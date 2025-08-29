@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Page scaffold */
+html, body, #root { height: 100%; }
+body {
+  background: radial-gradient(1200px 600px at 10% 0%, rgba(127,90,240,0.18), transparent 40%),
+              radial-gradient(900px 500px at 90% 20%, rgba(0,245,255,0.15), transparent 45%),
+              linear-gradient(180deg, #0a0c10 0%, #0e1117 60%, #121622 100%);
+  color: #eef2f7;
+  font-synthesis-weight: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Reusable Glass */
+.glass {
+  @apply bg-glass-bg border border-glass-border backdrop-blur-xl shadow-glass;
+}
+
+/* Premium separators */
+.separator {
+  @apply border-t border-glass-border;
+}
+
+/* Button base (professional, not too flashy) */
+.btn {
+  @apply inline-flex items-center gap-2 rounded-xl2 px-4 py-2 font-medium transition-all duration-200;
+}
+.btn-primary {
+  @apply bg-accent-aqua/10 text-accent-aqua border-2 border-accent-aqua hover:bg-accent-aqua/20;
+}
+.btn-secondary {
+  @apply bg-accent-purple/10 text-accent-purple border-2 border-accent-purple hover:bg-accent-purple/20;
+}
+.btn-ghost {
+  @apply bg-transparent text-text-dim border border-glass-border hover:border-text-soft;
+}
+
+/* Inputs */
+.input {
+  @apply w-full rounded-xl2 bg-transparent border border-glass-border px-3 py-2 text-sm text-text outline-none focus:border-accent-aqua focus:shadow-neonAqua transition;
+}
+
+/* Layout foundation */
+.layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: 100vh;
+}
+
+/* Sidebar link look */
+.sidebar-link {
+  @apply text-text-soft hover:text-text border border-transparent hover:border-glass-border rounded-xl px-3 py-2 transition;
+}
+.sidebar-active {
+  @apply text-accent-aqua border-accent-aqua/40 bg-accent-aquaSoft;
+}
