@@ -1,8 +1,10 @@
 // src/pages/Settings.jsx
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 
 export default function Settings() {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState({
     email: "",
     full_name: "",
@@ -67,8 +69,12 @@ export default function Settings() {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    window.location.href = "/login";
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error("Logout failed:", err.message);
+    }
+    navigate("/login"); // ✅ SPA-safe redirect
   };
 
   return (
