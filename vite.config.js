@@ -9,4 +9,8 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    outDir: "dist", // ensure Vercel reads the correct build folder
+  },
+  base: "./", // critical for proper routing of SPA on Vercel
 });
