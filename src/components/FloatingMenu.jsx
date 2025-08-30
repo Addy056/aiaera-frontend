@@ -1,5 +1,5 @@
 // src/components/Sidebar.jsx
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Bot,
@@ -29,18 +29,18 @@ const navItems = [
 ];
 
 export default function Sidebar() {
+  const navigate = useNavigate();
+
   const handleLogout = async () => {
     try {
-      // Sign out from Supabase without redirectTo
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
 
-      // Manually redirect to login page
-      window.location.href = "/login";
+      // ✅ Client-side navigation
+      navigate("/login");
     } catch (err) {
       console.error("Logout failed:", err.message);
-      // Always fallback to login
-      window.location.href = "/login";
+      navigate("/login"); // fallback
     }
   };
 
