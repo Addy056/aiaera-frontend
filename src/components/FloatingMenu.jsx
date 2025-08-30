@@ -1,5 +1,5 @@
 // src/components/Sidebar.jsx
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
   Bot,
@@ -29,18 +29,16 @@ const navItems = [
 ];
 
 export default function Sidebar() {
-  const navigate = useNavigate();
-
   const handleLogout = async () => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
 
-      // ✅ Client-side navigation
-      navigate("/login");
+      // ✅ Force redirect to Odoo login page
+      window.location.href = "https://aiaera1.odoo.com/login";
     } catch (err) {
       console.error("Logout failed:", err.message);
-      navigate("/login"); // fallback
+      window.location.href = "https://aiaera1.odoo.com/login"; // fallback
     }
   };
 
