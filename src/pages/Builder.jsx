@@ -38,7 +38,7 @@ export default function Builder() {
   const fileInputRef = useRef(null);
   const logoInputRef = useRef(null);
   const chatEndRef = useRef(null);
-  const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  const API_BASE = import.meta.env.VITE_API_URL;  // no fallback needed
   const BUCKET = import.meta.env.VITE_SUPABASE_BUCKET || "chatbot-files";
 
   useEffect(() => {
