@@ -10,7 +10,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: "dist", // ensure Vercel reads the correct build folder
+    outDir: "dist",
   },
-  base: "./", // critical for proper routing of SPA on Vercel
+  base: "/", // ✅ ensures correct routing on Vercel
 });
