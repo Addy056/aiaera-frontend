@@ -10,19 +10,27 @@ export default function ProtectedRoute({ children }) {
   const location = useLocation();
 
   useEffect(() => {
-    const fetchSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+    const fetchSessionAndSubscription = async () => {
+      // ✅ Get current session
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       setUser(session?.user || null);
 
       if (session?.user) {
-        // Check subscription
+        // ✅ Check subscription from Supabase table
         const { data: sub, error } = await supabase
           .from("user_subscriptions")
           .select("expires_at")
           .eq("user_id", session.user.id)
-          .single();
+          .maybeSingle(); // ✅ safer than .single()
 
-        if (sub && new Date(sub.expires_at) < new Date()) {
+        if (error) {
+          console.error("Error fetching subscription:", error.message);
+        }
+
+        if (!sub || (sub?.expires_at && new Date(sub.expires_at) < new Date())) {
           setIsExpired(true);
         } else {
           setIsExpired(false);
@@ -32,22 +40,24 @@ export default function ProtectedRoute({ children }) {
       setLoading(false);
     };
 
-    fetchSession();
+    fetchSessionAndSubscription();
 
-    // Listen for auth changes (login/logout)
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    // ✅ Listen for login/logout changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user || null);
     });
 
-    return () => listener.subscription.unsubscribe();
+    return () => subscription.unsubscribe();
   }, []);
 
   if (loading) return <div className="text-center p-6">Loading...</div>;
 
-  // Redirect if not logged in
+  // ✅ Redirect if not logged in
   if (!user) return <Navigate to="/login" replace />;
 
-  // Redirect if subscription expired and trying to access premium pages
+  // ✅ Redirect if subscription expired on premium pages
   const premiumPages = ["/builder", "/leads", "/appointments", "/integrations"];
   if (isExpired && premiumPages.includes(location.pathname)) {
     return <Navigate to="/pricing" replace />;
