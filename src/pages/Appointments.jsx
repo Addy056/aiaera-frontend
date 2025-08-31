@@ -157,7 +157,7 @@ export default function Appointments() {
   }
 
   return (
-    <div className="relative min-h-screen p-8 overflow-hidden">
+    <div className="relative min-h-screen p-4 sm:p-6 md:p-8 overflow-hidden">
       {/* Background Effects */}
       <div className="absolute inset-0 -z-10">
         <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-black to-purple-950 animate-gradient"></div>
@@ -168,7 +168,7 @@ export default function Appointments() {
       <div className="max-w-6xl mx-auto space-y-6 text-white">
         {/* Header */}
         <div className="p-6 rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-[0_0_50px_rgba(127,90,240,0.6)] hover:shadow-[0_0_70px_rgba(127,90,240,0.9)] transition-all transform hover:scale-[1.01]">
-          <h1 className="text-5xl font-extrabold bg-gradient-to-r from-purple-400 via-pink-400 to-purple-600 bg-clip-text text-transparent drop-shadow-xl">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-purple-400 via-pink-400 to-purple-600 bg-clip-text text-transparent drop-shadow-xl">
             Appointments Dashboard
           </h1>
           <p className="mt-2 text-gray-300">
@@ -280,7 +280,7 @@ export default function Appointments() {
                     key={appt.id}
                     className="p-4 rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-xl"
                   >
-                    <div className="flex justify-between">
+                    <div className="flex flex-col sm:flex-row sm:justify-between">
                       <span className="text-gray-300 font-semibold">Name:</span>
                       <span>{appt.customer_name}</span>
                     </div>
