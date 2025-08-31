@@ -1,4 +1,3 @@
-// src/components/MainLayout.jsx
 import React, { useEffect, useState } from "react";
 import FloatingMenu from "./FloatingMenu";
 import { supabase } from "../supabaseClient";
@@ -15,12 +14,14 @@ export default function MainLayout({ children }) {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#03040a] via-[#071026] to-[#020205] relative">
+    <div className="min-h-screen bg-gradient-to-b from-[#03040a] via-[#071026] to-[#020205] relative flex">
       {/* Floating Sidebar */}
       <FloatingMenu userEmail={userEmail} />
 
-      {/* Page content with left margin to avoid overlapping sidebar */}
-      <div className="ml-20 md:ml-32 p-8">{children}</div>
+      {/* Page content */}
+      <div className="flex-1 p-4 md:p-8 md:ml-32">
+        {children}
+      </div>
     </div>
   );
 }
