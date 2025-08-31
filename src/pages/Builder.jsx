@@ -38,7 +38,7 @@ export default function Builder() {
   const fileInputRef = useRef(null);
   const logoInputRef = useRef(null);
   const chatEndRef = useRef(null);
-  const API_BASE = import.meta.env.VITE_API_URL;  // no fallback needed
+  const API_BASE = import.meta.env.VITE_API_URL;
   const BUCKET = import.meta.env.VITE_SUPABASE_BUCKET || "chatbot-files";
 
   useEffect(() => {
@@ -122,7 +122,7 @@ export default function Builder() {
           .from("user_subscriptions")
           .select("expires_at")
           .eq("user_id", user.id)
-          .maybeSingle(); // ✅ changed from .single() to .maybeSingle() to fix 406
+          .maybeSingle();
 
         if (subErr) {
           console.error("Subscription check error:", subErr);
@@ -257,6 +257,7 @@ export default function Builder() {
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
+
   const handleDeleteFile = async (filePath) => {
     if (!user) return;
     try {
@@ -333,13 +334,13 @@ export default function Builder() {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 p-6 h-full bg-gradient-to-br from-[#0f0f17] via-[#1a1a2e] to-[#0f0f17]">
+    <div className="flex flex-col lg:flex-row gap-6 p-4 sm:p-6 h-full bg-gradient-to-br from-[#0f0f17] via-[#1a1a2e] to-[#0f0f17]">
       {/* Left - Builder Config */}
       <motion.div initial={{ x: -40, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.6 }} className="lg:w-1/2 w-full">
-        <Card className="backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl rounded-2xl p-6">
-          <h2 className="text-2xl font-bold text-white mb-4">⚡ Build Your Chatbot</h2>
+        <Card className="backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl rounded-2xl p-4 sm:p-6">
+          <h2 className="text-xl sm:text-2xl font-bold text-white mb-4">⚡ Build Your Chatbot</h2>
           <Tabs defaultValue="business">
-            <TabsList className="grid grid-cols-4 bg-black/30 rounded-xl p-1 mb-6">
+            <TabsList className="grid grid-cols-2 sm:grid-cols-4 bg-black/30 rounded-xl p-1 mb-6 gap-2">
               <TabsTrigger value="business">Business</TabsTrigger>
               <TabsTrigger value="files">Files</TabsTrigger>
               <TabsTrigger value="scraping">Website</TabsTrigger>
@@ -349,10 +350,10 @@ export default function Builder() {
             {/* Business Info */}
             <TabsContent value="business">
               <div className="space-y-4">
-                <Input placeholder="Business Name" value={businessName} onChange={(e) => setBusinessName(e.target.value)} className="bg-black/30 border-0 text-white" />
-                <Textarea placeholder="Business Description" value={businessDescription} onChange={(e) => setBusinessDescription(e.target.value)} className="bg-black/30 border-0 text-white" />
+                <Input placeholder="Business Name" value={businessName} onChange={(e) => setBusinessName(e.target.value)} className="bg-black/30 border-0 text-white w-full" />
+                <Textarea placeholder="Business Description" value={businessDescription} onChange={(e) => setBusinessDescription(e.target.value)} className="bg-black/30 border-0 text-white w-full" />
 
-                <div className="flex gap-2 mt-4">
+                <div className="flex flex-col sm:flex-row gap-2 mt-4">
                   <Button
                     onClick={isConfigSaved ? generateEmbedCode : saveConfig}
                     disabled={savingConfig}
@@ -367,7 +368,7 @@ export default function Builder() {
                         if (!chatbotId || !user) return;
                         try {
                           pushMessage("bot", "⚡ Retraining your chatbot...");
-                          const retrainRes = await axios.post(`${API_BASE}/api/chatbot/retrain`, { chatbotId, userId: user.id }, {
+                          await axios.post(`${API_BASE}/api/chatbot/retrain`, { chatbotId, userId: user.id }, {
                             headers: { Authorization: `Bearer ${authToken}` },
                           });
                           pushMessage("bot", "✅ Chatbot retraining started successfully!");
@@ -395,7 +396,7 @@ export default function Builder() {
                     <p className="text-sm text-gray-300">No files uploaded yet.</p>
                   ) : (
                     files.map((f) => (
-                      <div key={f.path} className="flex items-center justify-between bg-white/5 p-3 rounded-lg">
+                      <div key={f.path} className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-white/5 p-3 rounded-lg gap-2">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-md flex items-center justify-center text-xs font-semibold">
                             {f.name[0]?.toUpperCase() ?? "F"}
@@ -441,45 +442,49 @@ export default function Builder() {
           </Tabs>
         </Card>
       </motion.div>
-      {/* Right - Live Chatbot Preview */}
-      <motion.div initial={{ x: 40, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.6 }} className="lg:w-1/2 w-full">
-        <Card className="backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl rounded-2xl p-6 h-[600px] flex flex-col">
-          <h2 className="text-2xl font-bold text-white mb-4">🤖 Live Preview</h2>
-          <div className="flex-1 overflow-y-auto space-y-3 mb-4">
-            {messages.map((msg) => (
-              <motion.div
-                key={msg.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`p-3 rounded-lg max-w-[80%] ${msg.sender === "bot" ? "bg-purple-700 text-white self-start" : "bg-gray-700 text-white self-end"}`}
-                dangerouslySetInnerHTML={{ __html: formatMessage(msg.text) }}
-              />
+
+      {/* Right - Chat Preview */}
+      <motion.div initial={{ x: 40, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.6 }} className="lg:w-1/2 w-full flex flex-col">
+        <Card className="flex flex-col h-[70vh] sm:h-[80vh] backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl rounded-2xl">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3">
+            {messages.map((m) => (
+              <motion.div key={m.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className={`flex ${m.sender === "user" ? "justify-end" : "justify-start"}`}>
+                <div className={`max-w-[85%] sm:max-w-[75%] px-4 py-2 rounded-2xl shadow ${m.sender === "user" ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white" : "bg-white/15 text-gray-100 border border-white/20"}`}>
+                  <span dangerouslySetInnerHTML={{ __html: formatMessage(m.text) }} />
+                </div>
+              </motion.div>
             ))}
-            <div ref={chatEndRef}></div>
+            {loadingReply && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ repeat: Infinity, duration: 1 }}>
+                <div className="px-4 py-2 rounded-2xl bg-white/15 text-gray-100 border border-white/20">Typing...</div>
+              </motion.div>
+            )}
+            <div ref={chatEndRef} />
           </div>
-          <div className="flex gap-2">
+
+          <div className="p-4 border-t border-white/20 bg-black/20 flex flex-col sm:flex-row items-center gap-3">
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Type a message..."
-              className="flex-1 bg-black/30 border-0 text-white"
               onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+              className="flex-1 bg-black/40 border-0 text-white w-full"
             />
-            <Button onClick={sendMessage} disabled={loadingReply} className="bg-purple-600 hover:opacity-90">
-              {loadingReply ? "..." : "Send"}
-            </Button>
+            <Button onClick={sendMessage} className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90 w-full sm:w-auto">Send</Button>
           </div>
         </Card>
       </motion.div>
 
       {/* Embed Modal */}
       {showEmbedModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-black/90 rounded-2xl p-6 w-[500px] max-w-full relative">
-            <h3 className="text-white text-xl font-bold mb-4">Embed Code</h3>
-            <Textarea value={embedCode} readOnly className="bg-white/10 text-white mb-4" />
-            <Button onClick={copyEmbedCode} className="bg-purple-600 hover:opacity-90 w-full">Copy Embed Code</Button>
-            <button onClick={() => setShowEmbedModal(false)} className="absolute top-3 right-3 text-white text-xl">&times;</button>
+        <div className="fixed inset-0 flex items-center justify-center bg-black/70 z-50">
+          <div className="bg-[#1a1a2e] p-6 rounded-2xl shadow-2xl w-[90%] max-w-lg">
+            <h3 className="text-xl font-bold mb-4 text-white">Embed Code</h3>
+            <textarea value={embedCode} readOnly className="w-full h-32 bg-black/40 text-white text-sm p-3 rounded-lg" />
+            <div className="flex justify-end gap-3 mt-4">
+              <Button onClick={copyEmbedCode} className="bg-green-500 hover:opacity-90">Copy</Button>
+              <Button onClick={() => setShowEmbedModal(false)} className="bg-gray-600 hover:opacity-90">Close</Button>
+            </div>
           </div>
         </div>
       )}

@@ -1,11 +1,9 @@
-// src/pages/Pricing.jsx
 import { motion } from "framer-motion";
 import FloatingMenu from "../components/FloatingMenu";
 import { supabase } from "../supabaseClient";
 import axios from "axios";
 import { useState } from "react";
 
-// ✅ Plan configuration
 const PLANS = {
   free: { amount: 0, duration: 1, display: "₹0 / 1 Day" },
   basic: { amount: 999, duration: 1, display: "₹999 / month" },
@@ -14,7 +12,6 @@ const PLANS = {
 
 export default function Pricing() {
   const [loading, setLoading] = useState(false);
-
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
   const plans = [
@@ -61,52 +58,30 @@ export default function Pricing() {
     },
   ];
 
-  // ✅ Free Trial Activation
   const handleFreeTrial = async () => {
     try {
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return alert("Please log in first.");
-
-      const { data } = await axios.post(`${BACKEND_URL}/api/payment/create-order`, {
-        plan: "free",
-        user_id: user.id,
-      });
-
-      if (!data?.success) {
-        console.error("❌ Free trial failed:", data.error);
-        return alert(`Free trial failed: ${data.error || "Unknown error"}`);
-      }
-
+      const { data } = await axios.post(`${BACKEND_URL}/api/payment/create-order`, { plan: "free", user_id: user.id });
+      if (!data?.success) return alert(`Free trial failed: ${data.error || "Unknown error"}`);
       alert("🎉 Free trial activated! Enjoy 24 hours of full access.");
     } catch (err) {
-      console.error("❌ handleFreeTrial error:", err);
-      alert(`Free trial failed: ${err.response?.data?.error || err.message || "Unknown error"}`);
+      console.error(err);
+      alert(`Free trial failed: ${err.response?.data?.error || err.message}`);
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ Paid Plan Purchase
   const handlePaidPlan = async (slug) => {
     try {
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return alert("Please log in first.");
-
       const plan = PLANS[slug];
       if (!plan) return alert("Invalid plan selected.");
-
-      // Call backend to create order
-      const { data } = await axios.post(`${BACKEND_URL}/api/payment/create-order`, {
-        plan: slug,
-        user_id: user.id,
-      });
-
-      if (!data?.success) {
-        console.error("❌ Backend create order failed:", data.error);
-        return alert(`Create order failed: ${data.error || "Unknown error"}`);
-      }
+      const { data } = await axios.post(`${BACKEND_URL}/api/payment/create-order`, { plan: slug, user_id: user.id });
 
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
@@ -124,16 +99,11 @@ export default function Pricing() {
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
             });
-
-            if (res.data?.success) {
-              alert(`✅ ${slug.charAt(0).toUpperCase() + slug.slice(1)} plan activated successfully!`);
-            } else {
-              console.error("❌ Payment verification failed:", res.data.error);
-              alert(`Payment verification failed: ${res.data.error || "Unknown error"}`);
-            }
+            if (res.data?.success) alert(`${slug.charAt(0).toUpperCase() + slug.slice(1)} plan activated successfully!`);
+            else alert(`Payment verification failed: ${res.data.error || "Unknown error"}`);
           } catch (err) {
-            console.error("❌ Razorpay handler error:", err);
-            alert("Payment verification failed. Check console for details.");
+            console.error(err);
+            alert("Payment verification failed.");
           }
         },
         prefill: { email: user.email },
@@ -143,8 +113,8 @@ export default function Pricing() {
       const rzp = new window.Razorpay(options);
       rzp.open();
     } catch (err) {
-      console.error("❌ handlePaidPlan error:", err);
-      alert(`Payment failed: ${err.response?.data?.error || err.message || "Unknown error"}`);
+      console.error(err);
+      alert(`Payment failed: ${err.response?.data?.error || err.message}`);
     } finally {
       setLoading(false);
     }
@@ -154,63 +124,62 @@ export default function Pricing() {
     <div className="relative min-h-screen bg-gradient-to-br from-[#0f0c29] via-[#302b63] to-[#24243e] text-white overflow-hidden">
       <FloatingMenu />
 
-      {/* Background glows */}
+      {/* Background Blobs */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1, scale: [1, 1.1, 1] }}
         transition={{ repeat: Infinity, duration: 12 }}
-        className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full bg-purple-600/20 blur-[120px]"
+        className="absolute -top-32 -left-32 w-[400px] h-[400px] rounded-full bg-purple-600/20 blur-[120px]"
       />
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1, scale: [1.1, 1, 1.1] }}
         transition={{ repeat: Infinity, duration: 15 }}
-        className="absolute bottom-0 right-0 w-[600px] h-[600px] rounded-full bg-pink-600/20 blur-[140px]"
+        className="absolute bottom-0 right-0 w-[500px] h-[500px] rounded-full bg-pink-600/20 blur-[140px]"
       />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6 py-24">
-        {/* Heading */}
+      <div className="relative z-10 max-w-7xl mx-auto px-6 py-16 sm:py-24">
+        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="text-center mb-20"
+          className="text-center mb-16 sm:mb-20"
         >
-          <h1 className="text-6xl font-extrabold bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent drop-shadow-lg">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent drop-shadow-lg">
             Pricing Plans
           </h1>
-          <p className="mt-4 text-lg text-gray-300">
+          <p className="mt-4 text-gray-300 text-base sm:text-lg">
             Choose the plan that fits your business best
           </p>
         </motion.div>
 
         {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 items-center">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 md:gap-10 items-stretch">
           {plans.map((plan, idx) => (
             <motion.div
               key={idx}
-              initial={{ opacity: 0, y: 40 }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.2 }}
-              className={`relative rounded-3xl p-10 shadow-2xl backdrop-blur-2xl border transition transform hover:scale-105 hover:shadow-purple-600/40 ${
+              transition={{ delay: idx * 0.15 }}
+              className={`relative rounded-3xl p-6 sm:p-8 md:p-10 shadow-2xl backdrop-blur-2xl border transition transform hover:scale-105 hover:shadow-purple-600/40 flex flex-col ${
                 plan.highlight
-                  ? "bg-gradient-to-br from-purple-900/40 to-pink-900/30 border-purple-500/40 shadow-lg shadow-purple-500/50 scale-110 z-10"
+                  ? "bg-gradient-to-br from-purple-900/40 to-pink-900/30 border-purple-500/40 shadow-lg shadow-purple-500/50 z-10"
                   : "bg-white/5 border-white/10"
               }`}
             >
               {plan.highlight && (
-                <span className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-purple-500 to-pink-500 text-xs font-bold px-4 py-1 rounded-full shadow-md tracking-wide">
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-xs sm:text-sm font-bold px-3 py-1 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 shadow-md tracking-wide">
                   Most Popular
                 </span>
               )}
+              <h2 className="text-2xl sm:text-3xl font-semibold mb-2 sm:mb-4">{plan.name}</h2>
+              <p className="text-2xl sm:text-4xl font-extrabold mb-3 sm:mb-6">{PLANS[plan.slug].display}</p>
+              <p className="text-gray-300 text-sm sm:text-base mb-4 sm:mb-8">{plan.description}</p>
 
-              <h2 className="text-3xl font-semibold mb-4">{plan.name}</h2>
-              <p className="text-4xl font-extrabold mb-6">{PLANS[plan.slug].display}</p>
-              <p className="text-gray-300 mb-8">{plan.description}</p>
-
-              <ul className="space-y-4 mb-8">
+              <ul className="space-y-2 sm:space-y-4 mb-4 sm:mb-8 flex-1">
                 {plan.features.map((f, i) => (
-                  <li key={i} className="flex items-center gap-3 text-gray-200">
+                  <li key={i} className="flex items-center gap-2 sm:gap-3 text-gray-200 text-sm sm:text-base">
                     <span className="w-2.5 h-2.5 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full shadow-md" />
                     {f}
                   </li>
@@ -221,12 +190,8 @@ export default function Pricing() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 disabled={loading}
-                onClick={() =>
-                  plan.slug === "free"
-                    ? handleFreeTrial()
-                    : handlePaidPlan(plan.slug)
-                }
-                className={`w-full py-4 rounded-2xl font-bold text-lg tracking-wide transition ${
+                onClick={() => plan.slug === "free" ? handleFreeTrial() : handlePaidPlan(plan.slug)}
+                className={`w-full py-3 sm:py-4 rounded-2xl font-bold text-base sm:text-lg tracking-wide transition mt-auto ${
                   plan.highlight
                     ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/40"
                     : "bg-white/10 text-purple-200 hover:bg-purple-700/30"

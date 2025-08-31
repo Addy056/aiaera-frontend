@@ -54,9 +54,9 @@ export default function Dashboard() {
           .eq("user_id", user.id)
           .single();
 
-        if (subErr) throw subErr;
+        if (subErr && subErr.code !== "PGRST116") throw subErr;
 
-        setSubscriptionActive(subscription && !isExpired(subscription.expires_at));
+        setSubscriptionActive(subscription && !isExpired(subscription?.expires_at));
 
         await fetchKpiAndActivity(user.id);
       } catch (err) {
@@ -132,13 +132,12 @@ export default function Dashboard() {
         break;
 
       case "Get Embed":
-        // Fetch user's bots to generate embed
         const { data: bots } = await supabase
           .from("chatbot_configs")
           .select("id, businessName")
           .eq("user_id", user.id);
 
-        if (bots && bots.length > 0) {
+        if (bots?.length) {
           const code = bots.map(b => `<script src="https://yourdomain.com/embed/${b.id}.js" async></script>`).join("\n");
           setEmbedCode(code);
           setEmbedModalOpen(true);
@@ -230,8 +229,7 @@ export default function Dashboard() {
             </motion.div>
 
             {/* Quick Actions */}
-            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.3 }} className="rounded-3
--3xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 shadow-[0_25px_80px_rgba(2,6,23,0.6)]">
+            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.3 }} className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 shadow-[0_25px_80px_rgba(2,6,23,0.6)]">
               <h2 className="text-lg sm:text-xl font-semibold text-white mb-4">Quick Actions</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {[

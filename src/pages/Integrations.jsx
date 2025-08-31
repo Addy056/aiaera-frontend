@@ -76,11 +76,8 @@ export default function Integrations() {
     try {
       const res = await fetch(`${API_BASE}?user_id=${userId}`);
       const text = await res.text();
-
       if (!res.ok) throw new Error(`Backend error: ${text}`);
-
       const data = JSON.parse(text);
-
       if (mountedRef.current && data?.integrations) {
         const integ = data.integrations;
         setForm({
@@ -152,8 +149,10 @@ export default function Integrations() {
   if (!subscriptionActive) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-purple-900 via-black to-purple-950 text-white p-8">
-        <h1 className="text-5xl font-bold mb-4">Subscription Expired 🚫</h1>
-        <p className="text-lg text-gray-300 mb-6 text-center">
+        <h1 className="text-4xl sm:text-5xl font-bold mb-4 text-center">
+          Subscription Expired 🚫
+        </h1>
+        <p className="text-lg sm:text-xl text-gray-300 mb-6 text-center">
           Your subscription has expired. Please renew to access Integrations.
         </p>
         <a
@@ -167,105 +166,108 @@ export default function Integrations() {
   }
 
   return (
-    <div className="relative min-h-screen p-8 overflow-hidden">
+    <div className="relative min-h-screen p-4 sm:p-8 overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 -z-10">
         <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-black to-purple-950 animate-gradient"></div>
-        <div className="absolute w-[600px] h-[600px] bg-purple-600/30 rounded-full blur-3xl top-20 left-10 animate-pulse"></div>
-        <div className="absolute w-[500px] h-[500px] bg-fuchsia-500/20 rounded-full blur-3xl bottom-10 right-10 animate-pulse-slow"></div>
+        <div className="absolute w-[400px] sm:w-[600px] h-[400px] sm:h-[600px] bg-purple-600/30 rounded-full blur-3xl top-10 sm:top-20 left-5 sm:left-10 animate-pulse"></div>
+        <div className="absolute w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] bg-fuchsia-500/20 rounded-full blur-3xl bottom-5 sm:bottom-10 right-5 sm:right-10 animate-pulse-slow"></div>
       </div>
 
-      <div className="max-w-4xl mx-auto space-y-8 text-white">
-        <div className="p-6 rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-[0_0_50px_rgba(127,90,240,0.6)] hover:shadow-[0_0_70px_rgba(127,90,240,0.9)] transition-all transform hover:scale-[1.01]">
-          <h1 className="text-5xl font-extrabold bg-gradient-to-r from-purple-400 via-pink-400 to-purple-600 bg-clip-text text-transparent drop-shadow-xl">
+      <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8 text-white">
+        <div className="p-4 sm:p-6 rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-[0_0_50px_rgba(127,90,240,0.6)] hover:shadow-[0_0_70px_rgba(127,90,240,0.9)] transition-all transform hover:scale-[1.01]">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-purple-400 via-pink-400 to-purple-600 bg-clip-text text-transparent drop-shadow-xl">
             Integrations Dashboard
           </h1>
-          <p className="mt-2 text-gray-300">
+          <p className="mt-2 text-gray-300 text-sm sm:text-base">
             Connect your WhatsApp, Facebook, Instagram, and Calendly accounts seamlessly ✨
           </p>
         </div>
 
         {error && (
-          <div className="p-4 rounded-2xl bg-red-600/30 border border-red-400/50 text-red-200">
+          <div className="p-3 sm:p-4 rounded-2xl bg-red-600/30 border border-red-400/50 text-red-200 text-sm sm:text-base">
             ⚠️ {error}
           </div>
         )}
 
-        <IntegrationCard title="WhatsApp Integration">
-          <input
-            type="text"
-            name="whatsapp_number"
-            value={form.whatsapp_number}
-            onChange={handleChange}
-            placeholder="WhatsApp Business Number"
-            className="input-field"
-          />
-          <input
-            type="text"
-            name="whatsapp_token"
-            value={form.whatsapp_token}
-            onChange={handleChange}
-            placeholder="WhatsApp API Token"
-            className="input-field"
-          />
-        </IntegrationCard>
+        {/* Integration Cards in a responsive grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+          <IntegrationCard title="WhatsApp Integration">
+            <input
+              type="text"
+              name="whatsapp_number"
+              value={form.whatsapp_number}
+              onChange={handleChange}
+              placeholder="WhatsApp Business Number"
+              className="input-field"
+            />
+            <input
+              type="text"
+              name="whatsapp_token"
+              value={form.whatsapp_token}
+              onChange={handleChange}
+              placeholder="WhatsApp API Token"
+              className="input-field"
+            />
+          </IntegrationCard>
 
-        <IntegrationCard title="Facebook Messenger Integration">
-          <input
-            type="text"
-            name="fb_page_id"
-            value={form.fb_page_id}
-            onChange={handleChange}
-            placeholder="Facebook Page ID"
-            className="input-field"
-          />
-          <input
-            type="text"
-            name="fb_page_token"
-            value={form.fb_page_token}
-            onChange={handleChange}
-            placeholder="Facebook Page Access Token"
-            className="input-field"
-          />
-        </IntegrationCard>
+          <IntegrationCard title="Facebook Messenger Integration">
+            <input
+              type="text"
+              name="fb_page_id"
+              value={form.fb_page_id}
+              onChange={handleChange}
+              placeholder="Facebook Page ID"
+              className="input-field"
+            />
+            <input
+              type="text"
+              name="fb_page_token"
+              value={form.fb_page_token}
+              onChange={handleChange}
+              placeholder="Facebook Page Access Token"
+              className="input-field"
+            />
+          </IntegrationCard>
 
-        <IntegrationCard title="Instagram Integration">
-          <input
-            type="text"
-            name="instagram_user_id"
-            value={form.instagram_user_id}
-            onChange={handleChange}
-            placeholder="Instagram User ID"
-            className="input-field"
-          />
-          <input
-            type="text"
-            name="instagram_page_id"
-            value={form.instagram_page_id}
-            onChange={handleChange}
-            placeholder="Connected Facebook Page ID"
-            className="input-field"
-          />
-          <input
-            type="text"
-            name="instagram_access_token"
-            value={form.instagram_access_token}
-            onChange={handleChange}
-            placeholder="Instagram Access Token"
-            className="input-field"
-          />
-        </IntegrationCard>
+          <IntegrationCard title="Instagram Integration">
+            <input
+              type="text"
+              name="instagram_user_id"
+              value={form.instagram_user_id}
+              onChange={handleChange}
+              placeholder="Instagram User ID"
+              className="input-field"
+            />
+            <input
+              type="text"
+              name="instagram_page_id"
+              value={form.instagram_page_id}
+              onChange={handleChange}
+              placeholder="Connected Facebook Page ID"
+              className="input-field"
+            />
+            <input
+              type="text"
+              name="instagram_access_token"
+              value={form.instagram_access_token}
+              onChange={handleChange}
+              placeholder="Instagram Access Token"
+              className="input-field"
+            />
+          </IntegrationCard>
 
-        <IntegrationCard title="Calendly Integration">
-          <input
-            type="text"
-            name="calendly_link"
-            value={form.calendly_link}
-            onChange={handleChange}
-            placeholder="Calendly Link"
-            className="input-field"
-          />
-        </IntegrationCard>
+          <IntegrationCard title="Calendly Integration">
+            <input
+              type="text"
+              name="calendly_link"
+              value={form.calendly_link}
+              onChange={handleChange}
+              placeholder="Calendly Link"
+              className="input-field"
+            />
+          </IntegrationCard>
+        </div>
 
         <button
           onClick={handleSave}
@@ -276,7 +278,7 @@ export default function Integrations() {
         </button>
 
         {saved && (
-          <p className="text-green-400 mt-4 text-center">
+          <p className="text-green-400 mt-4 text-center text-sm sm:text-base">
             ✅ Integrations saved successfully!
           </p>
         )}
@@ -298,12 +300,13 @@ export default function Integrations() {
         .input-field {
           width: 100%;
           margin-bottom: 0.75rem;
-          padding: 1rem;
-          border-radius: 1rem;
+          padding: 0.85rem 1rem;
+          border-radius: 0.75rem;
           background: rgba(255, 255, 255, 0.2);
           color: white;
           outline: none;
           transition: all 0.2s;
+          font-size: 0.875rem;
         }
         .input-field::placeholder {
           color: #d1d5db;
@@ -319,8 +322,8 @@ export default function Integrations() {
 
 function IntegrationCard({ title, children }) {
   return (
-    <div className="bg-white/10 backdrop-blur-xl rounded-3xl shadow-xl p-6 border border-white/20 hover:scale-[1.01] transition-all">
-      <h2 className="text-xl font-semibold text-purple-300 mb-4">{title}</h2>
+    <div className="bg-white/10 backdrop-blur-xl rounded-3xl shadow-xl p-4 sm:p-6 border border-white/20 hover:scale-[1.01] transition-all">
+      <h2 className="text-lg sm:text-xl font-semibold text-purple-300 mb-3 sm:mb-4">{title}</h2>
       {children}
     </div>
   );
