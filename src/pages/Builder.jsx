@@ -41,6 +41,7 @@ export default function Builder() {
   const API_BASE = import.meta.env.VITE_API_URL;
   const BUCKET = import.meta.env.VITE_SUPABASE_BUCKET || "chatbot-files";
 
+  // ------------------- Initialize -------------------
   useEffect(() => {
     let mounted = true;
     const init = async () => {
@@ -293,7 +294,7 @@ export default function Builder() {
     pushMessage("user", input);
 
     const outgoingMessages = [
-      ...messages.map((m) => ({ role: m.sender === "bot" ? "assistant" : "user", content: m.text })),
+      ...messages.map((m) => ({ role: m.sender === "bot" ? "assistant" : "user", content: m.text })), 
       { role: "user", content: input },
     ];
 
@@ -333,8 +334,9 @@ export default function Builder() {
     }
   };
 
+  // ---------------- UI ----------------
   return (
-    <div className="flex flex-col lg:flex-row gap-6 p-4 sm:p-6 h-full bg-gradient-to-br from-[#0f0f17] via-[#1a1a2e] to-[#0f0f17]">
+    <div className="flex flex-col lg:flex-row gap-6 p-4 sm:p-6 h-full bg-gradient-to-br from-[#0f0f17] via-[#1a1a2e] to-[#0f0f17] min-h-screen">
       {/* Left - Builder Config */}
       <motion.div initial={{ x: -40, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.6 }} className="lg:w-1/2 w-full">
         <Card className="backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl rounded-2xl p-4 sm:p-6">

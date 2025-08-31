@@ -1,3 +1,4 @@
+// src/pages/Integrations.jsx
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "../supabaseClient";
 
@@ -23,27 +24,22 @@ export default function Integrations() {
   const [subscriptionActive, setSubscriptionActive] = useState(true);
   const mountedRef = useRef(false);
 
-  const API_BASE =
-    import.meta.env.VITE_API_BASE || "http://localhost:5000/api/integrations";
+  const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000/api/integrations";
 
   useEffect(() => {
     mountedRef.current = true;
     init();
-    return () => {
-      mountedRef.current = false;
-    };
+    return () => { mountedRef.current = false; };
   }, []);
 
   const init = async () => {
     setLoading(true);
     setError(null);
     try {
-      const {
-        data: { user },
-        error: userErr,
-      } = await supabase.auth.getUser();
+      const { data: { user }, error: userErr } = await supabase.auth.getUser();
       if (userErr || !user) throw new Error("Unable to fetch user session.");
 
+      // Superuser bypass
       if (user.email === "aiaera056@gmail.com") {
         setSubscriptionActive(true);
         await fetchIntegrations(user.id);
@@ -55,8 +51,8 @@ export default function Integrations() {
         .select("*")
         .eq("user_id", user.id)
         .single();
-      if (subErr && subErr.code !== "PGRST116") throw subErr;
 
+      if (subErr && subErr.code !== "PGRST116") throw subErr;
       if (!subscription || isExpired(subscription.expires_at)) {
         setSubscriptionActive(false);
         return;
@@ -99,30 +95,19 @@ export default function Integrations() {
     }
   };
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSave = async () => {
     setLoading(true);
     setError(null);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not logged in.");
 
       let cleanCalendly = form.calendly_link.replace(/<[^>]*>/g, "").trim();
-      if (cleanCalendly && !/^https?:\/\//i.test(cleanCalendly)) {
-        cleanCalendly = "https://" + cleanCalendly;
-      }
+      if (cleanCalendly && !/^https?:\/\//i.test(cleanCalendly)) cleanCalendly = "https://" + cleanCalendly;
 
-      const payload = {
-        ...form,
-        calendly_link: cleanCalendly,
-        user_id: user.id,
-      };
-
+      const payload = { ...form, calendly_link: cleanCalendly, user_id: user.id };
       const res = await fetch(API_BASE, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -131,7 +116,6 @@ export default function Integrations() {
 
       const text = await res.text();
       const result = JSON.parse(text);
-
       if (!res.ok) throw new Error(result?.error || "Failed to save integrations");
 
       if (mountedRef.current) {
@@ -149,16 +133,11 @@ export default function Integrations() {
   if (!subscriptionActive) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-purple-900 via-black to-purple-950 text-white p-8">
-        <h1 className="text-4xl sm:text-5xl font-bold mb-4 text-center">
-          Subscription Expired 🚫
-        </h1>
+        <h1 className="text-4xl sm:text-5xl font-bold mb-4 text-center">Subscription Expired 🚫</h1>
         <p className="text-lg sm:text-xl text-gray-300 mb-6 text-center">
           Your subscription has expired. Please renew to access Integrations.
         </p>
-        <a
-          href="/pricing"
-          className="px-6 py-3 rounded-2xl bg-purple-600/80 hover:bg-purple-700 transition font-semibold"
-        >
+        <a href="/pricing" className="px-6 py-3 rounded-2xl bg-purple-600/80 hover:bg-purple-700 transition font-semibold">
           Renew Now
         </a>
       </div>
@@ -190,98 +169,34 @@ export default function Integrations() {
           </div>
         )}
 
-        {/* Integration Cards in a responsive grid */}
+        {/* Integration Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           <IntegrationCard title="WhatsApp Integration">
-            <input
-              type="text"
-              name="whatsapp_number"
-              value={form.whatsapp_number}
-              onChange={handleChange}
-              placeholder="WhatsApp Business Number"
-              className="input-field"
-            />
-            <input
-              type="text"
-              name="whatsapp_token"
-              value={form.whatsapp_token}
-              onChange={handleChange}
-              placeholder="WhatsApp API Token"
-              className="input-field"
-            />
+            <input type="text" name="whatsapp_number" value={form.whatsapp_number} onChange={handleChange} placeholder="WhatsApp Business Number" className="input-field" />
+            <input type="text" name="whatsapp_token" value={form.whatsapp_token} onChange={handleChange} placeholder="WhatsApp API Token" className="input-field" />
           </IntegrationCard>
 
           <IntegrationCard title="Facebook Messenger Integration">
-            <input
-              type="text"
-              name="fb_page_id"
-              value={form.fb_page_id}
-              onChange={handleChange}
-              placeholder="Facebook Page ID"
-              className="input-field"
-            />
-            <input
-              type="text"
-              name="fb_page_token"
-              value={form.fb_page_token}
-              onChange={handleChange}
-              placeholder="Facebook Page Access Token"
-              className="input-field"
-            />
+            <input type="text" name="fb_page_id" value={form.fb_page_id} onChange={handleChange} placeholder="Facebook Page ID" className="input-field" />
+            <input type="text" name="fb_page_token" value={form.fb_page_token} onChange={handleChange} placeholder="Facebook Page Access Token" className="input-field" />
           </IntegrationCard>
 
           <IntegrationCard title="Instagram Integration">
-            <input
-              type="text"
-              name="instagram_user_id"
-              value={form.instagram_user_id}
-              onChange={handleChange}
-              placeholder="Instagram User ID"
-              className="input-field"
-            />
-            <input
-              type="text"
-              name="instagram_page_id"
-              value={form.instagram_page_id}
-              onChange={handleChange}
-              placeholder="Connected Facebook Page ID"
-              className="input-field"
-            />
-            <input
-              type="text"
-              name="instagram_access_token"
-              value={form.instagram_access_token}
-              onChange={handleChange}
-              placeholder="Instagram Access Token"
-              className="input-field"
-            />
+            <input type="text" name="instagram_user_id" value={form.instagram_user_id} onChange={handleChange} placeholder="Instagram User ID" className="input-field" />
+            <input type="text" name="instagram_page_id" value={form.instagram_page_id} onChange={handleChange} placeholder="Connected Facebook Page ID" className="input-field" />
+            <input type="text" name="instagram_access_token" value={form.instagram_access_token} onChange={handleChange} placeholder="Instagram Access Token" className="input-field" />
           </IntegrationCard>
 
           <IntegrationCard title="Calendly Integration">
-            <input
-              type="text"
-              name="calendly_link"
-              value={form.calendly_link}
-              onChange={handleChange}
-              placeholder="Calendly Link"
-              className="input-field"
-            />
+            <input type="text" name="calendly_link" value={form.calendly_link} onChange={handleChange} placeholder="Calendly Link" className="input-field" />
           </IntegrationCard>
         </div>
 
-        <button
-          onClick={handleSave}
-          disabled={loading}
-          className="w-full py-3 rounded-2xl bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 text-white font-semibold shadow-xl hover:scale-105 hover:shadow-[0_0_35px_rgba(127,90,240,0.8)] transition-all disabled:opacity-50"
-        >
+        <button onClick={handleSave} disabled={loading} className="w-full py-3 rounded-2xl bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 text-white font-semibold shadow-xl hover:scale-105 hover:shadow-[0_0_35px_rgba(127,90,240,0.8)] transition-all disabled:opacity-50">
           {loading ? "Saving..." : "Save Integrations"}
         </button>
 
-        {saved && (
-          <p className="text-green-400 mt-4 text-center text-sm sm:text-base">
-            ✅ Integrations saved successfully!
-          </p>
-        )}
+        {saved && <p className="text-green-400 mt-4 text-center text-sm sm:text-base">✅ Integrations saved successfully!</p>}
       </div>
 
       <style>{`
@@ -308,9 +223,7 @@ export default function Integrations() {
           transition: all 0.2s;
           font-size: 0.875rem;
         }
-        .input-field::placeholder {
-          color: #d1d5db;
-        }
+        .input-field::placeholder { color: #d1d5db; }
         .input-field:focus {
           background: rgba(255, 255, 255, 0.25);
           box-shadow: 0 0 0 2px #a855f7;

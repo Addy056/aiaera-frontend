@@ -34,11 +34,7 @@ export default function Pricing() {
       name: "Basic Plan",
       slug: "basic",
       description: "Perfect for small businesses needing website integration.",
-      features: [
-        "Website chatbot widget",
-        "Lead collection & export",
-        "Email support",
-      ],
+      features: ["Website chatbot widget", "Lead collection & export", "Email support"],
       highlight: false,
     },
     {
@@ -63,7 +59,10 @@ export default function Pricing() {
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return alert("Please log in first.");
-      const { data } = await axios.post(`${BACKEND_URL}/api/payment/create-order`, { plan: "free", user_id: user.id });
+      const { data } = await axios.post(`${BACKEND_URL}/api/payment/create-order`, {
+        plan: "free",
+        user_id: user.id,
+      });
       if (!data?.success) return alert(`Free trial failed: ${data.error || "Unknown error"}`);
       alert("🎉 Free trial activated! Enjoy 24 hours of full access.");
     } catch (err) {
@@ -81,7 +80,10 @@ export default function Pricing() {
       if (!user) return alert("Please log in first.");
       const plan = PLANS[slug];
       if (!plan) return alert("Invalid plan selected.");
-      const { data } = await axios.post(`${BACKEND_URL}/api/payment/create-order`, { plan: slug, user_id: user.id });
+      const { data } = await axios.post(`${BACKEND_URL}/api/payment/create-order`, {
+        plan: slug,
+        user_id: user.id,
+      });
 
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
@@ -99,7 +101,8 @@ export default function Pricing() {
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
             });
-            if (res.data?.success) alert(`${slug.charAt(0).toUpperCase() + slug.slice(1)} plan activated successfully!`);
+            if (res.data?.success)
+              alert(`${slug.charAt(0).toUpperCase() + slug.slice(1)} plan activated successfully!`);
             else alert(`Payment verification failed: ${res.data.error || "Unknown error"}`);
           } catch (err) {
             console.error(err);
@@ -190,7 +193,7 @@ export default function Pricing() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 disabled={loading}
-                onClick={() => plan.slug === "free" ? handleFreeTrial() : handlePaidPlan(plan.slug)}
+                onClick={() => (plan.slug === "free" ? handleFreeTrial() : handlePaidPlan(plan.slug))}
                 className={`w-full py-3 sm:py-4 rounded-2xl font-bold text-base sm:text-lg tracking-wide transition mt-auto ${
                   plan.highlight
                     ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/40"
