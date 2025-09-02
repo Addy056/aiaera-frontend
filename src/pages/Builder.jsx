@@ -95,6 +95,79 @@ export default function Builder() {
     return text.replace(urlRegex, (url) => `<a href="${url}" target="_blank" class="underline text-purple-200">${url}</a>`);
   };
 
+  // ---------------- Helpers: Business Data ----------------
+  // Upsert a "general" business_data row so chatbot has searchable content
+  const upsertBusinessDataFromBuilder = async () => {
+    if (!user) return;
+    try {
+      // Try to find an existing row by user + title (to avoid duplicates on repeated saves)
+      const { data: existing, error: findErr } = await supabase
+        .from("business_data")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("business_type", "general")
+        .eq("title", businessName)
+        .maybeSingle();
+
+      if (findErr) console.warn("find business_data error:", findErr);
+
+      const payload = {
+        user_id: user.id,
+        business_type: "general",
+        title: businessName || "My Business",
+        description: businessDescription || "",
+        attributes: {
+          website_url: websiteUrl || null,
+          files: (files || []).map(f => ({ name: f.name, url: f.publicUrl })),
+          logo_url: logoUrl || null,
+          updated_from: "builder",
+        }
+      };
+
+      if (existing?.id) {
+        const { error: updErr } = await supabase
+          .from("business_data")
+          .update(payload)
+          .eq("id", existing.id)
+          .eq("user_id", user.id);
+        if (updErr) throw updErr;
+      } else {
+        const { error: insErr } = await supabase
+          .from("business_data")
+          .insert([payload]);
+        if (insErr) throw insErr;
+      }
+    } catch (e) {
+      console.error("upsertBusinessDataFromBuilder error:", e);
+      // Don't block saving the chatbot if this fails; just log
+    }
+  };
+
+  // Search user's business_data by keyword (title + description)
+  const searchBusinessData = async (query) => {
+    if (!user) return [];
+    try {
+      // Escape % and _ in the query to avoid wildcard surprises
+      const safe = query.replaceAll("%", "\\%").replaceAll("_", "\\_");
+      const { data, error } = await supabase
+        .from("business_data")
+        .select("id, title, description, attributes, business_type, created_at")
+        .eq("user_id", user.id)
+        .or(`title.ilike.%${safe}%,description.ilike.%${safe}%`)
+        .order("created_at", { ascending: false })
+        .limit(10);
+
+      if (error) {
+        console.error("Supabase searchBusinessData error:", error);
+        return [];
+      }
+      return data || [];
+    } catch (e) {
+      console.error("searchBusinessData exception:", e);
+      return [];
+    }
+  };
+
   // ---------------- Save Config ----------------
   const saveConfig = async () => {
     if (!user) {
@@ -148,6 +221,9 @@ export default function Builder() {
         if (error) throw error;
         setChatbotId(data.id);
       }
+
+      // 👉 Ensure searchable data exists in business_data
+      await upsertBusinessDataFromBuilder();
 
       pushMessage("bot", "✅ Configuration saved.");
       setIsConfigSaved(true);
@@ -206,6 +282,9 @@ export default function Builder() {
 
         if (error) throw error;
       }
+
+      // Keep business_data in sync for search
+      await upsertBusinessDataFromBuilder();
     } catch (err) {
       console.error("Logo upload error:", err);
       pushMessage("bot", "❌ Logo upload failed.");
@@ -249,6 +328,9 @@ export default function Builder() {
         if (error) throw error;
       }
 
+      // Keep business_data in sync for search (stores file metadata in attributes)
+      await upsertBusinessDataFromBuilder();
+
       pushMessage("bot", `📂 Uploaded ${file.name}`);
     } catch (err) {
       console.error("File upload error:", err);
@@ -281,6 +363,9 @@ export default function Builder() {
         if (error) throw error;
       }
 
+      // Sync business_data attributes (file list changed)
+      await upsertBusinessDataFromBuilder();
+
       pushMessage("bot", "🗑️ File deleted.");
     } catch (err) {
       console.error("Delete file error:", err);
@@ -288,26 +373,54 @@ export default function Builder() {
     }
   };
 
-  // ---------------- Chat Preview & Retrain ----------------
+  // ---------------- Chat Preview (Data-Aware) ----------------
   const sendMessage = async () => {
     if (!input.trim() || !user) return;
-    pushMessage("user", input);
+    const userText = input.trim();
+    pushMessage("user", userText);
 
-    const outgoingMessages = [
-      ...messages.map((m) => ({ role: m.sender === "bot" ? "assistant" : "user", content: m.text })), 
-      { role: "user", content: input },
-    ];
+    // Build prior messages for continuity
+    const prior = messages.map((m) => ({
+      role: m.sender === "bot" ? "assistant" : "user",
+      content: m.text,
+    }));
 
     setInput("");
     setLoadingReply(true);
 
     try {
+      // 1) Query Supabase for relevant business data
+      const results = await searchBusinessData(userText);
+
+      // 2) Prepare a compact context string for the LLM
+      const context =
+        results.length > 0
+          ? results
+              .map((r, idx) => {
+                const attrs = r.attributes ? JSON.stringify(r.attributes) : "{}";
+                const desc = (r.description || "").replace(/\s+/g, " ").slice(0, 800);
+                return `#${idx + 1} ${r.title}\nDesc: ${desc}\nAttrs: ${attrs}`;
+              })
+              .join("\n\n")
+          : "(no matching rows)";
+
+      // 3) Inject strict instruction + retrieved context into messages
+      const augmentedMessages = [
+        ...prior,
+        { role: "system", content: "You are an assistant for a business. Answer ONLY using the data provided in 'Business Data Context'. If the context doesn't contain the answer, say you couldn't find it and ask a brief clarifying question." },
+        { role: "assistant", content: `Business Data Context:\n${context}` },
+        { role: "user", content: userText },
+      ];
+
+      // 4) Call existing backend preview endpoint (no API keys leaked)
       const res = await axios.post(
         `${API_BASE}/api/chatbot/preview`,
         {
           userId: user.id,
           chatbotConfig: { businessName, businessDescription, websiteUrl, files, logoUrl },
-          messages: outgoingMessages,
+          messages: augmentedMessages,
+          // Optional: also pass structured results if your backend wants to format it
+          retrievedData: results,
         },
         { headers: { Authorization: `Bearer ${authToken}` } }
       );
@@ -324,6 +437,7 @@ export default function Builder() {
         return;
       }
 
+      // If backend didn't use context and still generic, we at least include a fallback
       pushMessage("bot", botReply);
     } catch (err) {
       console.error("Preview chat error:", err.response?.data || err.message || err);

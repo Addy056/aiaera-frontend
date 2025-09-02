@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 
-export default function ChatbotPreview({ chatbotConfig }) {
+export default function ChatbotPreview({ chatbotConfig, user }) {
   const [messages, setMessages] = useState([
     {
       role: "assistant",
@@ -12,10 +12,9 @@ export default function ChatbotPreview({ chatbotConfig }) {
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-
   const messagesEndRef = useRef(null);
 
-  // Scroll to the latest message
+  // 🔹 Scroll to the latest message
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -24,6 +23,7 @@ export default function ChatbotPreview({ chatbotConfig }) {
     scrollToBottom();
   }, [messages]);
 
+  // 🔹 Send message to backend API
   const sendMessage = async () => {
     if (!input.trim()) return;
 
@@ -33,9 +33,11 @@ export default function ChatbotPreview({ chatbotConfig }) {
     setLoading(true);
 
     try {
-      const res = await axios.post("/api/chatbot-preview", {
+      const res = await axios.post("/api/chatbot/preview", {
         messages: newMessages,
         chatbotConfig,
+        userId: user?.id, // ✅ backend will fetch business_data itself
+        language: chatbotConfig?.language || "en",
       });
 
       const reply = res.data.reply || "Sorry, I couldn't generate a response.";
@@ -83,18 +85,16 @@ export default function ChatbotPreview({ chatbotConfig }) {
       {/* Header with Logo */}
       <div style={styles.header}>
         {chatbotConfig?.logoUrl && (
-          <img
-            src={chatbotConfig.logoUrl}
-            alt="Logo"
-            style={styles.logo}
-          />
+          <img src={chatbotConfig.logoUrl} alt="Logo" style={styles.logo} />
         )}
         <span>{chatbotConfig?.name || "AI Chatbot"} Preview</span>
       </div>
 
       {/* Business Description and Website */}
       {chatbotConfig?.businessDescription && (
-        <div style={styles.businessInfo}>{chatbotConfig.businessDescription}</div>
+        <div style={styles.businessInfo}>
+          {chatbotConfig.businessDescription}
+        </div>
       )}
       {chatbotConfig?.websiteUrl && (
         <a
@@ -114,7 +114,12 @@ export default function ChatbotPreview({ chatbotConfig }) {
           <ul style={styles.fileList}>
             {chatbotConfig.files.map((f) => (
               <li key={f.publicUrl}>
-                <a href={f.publicUrl} target="_blank" rel="noreferrer" style={styles.fileLink}>
+                <a
+                  href={f.publicUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={styles.fileLink}
+                >
                   {f.name}
                 </a>
               </li>
@@ -147,7 +152,9 @@ export default function ChatbotPreview({ chatbotConfig }) {
         ))}
         {loading && (
           <div style={{ ...styles.message, ...styles.assistantMsg }}>
-            <div style={{ ...styles.bubble, ...styles.assistantBubble }}>...</div>
+            <div style={{ ...styles.bubble, ...styles.assistantBubble }}>
+              ...
+            </div>
           </div>
         )}
         <div ref={messagesEndRef} />
@@ -169,12 +176,16 @@ export default function ChatbotPreview({ chatbotConfig }) {
 
       {/* Embed Code Section */}
       <div style={styles.embedSection}>
-        <label style={{ marginBottom: "6px", color: "white", fontWeight: "bold" }}>
+        <label
+          style={{ marginBottom: "6px", color: "white", fontWeight: "bold" }}
+        >
           Embed this chatbot on your website:
         </label>
         <textarea
           readOnly
-          value={`<div id="aiaera-chatbot"></div>\n<script src="https://yourapp.com/api/embed/${chatbotConfig?.id || "demo"}.js" async></script>`}
+          value={`<div id="aiaera-chatbot"></div>\n<script src="https://yourapp.com/api/embed/${
+            chatbotConfig?.id || "demo"
+          }.js" async></script>`}
           style={styles.embedTextarea}
         />
       </div>
