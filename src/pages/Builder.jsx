@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "../supabaseClient.js";
 
 export default function Builder() {
+  // ---------------- State ----------------
   const [messages, setMessages] = useState([
     { id: uuidv4(), sender: "bot", text: "👋 Hi! I’m your AIAERA assistant. Let’s start building." },
   ]);
@@ -38,12 +39,14 @@ export default function Builder() {
   const fileInputRef = useRef(null);
   const logoInputRef = useRef(null);
   const chatEndRef = useRef(null);
+
   const API_BASE = import.meta.env.VITE_API_URL;
   const BUCKET = import.meta.env.VITE_SUPABASE_BUCKET || "chatbot-files";
 
-  // ------------------- Initialize -------------------
+  // ---------------- Initialize ----------------
   useEffect(() => {
     let mounted = true;
+
     const init = async () => {
       setLoadingConfig(true);
       try {
@@ -77,14 +80,17 @@ export default function Builder() {
         if (mounted) setLoadingConfig(false);
       }
     };
+
     init();
     return () => { mounted = false; };
   }, []);
 
+  // Scroll to bottom on new messages
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loadingReply]);
 
+  // ---------------- Message Helpers ----------------
   const pushMessage = (sender, text) => {
     setMessages((prev) => [...prev, { id: uuidv4(), sender, text }]);
   };
@@ -95,21 +101,17 @@ export default function Builder() {
     return text.replace(urlRegex, (url) => `<a href="${url}" target="_blank" class="underline text-purple-200">${url}</a>`);
   };
 
-  // ---------------- Helpers: Business Data ----------------
-  // Upsert a "general" business_data row so chatbot has searchable content
+  // ---------------- Business Data ----------------
   const upsertBusinessDataFromBuilder = async () => {
     if (!user) return;
     try {
-      // Try to find an existing row by user + title (to avoid duplicates on repeated saves)
-      const { data: existing, error: findErr } = await supabase
+      const { data: existing } = await supabase
         .from("business_data")
         .select("id")
         .eq("user_id", user.id)
         .eq("business_type", "general")
         .eq("title", businessName)
         .maybeSingle();
-
-      if (findErr) console.warn("find business_data error:", findErr);
 
       const payload = {
         user_id: user.id,
@@ -125,31 +127,26 @@ export default function Builder() {
       };
 
       if (existing?.id) {
-        const { error: updErr } = await supabase
+        await supabase
           .from("business_data")
           .update(payload)
           .eq("id", existing.id)
           .eq("user_id", user.id);
-        if (updErr) throw updErr;
       } else {
-        const { error: insErr } = await supabase
+        await supabase
           .from("business_data")
           .insert([payload]);
-        if (insErr) throw insErr;
       }
     } catch (e) {
       console.error("upsertBusinessDataFromBuilder error:", e);
-      // Don't block saving the chatbot if this fails; just log
     }
   };
 
-  // Search user's business_data by keyword (title + description)
   const searchBusinessData = async (query) => {
     if (!user) return [];
     try {
-      // Escape % and _ in the query to avoid wildcard surprises
       const safe = query.replaceAll("%", "\\%").replaceAll("_", "\\_");
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("business_data")
         .select("id, title, description, attributes, business_type, created_at")
         .eq("user_id", user.id)
@@ -157,13 +154,9 @@ export default function Builder() {
         .order("created_at", { ascending: false })
         .limit(10);
 
-      if (error) {
-        console.error("Supabase searchBusinessData error:", error);
-        return [];
-      }
       return data || [];
     } catch (e) {
-      console.error("searchBusinessData exception:", e);
+      console.error("searchBusinessData error:", e);
       return [];
     }
   };
@@ -179,7 +172,7 @@ export default function Builder() {
       const config = { website_url: websiteUrl, files, logo_url: logoUrl };
 
       if (chatbotId) {
-        const { error } = await supabase
+        await supabase
           .from("chatbots")
           .update({
             name: businessName,
@@ -189,21 +182,12 @@ export default function Builder() {
           })
           .eq("id", chatbotId)
           .eq("user_id", user.id);
-
-        if (error) throw error;
       } else {
-        const { data: subscription, error: subErr } = await supabase
+        const { data: subscription } = await supabase
           .from("user_subscriptions")
           .select("expires_at")
           .eq("user_id", user.id)
           .maybeSingle();
-
-        if (subErr) {
-          console.error("Subscription check error:", subErr);
-          pushMessage("bot", "❌ Unable to verify subscription. Please try again.");
-          setSavingConfig(false);
-          return;
-        }
 
         const expired = !subscription || !subscription.expires_at || new Date(subscription.expires_at) < new Date();
         if (expired) {
@@ -212,19 +196,16 @@ export default function Builder() {
           return;
         }
 
-        const { data, error } = await supabase
+        const { data } = await supabase
           .from("chatbots")
           .insert([{ user_id: user.id, name: businessName, business_info: businessDescription, config }])
           .select()
           .single();
 
-        if (error) throw error;
         setChatbotId(data.id);
       }
 
-      // 👉 Ensure searchable data exists in business_data
       await upsertBusinessDataFromBuilder();
-
       pushMessage("bot", "✅ Configuration saved.");
       setIsConfigSaved(true);
     } catch (err) {
@@ -235,15 +216,9 @@ export default function Builder() {
     }
   };
 
-  const generateEmbedCode = () => {
-    if (!chatbotId) return;
-    setShowEmbedModal(true);
-  };
-
-  const embedCode = chatbotId
-    ? `<script src="${API_BASE}/api/embed/${chatbotId}.js" async></script>`
-    : "";
-
+  // ---------------- Embed Code ----------------
+  const generateEmbedCode = () => setShowEmbedModal(true);
+  const embedCode = chatbotId ? `<script src="${API_BASE}/api/embed/${chatbotId}.js" async></script>` : "";
   const copyEmbedCode = () => {
     if (!embedCode) return;
     navigator.clipboard.writeText(embedCode);
@@ -258,32 +233,23 @@ export default function Builder() {
     setUploading(true);
     try {
       const filePath = `${user.id}/logo-${Date.now()}-${file.name}`;
-      const { error: uploadError } = await supabase.storage
-        .from(BUCKET)
-        .upload(filePath, file, { cacheControl: "3600", upsert: false });
-
-      if (uploadError) throw uploadError;
+      const { error } = await supabase.storage.from(BUCKET).upload(filePath, file, { cacheControl: "3600", upsert: false });
+      if (error) throw error;
 
       const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(filePath);
       const publicUrl = urlData?.publicUrl ?? null;
 
       setLogoUrl(publicUrl);
-      pushMessage("bot", `📌 Logo uploaded successfully.`);
+      pushMessage("bot", "📌 Logo uploaded successfully.");
 
       if (chatbotId) {
-        const { error } = await supabase
+        await supabase
           .from("chatbots")
-          .update({
-            config: { website_url: websiteUrl, files, logo_url: publicUrl },
-            updated_at: new Date().toISOString(),
-          })
+          .update({ config: { website_url: websiteUrl, files, logo_url: publicUrl }, updated_at: new Date().toISOString() })
           .eq("id", chatbotId)
           .eq("user_id", user.id);
-
-        if (error) throw error;
       }
 
-      // Keep business_data in sync for search
       await upsertBusinessDataFromBuilder();
     } catch (err) {
       console.error("Logo upload error:", err);
@@ -294,7 +260,7 @@ export default function Builder() {
     }
   };
 
-  // ---------------- File Upload ----------------
+  // ---------------- File Upload & Delete ----------------
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
@@ -302,11 +268,8 @@ export default function Builder() {
     setUploading(true);
     try {
       const filePath = `${user.id}/${Date.now()}-${file.name}`;
-      const { error: uploadError } = await supabase.storage
-        .from(BUCKET)
-        .upload(filePath, file, { cacheControl: "3600", upsert: false });
-
-      if (uploadError) throw uploadError;
+      const { error } = await supabase.storage.from(BUCKET).upload(filePath, file, { cacheControl: "3600", upsert: false });
+      if (error) throw error;
 
       const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(filePath);
       const publicUrl = urlData?.publicUrl ?? null;
@@ -316,21 +279,14 @@ export default function Builder() {
       setFiles(updatedFiles);
 
       if (chatbotId) {
-        const { error } = await supabase
+        await supabase
           .from("chatbots")
-          .update({
-            config: { website_url: websiteUrl, files: updatedFiles, logo_url: logoUrl },
-            updated_at: new Date().toISOString(),
-          })
+          .update({ config: { website_url: websiteUrl, files: updatedFiles, logo_url: logoUrl }, updated_at: new Date().toISOString() })
           .eq("id", chatbotId)
           .eq("user_id", user.id);
-
-        if (error) throw error;
       }
 
-      // Keep business_data in sync for search (stores file metadata in attributes)
       await upsertBusinessDataFromBuilder();
-
       pushMessage("bot", `📂 Uploaded ${file.name}`);
     } catch (err) {
       console.error("File upload error:", err);
@@ -344,28 +300,19 @@ export default function Builder() {
   const handleDeleteFile = async (filePath) => {
     if (!user) return;
     try {
-      const { error: delErr } = await supabase.storage.from(BUCKET).remove([filePath]);
-      if (delErr) throw delErr;
-
+      await supabase.storage.from(BUCKET).remove([filePath]);
       const updatedFiles = files.filter((f) => f.path !== filePath);
       setFiles(updatedFiles);
 
       if (chatbotId) {
-        const { error } = await supabase
+        await supabase
           .from("chatbots")
-          .update({
-            config: { website_url: websiteUrl, files: updatedFiles, logo_url: logoUrl },
-            updated_at: new Date().toISOString(),
-          })
+          .update({ config: { website_url: websiteUrl, files: updatedFiles, logo_url: logoUrl }, updated_at: new Date().toISOString() })
           .eq("id", chatbotId)
           .eq("user_id", user.id);
-
-        if (error) throw error;
       }
 
-      // Sync business_data attributes (file list changed)
       await upsertBusinessDataFromBuilder();
-
       pushMessage("bot", "🗑️ File deleted.");
     } catch (err) {
       console.error("Delete file error:", err);
@@ -373,13 +320,12 @@ export default function Builder() {
     }
   };
 
-  // ---------------- Chat Preview (Data-Aware) ----------------
+  // ---------------- Chat Preview ----------------
   const sendMessage = async () => {
     if (!input.trim() || !user) return;
     const userText = input.trim();
     pushMessage("user", userText);
 
-    // Build prior messages for continuity
     const prior = messages.map((m) => ({
       role: m.sender === "bot" ? "assistant" : "user",
       content: m.text,
@@ -389,10 +335,8 @@ export default function Builder() {
     setLoadingReply(true);
 
     try {
-      // 1) Query Supabase for relevant business data
       const results = await searchBusinessData(userText);
 
-      // 2) Prepare a compact context string for the LLM
       const context =
         results.length > 0
           ? results
@@ -404,7 +348,6 @@ export default function Builder() {
               .join("\n\n")
           : "(no matching rows)";
 
-      // 3) Inject strict instruction + retrieved context into messages
       const augmentedMessages = [
         ...prior,
         { role: "system", content: "You are an assistant for a business. Answer ONLY using the data provided in 'Business Data Context'. If the context doesn't contain the answer, say you couldn't find it and ask a brief clarifying question." },
@@ -412,32 +355,18 @@ export default function Builder() {
         { role: "user", content: userText },
       ];
 
-      // 4) Call existing backend preview endpoint (no API keys leaked)
       const res = await axios.post(
         `${API_BASE}/api/chatbot/preview`,
         {
           userId: user.id,
           chatbotConfig: { businessName, businessDescription, websiteUrl, files, logoUrl },
           messages: augmentedMessages,
-          // Optional: also pass structured results if your backend wants to format it
           retrievedData: results,
         },
         { headers: { Authorization: `Bearer ${authToken}` } }
       );
 
-      let botReply = "🤖 (No reply received)";
-      if (res.data?.reply) botReply = res.data.reply;
-      else if (Array.isArray(res.data?.messages)) {
-        const formatted = res.data.messages.map((m) => ({
-          id: uuidv4(),
-          sender: m.role === "assistant" ? "bot" : "user",
-          text: m.content,
-        }));
-        setMessages(formatted);
-        return;
-      }
-
-      // If backend didn't use context and still generic, we at least include a fallback
+      const botReply = res.data?.reply || "🤖 (No reply received)";
       pushMessage("bot", botReply);
     } catch (err) {
       console.error("Preview chat error:", err.response?.data || err.message || err);
@@ -451,7 +380,7 @@ export default function Builder() {
   // ---------------- UI ----------------
   return (
     <div className="flex flex-col lg:flex-row gap-6 p-4 sm:p-6 h-full bg-gradient-to-br from-[#0f0f17] via-[#1a1a2e] to-[#0f0f17] min-h-screen">
-      {/* Left - Builder Config */}
+      {/* Left Panel */}
       <motion.div initial={{ x: -40, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.6 }} className="lg:w-1/2 w-full">
         <Card className="backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl rounded-2xl p-4 sm:p-6">
           <h2 className="text-xl sm:text-2xl font-bold text-white mb-4">⚡ Build Your Chatbot</h2>
@@ -463,18 +392,14 @@ export default function Builder() {
               <TabsTrigger value="logo">Logo</TabsTrigger>
             </TabsList>
 
-            {/* Business Info */}
+            {/* Business */}
             <TabsContent value="business">
               <div className="space-y-4">
                 <Input placeholder="Business Name" value={businessName} onChange={(e) => setBusinessName(e.target.value)} className="bg-black/30 border-0 text-white w-full" />
                 <Textarea placeholder="Business Description" value={businessDescription} onChange={(e) => setBusinessDescription(e.target.value)} className="bg-black/30 border-0 text-white w-full" />
 
                 <div className="flex flex-col sm:flex-row gap-2 mt-4">
-                  <Button
-                    onClick={isConfigSaved ? generateEmbedCode : saveConfig}
-                    disabled={savingConfig}
-                    className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90"
-                  >
+                  <Button onClick={isConfigSaved ? generateEmbedCode : saveConfig} disabled={savingConfig} className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90">
                     {isConfigSaved ? "Generate Embed Code" : savingConfig ? "Saving..." : "Save Info"}
                   </Button>
 
@@ -484,9 +409,7 @@ export default function Builder() {
                         if (!chatbotId || !user) return;
                         try {
                           pushMessage("bot", "⚡ Retraining your chatbot...");
-                          await axios.post(`${API_BASE}/api/chatbot/retrain`, { chatbotId, userId: user.id }, {
-                            headers: { Authorization: `Bearer ${authToken}` },
-                          });
+                          await axios.post(`${API_BASE}/api/chatbot/retrain`, { chatbotId, userId: user.id }, { headers: { Authorization: `Bearer ${authToken}` } });
                           pushMessage("bot", "✅ Chatbot retraining started successfully!");
                         } catch (err) {
                           console.error("Retrain error:", err.response?.data || err.message || err);
@@ -502,40 +425,34 @@ export default function Builder() {
               </div>
             </TabsContent>
 
-            {/* Files Upload */}
+            {/* Files */}
             <TabsContent value="files">
               <div className="space-y-4">
                 <input ref={fileInputRef} type="file" onChange={handleFileChange} className="w-full text-sm text-gray-200" />
                 <div className="space-y-2">
                   {uploading && <p className="text-sm text-gray-300">Uploading...</p>}
-                  {files.length === 0 ? (
-                    <p className="text-sm text-gray-300">No files uploaded yet.</p>
-                  ) : (
-                    files.map((f) => (
-                      <div key={f.path} className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-white/5 p-3 rounded-lg gap-2">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-md flex items-center justify-center text-xs font-semibold">
-                            {f.name[0]?.toUpperCase() ?? "F"}
-                          </div>
-                          <div>
-                            <div className="text-sm font-medium">{f.name}</div>
-                            <div className="text-xs text-gray-300">{f.uploaded_at ? new Date(f.uploaded_at).toLocaleString() : ""}</div>
-                          </div>
+                  {files.length === 0 ? <p className="text-sm text-gray-300">No files uploaded yet.</p> : files.map((f) => (
+                    <div key={f.path} className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-white/5 p-3 rounded-lg gap-2">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-md flex items-center justify-center text-xs font-semibold">
+                          {f.name[0]?.toUpperCase() ?? "F"}
                         </div>
-                        <div className="flex items-center gap-2">
-                          {f.publicUrl && (
-                            <a href={f.publicUrl} target="_blank" rel="noreferrer" className="text-sm underline text-purple-200">Open</a>
-                          )}
-                          <button onClick={() => handleDeleteFile(f.path)} className="text-sm text-red-400 hover:underline">Delete</button>
+                        <div>
+                          <div className="text-sm font-medium">{f.name}</div>
+                          <div className="text-xs text-gray-300">{f.uploaded_at ? new Date(f.uploaded_at).toLocaleString() : ""}</div>
                         </div>
                       </div>
-                    ))
-                  )}
+                      <div className="flex items-center gap-2">
+                        {f.publicUrl && <a href={f.publicUrl} target="_blank" rel="noreferrer" className="text-sm underline text-purple-200">Open</a>}
+                        <button onClick={() => handleDeleteFile(f.path)} className="text-sm text-red-400 hover:underline">Delete</button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </TabsContent>
 
-            {/* Website Scraping */}
+            {/* Website */}
             <TabsContent value="scraping">
               <div className="space-y-4">
                 <Input placeholder="https://your-website.com" value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} className="bg-black/30 border-0 text-white" />
@@ -543,23 +460,19 @@ export default function Builder() {
               </div>
             </TabsContent>
 
-            {/* Logo Upload */}
+            {/* Logo */}
             <TabsContent value="logo">
               <div className="space-y-4">
                 <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoUpload} className="w-full text-sm text-gray-200" />
                 {uploading && <p className="text-sm text-gray-300">Uploading...</p>}
-                {logoUrl && (
-                  <div className="flex justify-center mt-4">
-                    <img src={logoUrl} alt="Logo Preview" className="h-24 w-auto rounded-lg shadow-lg" />
-                  </div>
-                )}
+                {logoUrl && <div className="flex justify-center mt-4"><img src={logoUrl} alt="Logo Preview" className="h-24 w-auto rounded-lg shadow-lg" /></div>}
               </div>
             </TabsContent>
           </Tabs>
         </Card>
       </motion.div>
 
-      {/* Right - Chat Preview */}
+      {/* Right Panel - Chat Preview */}
       <motion.div initial={{ x: 40, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.6 }} className="lg:w-1/2 w-full flex flex-col">
         <Card className="flex flex-col h-[70vh] sm:h-[80vh] backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl rounded-2xl">
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3">
@@ -570,22 +483,12 @@ export default function Builder() {
                 </div>
               </motion.div>
             ))}
-            {loadingReply && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ repeat: Infinity, duration: 1 }}>
-                <div className="px-4 py-2 rounded-2xl bg-white/15 text-gray-100 border border-white/20">Typing...</div>
-              </motion.div>
-            )}
+            {loadingReply && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ repeat: Infinity, duration: 1 }}><div className="px-4 py-2 rounded-2xl bg-white/15 text-gray-100 border border-white/20">Typing...</div></motion.div>}
             <div ref={chatEndRef} />
           </div>
 
           <div className="p-4 border-t border-white/20 bg-black/20 flex flex-col sm:flex-row items-center gap-3">
-            <Input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Type a message..."
-              onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-              className="flex-1 bg-black/40 border-0 text-white w-full"
-            />
+            <Input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Type a message..." onKeyDown={(e) => e.key === "Enter" && sendMessage()} className="flex-1 bg-black/40 border-0 text-white w-full" />
             <Button onClick={sendMessage} className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90 w-full sm:w-auto">Send</Button>
           </div>
         </Card>
