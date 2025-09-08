@@ -40,7 +40,8 @@ export default function Builder() {
   const logoInputRef = useRef(null);
   const chatEndRef = useRef(null);
 
-  const API_BASE = import.meta.env.VITE_API_URL;
+  // ✅ Correct env variable name
+  const API_BASE = import.meta.env.VITE_BACKEND_URL;
   const BUCKET = import.meta.env.VITE_SUPABASE_BUCKET || "chatbot-files";
 
   // ---------------- Initialize ----------------
@@ -377,6 +378,28 @@ export default function Builder() {
     }
   };
 
+  // ---------------- Retrain Function ----------------
+  const retrainChatbot = async () => {
+    if (!chatbotId || !user) {
+      pushMessage("bot", "⚠️ Chatbot ID or user missing.");
+      return;
+    }
+    try {
+      pushMessage("bot", "⚡ Retraining your chatbot...");
+      const url = `${API_BASE}/api/chatbot/retrain`;
+      const res = await axios.post(
+        url,
+        { chatbotId, userId: user.id },
+        { headers: { Authorization: `Bearer ${authToken}` } }
+      );
+      pushMessage("bot", "✅ Chatbot retraining started successfully!");
+      console.log("Retrain response:", res.data);
+    } catch (err) {
+      console.error("Retrain error:", err.response?.data || err.message || err);
+      pushMessage("bot", "❌ Failed to start retraining.");
+    }
+  };
+
   // ---------------- UI ----------------
   return (
     <div className="flex flex-col lg:flex-row gap-6 p-4 sm:p-6 h-full bg-gradient-to-br from-[#0f0f17] via-[#1a1a2e] to-[#0f0f17] min-h-screen">
@@ -405,17 +428,7 @@ export default function Builder() {
 
                   {isConfigSaved && (
                     <Button
-                      onClick={async () => {
-                        if (!chatbotId || !user) return;
-                        try {
-                          pushMessage("bot", "⚡ Retraining your chatbot...");
-                          await axios.post(`${API_BASE}/api/chatbot/retrain`, { chatbotId, userId: user.id }, { headers: { Authorization: `Bearer ${authToken}` } });
-                          pushMessage("bot", "✅ Chatbot retraining started successfully!");
-                        } catch (err) {
-                          console.error("Retrain error:", err.response?.data || err.message || err);
-                          pushMessage("bot", "❌ Failed to start retraining.");
-                        }
-                      }}
+                      onClick={retrainChatbot}
                       className="flex-1 bg-green-500 hover:opacity-90"
                     >
                       Retrain Chatbot
