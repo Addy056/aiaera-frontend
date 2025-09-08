@@ -14,9 +14,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "../supabaseClient.js";
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+
+// Fix default marker icon issue with Leaflet + Vite
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+});
 
 export default function Builder() {
-  // ---------------- State ----------------
   const [messages, setMessages] = useState([
     { id: uuidv4(), sender: "bot", text: "👋 Hi! I’m your AIAERA assistant. Let’s start building." },
   ]);
@@ -35,16 +45,17 @@ export default function Builder() {
   const [authToken, setAuthToken] = useState(null);
   const [isConfigSaved, setIsConfigSaved] = useState(false);
   const [showEmbedModal, setShowEmbedModal] = useState(false);
+  const [location, setLocation] = useState({ lat: 20.5937, lng: 78.9629 }); // Default India
+  const [hasSelectedLocation, setHasSelectedLocation] = useState(false);
 
   const fileInputRef = useRef(null);
   const logoInputRef = useRef(null);
   const chatEndRef = useRef(null);
 
-  // ✅ Correct env variable name
   const API_BASE = import.meta.env.VITE_BACKEND_URL;
   const BUCKET = import.meta.env.VITE_SUPABASE_BUCKET || "chatbot-files";
 
-  // ---------------- Initialize ----------------
+  // Init Builder
   useEffect(() => {
     let mounted = true;
 
@@ -73,6 +84,10 @@ export default function Builder() {
           setWebsiteUrl(data.config?.website_url || "");
           setLogoUrl(data.config?.logo_url || null);
           if (Array.isArray(data.config?.files)) setFiles(data.config.files);
+          if (data.config?.location) {
+            setLocation(data.config.location);
+            setHasSelectedLocation(true);
+          }
           setIsConfigSaved(true);
         } else setChatbotId(null);
       } catch (err) {
@@ -86,26 +101,31 @@ export default function Builder() {
     return () => { mounted = false; };
   }, []);
 
-  // Scroll to bottom on new messages
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loadingReply]);
 
-  // ---------------- Message Helpers ----------------
   const pushMessage = (sender, text) => {
     setMessages((prev) => [...prev, { id: uuidv4(), sender, text }]);
   };
 
-  const formatMessage = (text) => {
-    if (!text) return "";
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
-    return text.replace(urlRegex, (url) => `<a href="${url}" target="_blank" class="underline text-purple-200">${url}</a>`);
-  };
-
-  // ---------------- Business Data ----------------
   const upsertBusinessDataFromBuilder = async () => {
     if (!user) return;
     try {
+      const payload = {
+        user_id: user.id,
+        business_type: "general",
+        title: businessName || "My Business",
+        description: businessDescription || "",
+        attributes: {
+          website_url: websiteUrl || null,
+          files: (files || []).map(f => ({ name: f.name, url: f.publicUrl, extractedContent: f.extractedContent || null })),
+          logo_url: logoUrl || null,
+          location: hasSelectedLocation ? location : null,
+          updated_from: "builder",
+        }
+      };
+
       const { data: existing } = await supabase
         .from("business_data")
         .select("id")
@@ -114,55 +134,16 @@ export default function Builder() {
         .eq("title", businessName)
         .maybeSingle();
 
-      const payload = {
-        user_id: user.id,
-        business_type: "general",
-        title: businessName || "My Business",
-        description: businessDescription || "",
-        attributes: {
-          website_url: websiteUrl || null,
-          files: (files || []).map(f => ({ name: f.name, url: f.publicUrl })),
-          logo_url: logoUrl || null,
-          updated_from: "builder",
-        }
-      };
-
       if (existing?.id) {
-        await supabase
-          .from("business_data")
-          .update(payload)
-          .eq("id", existing.id)
-          .eq("user_id", user.id);
+        await supabase.from("business_data").update(payload).eq("id", existing.id);
       } else {
-        await supabase
-          .from("business_data")
-          .insert([payload]);
+        await supabase.from("business_data").insert([payload]);
       }
     } catch (e) {
       console.error("upsertBusinessDataFromBuilder error:", e);
     }
   };
 
-  const searchBusinessData = async (query) => {
-    if (!user) return [];
-    try {
-      const safe = query.replaceAll("%", "\\%").replaceAll("_", "\\_");
-      const { data } = await supabase
-        .from("business_data")
-        .select("id, title, description, attributes, business_type, created_at")
-        .eq("user_id", user.id)
-        .or(`title.ilike.%${safe}%,description.ilike.%${safe}%`)
-        .order("created_at", { ascending: false })
-        .limit(10);
-
-      return data || [];
-    } catch (e) {
-      console.error("searchBusinessData error:", e);
-      return [];
-    }
-  };
-
-  // ---------------- Save Config ----------------
   const saveConfig = async () => {
     if (!user) {
       pushMessage("bot", "⚠️ Please log in to save your configuration.");
@@ -170,7 +151,7 @@ export default function Builder() {
     }
     setSavingConfig(true);
     try {
-      const config = { website_url: websiteUrl, files, logo_url: logoUrl };
+      const config = { website_url: websiteUrl, files, logo_url: logoUrl, location: hasSelectedLocation ? location : null };
 
       if (chatbotId) {
         await supabase
@@ -217,7 +198,6 @@ export default function Builder() {
     }
   };
 
-  // ---------------- Embed Code ----------------
   const generateEmbedCode = () => setShowEmbedModal(true);
   const embedCode = chatbotId ? `<script src="${API_BASE}/api/embed/${chatbotId}.js" async></script>` : "";
   const copyEmbedCode = () => {
@@ -226,7 +206,6 @@ export default function Builder() {
     alert("Embed code copied to clipboard!");
   };
 
-  // ---------------- Logo Upload ----------------
   const handleLogoUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
@@ -244,11 +223,7 @@ export default function Builder() {
       pushMessage("bot", "📌 Logo uploaded successfully.");
 
       if (chatbotId) {
-        await supabase
-          .from("chatbots")
-          .update({ config: { website_url: websiteUrl, files, logo_url: publicUrl }, updated_at: new Date().toISOString() })
-          .eq("id", chatbotId)
-          .eq("user_id", user.id);
+        await supabase.from("chatbots").update({ config: { website_url: websiteUrl, files, logo_url: publicUrl, location: hasSelectedLocation ? location : null }, updated_at: new Date().toISOString() }).eq("id", chatbotId).eq("user_id", user.id);
       }
 
       await upsertBusinessDataFromBuilder();
@@ -261,36 +236,43 @@ export default function Builder() {
     }
   };
 
-  // ---------------- File Upload & Delete ----------------
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
     setUploading(true);
     try {
-      const filePath = `${user.id}/${Date.now()}-${file.name}`;
-      const { error } = await supabase.storage.from(BUCKET).upload(filePath, file, { cacheControl: "3600", upsert: false });
-      if (error) throw error;
+      const formData = new FormData();
+      formData.append("file", file);
+      if (chatbotId) formData.append("chatbot_id", chatbotId);
 
-      const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(filePath);
-      const publicUrl = urlData?.publicUrl ?? null;
+      const res = await axios.post(`${API_BASE}/api/uploads`, formData, {
+        headers: { Authorization: `Bearer ${authToken}`, "Content-Type": "multipart/form-data" },
+      });
 
-      const newFileEntry = { name: file.name, path: filePath, publicUrl, uploaded_at: new Date().toISOString() };
+      const { metadata, extractedContent, storage } = res.data;
+
+      const newFileEntry = {
+        name: metadata.filename,
+        path: metadata.path,
+        publicUrl: storage?.Key
+          ? `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${metadata.path}`
+          : null,
+        uploaded_at: new Date().toISOString(),
+        extractedContent,
+      };
+
       const updatedFiles = [newFileEntry, ...files];
       setFiles(updatedFiles);
 
       if (chatbotId) {
-        await supabase
-          .from("chatbots")
-          .update({ config: { website_url: websiteUrl, files: updatedFiles, logo_url: logoUrl }, updated_at: new Date().toISOString() })
-          .eq("id", chatbotId)
-          .eq("user_id", user.id);
+        await supabase.from("chatbots").update({ config: { website_url: websiteUrl, files: updatedFiles, logo_url: logoUrl, location: hasSelectedLocation ? location : null }, updated_at: new Date().toISOString() }).eq("id", chatbotId).eq("user_id", user.id);
       }
 
       await upsertBusinessDataFromBuilder();
-      pushMessage("bot", `📂 Uploaded ${file.name}`);
+      pushMessage("bot", `📂 Uploaded and parsed ${file.name}`);
     } catch (err) {
-      console.error("File upload error:", err);
+      console.error("File upload error:", err.response?.data || err.message || err);
       pushMessage("bot", "❌ File upload failed.");
     } finally {
       setUploading(false);
@@ -306,11 +288,7 @@ export default function Builder() {
       setFiles(updatedFiles);
 
       if (chatbotId) {
-        await supabase
-          .from("chatbots")
-          .update({ config: { website_url: websiteUrl, files: updatedFiles, logo_url: logoUrl }, updated_at: new Date().toISOString() })
-          .eq("id", chatbotId)
-          .eq("user_id", user.id);
+        await supabase.from("chatbots").update({ config: { website_url: websiteUrl, files: updatedFiles, logo_url: logoUrl, location: hasSelectedLocation ? location : null }, updated_at: new Date().toISOString() }).eq("id", chatbotId).eq("user_id", user.id);
       }
 
       await upsertBusinessDataFromBuilder();
@@ -321,7 +299,6 @@ export default function Builder() {
     }
   };
 
-  // ---------------- Chat Preview ----------------
   const sendMessage = async () => {
     if (!input.trim() || !user) return;
     const userText = input.trim();
@@ -336,49 +313,28 @@ export default function Builder() {
     setLoadingReply(true);
 
     try {
-      const results = await searchBusinessData(userText);
-
-      const context =
-        results.length > 0
-          ? results
-              .map((r, idx) => {
-                const attrs = r.attributes ? JSON.stringify(r.attributes) : "{}";
-                const desc = (r.description || "").replace(/\s+/g, " ").slice(0, 800);
-                return `#${idx + 1} ${r.title}\nDesc: ${desc}\nAttrs: ${attrs}`;
-              })
-              .join("\n\n")
-          : "(no matching rows)";
+      const { data } = await supabase.from("business_data").select("*").eq("user_id", user.id);
+      const context = data.map((r, idx) => `#${idx + 1} ${r.title}\nDesc: ${r.description || ""}\nAttrs: ${JSON.stringify(r.attributes)}`).join("\n\n");
 
       const augmentedMessages = [
         ...prior,
-        { role: "system", content: "You are an assistant for a business. Answer ONLY using the data provided in 'Business Data Context'. If the context doesn't contain the answer, say you couldn't find it and ask a brief clarifying question." },
+        { role: "system", content: "You are an assistant for a business. Answer ONLY using the data provided in 'Business Data Context'." },
         { role: "assistant", content: `Business Data Context:\n${context}` },
         { role: "user", content: userText },
       ];
 
-      const res = await axios.post(
-        `${API_BASE}/api/chatbot/preview`,
-        {
-          userId: user.id,
-          chatbotConfig: { businessName, businessDescription, websiteUrl, files, logoUrl },
-          messages: augmentedMessages,
-          retrievedData: results,
-        },
-        { headers: { Authorization: `Bearer ${authToken}` } }
-      );
+      const res = await axios.post(`${API_BASE}/api/chatbot/preview`, { userId: user.id, chatbotConfig: { businessName, businessDescription, websiteUrl, files, logoUrl, location: hasSelectedLocation ? location : null }, messages: augmentedMessages, retrievedData: data }, { headers: { Authorization: `Bearer ${authToken}` } });
 
       const botReply = res.data?.reply || "🤖 (No reply received)";
       pushMessage("bot", botReply);
     } catch (err) {
       console.error("Preview chat error:", err.response?.data || err.message || err);
-      const errorText = err.response?.data?.error || err.message || "❌ Error: Unable to get a reply.";
-      pushMessage("bot", errorText);
+      pushMessage("bot", "❌ Error: Unable to get a reply.");
     } finally {
       setLoadingReply(false);
     }
   };
 
-  // ---------------- Retrain Function ----------------
   const retrainChatbot = async () => {
     if (!chatbotId || !user) {
       pushMessage("bot", "⚠️ Chatbot ID or user missing.");
@@ -386,12 +342,7 @@ export default function Builder() {
     }
     try {
       pushMessage("bot", "⚡ Retraining your chatbot...");
-      const url = `${API_BASE}/api/chatbot/retrain`;
-      const res = await axios.post(
-        url,
-        { chatbotId, userId: user.id },
-        { headers: { Authorization: `Bearer ${authToken}` } }
-      );
+      const res = await axios.post(`${API_BASE}/api/chatbot/retrain`, { chatbotId, userId: user.id }, { headers: { Authorization: `Bearer ${authToken}` } });
       pushMessage("bot", "✅ Chatbot retraining started successfully!");
       console.log("Retrain response:", res.data);
     } catch (err) {
@@ -400,7 +351,22 @@ export default function Builder() {
     }
   };
 
-  // ---------------- UI ----------------
+  // Map click component
+  function LocationMarker() {
+    useMapEvents({
+      click(e) {
+        setLocation({ lat: e.latlng.lat, lng: e.latlng.lng });
+        setHasSelectedLocation(true);
+      },
+    });
+
+    return hasSelectedLocation ? (
+      <Marker position={[location.lat, location.lng]}>
+        <Popup>Business Location</Popup>
+      </Marker>
+    ) : null;
+  }
+
   return (
     <div className="flex flex-col lg:flex-row gap-6 p-4 sm:p-6 h-full bg-gradient-to-br from-[#0f0f17] via-[#1a1a2e] to-[#0f0f17] min-h-screen">
       {/* Left Panel */}
@@ -408,11 +374,12 @@ export default function Builder() {
         <Card className="backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl rounded-2xl p-4 sm:p-6">
           <h2 className="text-xl sm:text-2xl font-bold text-white mb-4">⚡ Build Your Chatbot</h2>
           <Tabs defaultValue="business">
-            <TabsList className="grid grid-cols-2 sm:grid-cols-4 bg-black/30 rounded-xl p-1 mb-6 gap-2">
+            <TabsList className="grid grid-cols-2 sm:grid-cols-5 bg-black/30 rounded-xl p-1 mb-6 gap-2">
               <TabsTrigger value="business">Business</TabsTrigger>
               <TabsTrigger value="files">Files</TabsTrigger>
               <TabsTrigger value="scraping">Website</TabsTrigger>
               <TabsTrigger value="logo">Logo</TabsTrigger>
+              <TabsTrigger value="map">Location</TabsTrigger>
             </TabsList>
 
             {/* Business */}
@@ -420,6 +387,7 @@ export default function Builder() {
               <div className="space-y-4">
                 <Input placeholder="Business Name" value={businessName} onChange={(e) => setBusinessName(e.target.value)} className="bg-black/30 border-0 text-white w-full" />
                 <Textarea placeholder="Business Description" value={businessDescription} onChange={(e) => setBusinessDescription(e.target.value)} className="bg-black/30 border-0 text-white w-full" />
+                <Input placeholder="Website URL" value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} className="bg-black/30 border-0 text-white w-full" />
 
                 <div className="flex flex-col sm:flex-row gap-2 mt-4">
                   <Button onClick={isConfigSaved ? generateEmbedCode : saveConfig} disabled={savingConfig} className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90">
@@ -427,10 +395,7 @@ export default function Builder() {
                   </Button>
 
                   {isConfigSaved && (
-                    <Button
-                      onClick={retrainChatbot}
-                      className="flex-1 bg-green-500 hover:opacity-90"
-                    >
+                    <Button onClick={retrainChatbot} className="flex-1 bg-green-500 hover:opacity-90">
                       Retrain Chatbot
                     </Button>
                   )}
@@ -442,67 +407,75 @@ export default function Builder() {
             <TabsContent value="files">
               <div className="space-y-4">
                 <input ref={fileInputRef} type="file" onChange={handleFileChange} className="w-full text-sm text-gray-200" />
-                <div className="space-y-2">
-                  {uploading && <p className="text-sm text-gray-300">Uploading...</p>}
-                  {files.length === 0 ? <p className="text-sm text-gray-300">No files uploaded yet.</p> : files.map((f) => (
-                    <div key={f.path} className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-white/5 p-3 rounded-lg gap-2">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-md flex items-center justify-center text-xs font-semibold">
-                          {f.name[0]?.toUpperCase() ?? "F"}
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium">{f.name}</div>
-                          <div className="text-xs text-gray-300">{f.uploaded_at ? new Date(f.uploaded_at).toLocaleString() : ""}</div>
-                        </div>
+                {uploading && <p className="text-sm text-gray-300">Uploading...</p>}
+                {files.length === 0 ? <p className="text-sm text-gray-300">No files uploaded yet.</p> : files.map((f) => (
+                  <div key={f.path} className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-white/5 p-3 rounded-lg gap-2">
+                    <div className="flex flex-col sm:flex-row items-center gap-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-md flex items-center justify-center text-xs font-semibold">
+                        {f.name[0]?.toUpperCase() ?? "F"}
                       </div>
-                      <div className="flex items-center gap-2">
-                        {f.publicUrl && <a href={f.publicUrl} target="_blank" rel="noreferrer" className="text-sm underline text-purple-200">Open</a>}
-                        <button onClick={() => handleDeleteFile(f.path)} className="text-sm text-red-400 hover:underline">Delete</button>
+                      <div>
+                        <div className="text-sm font-medium">{f.name}</div>
+                        <div className="text-xs text-gray-300">{f.uploaded_at ? new Date(f.uploaded_at).toLocaleString() : ""}</div>
+                        {f.extractedContent?.text && (
+                          <div className="mt-2 text-xs text-gray-200 max-h-32 overflow-y-auto p-2 bg-white/5 rounded-md">
+                            <strong>Preview:</strong> {f.extractedContent.text.slice(0, 200)}...
+                          </div>
+                        )}
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-            </TabsContent>
-
-            {/* Website */}
-            <TabsContent value="scraping">
-              <div className="space-y-4">
-                <Input placeholder="https://your-website.com" value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} className="bg-black/30 border-0 text-white" />
-                <Button onClick={saveConfig} className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:opacity-90">Save Website</Button>
+                    <div className="flex items-center gap-2 mt-2 sm:mt-0">
+                      {f.publicUrl && <a href={f.publicUrl} target="_blank" rel="noreferrer" className="text-sm underline text-purple-200">Open</a>}
+                      <button onClick={() => handleDeleteFile(f.path)} className="text-sm text-red-400 hover:underline">Delete</button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </TabsContent>
 
             {/* Logo */}
             <TabsContent value="logo">
-              <div className="space-y-4">
-                <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoUpload} className="w-full text-sm text-gray-200" />
-                {uploading && <p className="text-sm text-gray-300">Uploading...</p>}
-                {logoUrl && <div className="flex justify-center mt-4"><img src={logoUrl} alt="Logo Preview" className="h-24 w-auto rounded-lg shadow-lg" /></div>}
+              <div className="flex flex-col gap-4">
+                <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoUpload} />
+                {logoUrl && <img src={logoUrl} alt="Logo" className="w-32 h-32 object-contain rounded-lg" />}
+              </div>
+            </TabsContent>
+
+            {/* Website */}
+            <TabsContent value="scraping">
+              <Input placeholder="Website URL" value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} className="bg-black/30 border-0 text-white w-full" />
+            </TabsContent>
+
+            {/* Map */}
+            <TabsContent value="map">
+              <div className="w-full h-64">
+                <MapContainer center={[location.lat, location.lng]} zoom={5} className="w-full h-full rounded-lg">
+                  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                  <LocationMarker />
+                </MapContainer>
+                <p className="text-sm text-gray-300 mt-2">Click on the map to select your business location.</p>
               </div>
             </TabsContent>
           </Tabs>
         </Card>
       </motion.div>
 
-      {/* Right Panel - Chat Preview */}
-      <motion.div initial={{ x: 40, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.6 }} className="lg:w-1/2 w-full flex flex-col">
-        <Card className="flex flex-col h-[70vh] sm:h-[80vh] backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl rounded-2xl">
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3">
-            {messages.map((m) => (
-              <motion.div key={m.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className={`flex ${m.sender === "user" ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[85%] sm:max-w-[75%] px-4 py-2 rounded-2xl shadow ${m.sender === "user" ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white" : "bg-white/15 text-gray-100 border border-white/20"}`}>
-                  <span dangerouslySetInnerHTML={{ __html: formatMessage(m.text) }} />
+      {/* Right Panel: Chat Preview */}
+      <motion.div initial={{ x: 40, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.6 }} className="lg:w-1/2 w-full flex flex-col h-full">
+        <Card className="backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl rounded-2xl flex-1 p-4 flex flex-col">
+          <div className="flex-1 overflow-y-auto mb-4">
+            {messages.map((msg) => (
+              <div key={msg.id} className={`mb-2 ${msg.sender === "bot" ? "text-left" : "text-right"}`}>
+                <div className={`inline-block px-3 py-2 rounded-xl ${msg.sender === "bot" ? "bg-purple-600 text-white" : "bg-white/20 text-white"}`}>
+                  <span dangerouslySetInnerHTML={{ __html: msg.text }} />
                 </div>
-              </motion.div>
+              </div>
             ))}
-            {loadingReply && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ repeat: Infinity, duration: 1 }}><div className="px-4 py-2 rounded-2xl bg-white/15 text-gray-100 border border-white/20">Typing...</div></motion.div>}
-            <div ref={chatEndRef} />
+            <div ref={chatEndRef}></div>
           </div>
-
-          <div className="p-4 border-t border-white/20 bg-black/20 flex flex-col sm:flex-row items-center gap-3">
-            <Input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Type a message..." onKeyDown={(e) => e.key === "Enter" && sendMessage()} className="flex-1 bg-black/40 border-0 text-white w-full" />
-            <Button onClick={sendMessage} className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90 w-full sm:w-auto">Send</Button>
+          <div className="flex gap-2">
+            <Input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Type a message..." className="flex-1 bg-black/20 border-0 text-white" onKeyDown={(e) => e.key === "Enter" && sendMessage()} />
+            <Button onClick={sendMessage} disabled={loadingReply} className="bg-purple-600 hover:opacity-90">{loadingReply ? "..." : "Send"}</Button>
           </div>
         </Card>
       </motion.div>
@@ -510,12 +483,12 @@ export default function Builder() {
       {/* Embed Modal */}
       {showEmbedModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/70 z-50">
-          <div className="bg-[#1a1a2e] p-6 rounded-2xl shadow-2xl w-[90%] max-w-lg">
-            <h3 className="text-xl font-bold mb-4 text-white">Embed Code</h3>
-            <textarea value={embedCode} readOnly className="w-full h-32 bg-black/40 text-white text-sm p-3 rounded-lg" />
-            <div className="flex justify-end gap-3 mt-4">
-              <Button onClick={copyEmbedCode} className="bg-green-500 hover:opacity-90">Copy</Button>
-              <Button onClick={() => setShowEmbedModal(false)} className="bg-gray-600 hover:opacity-90">Close</Button>
+          <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-6 rounded-2xl w-96">
+            <h3 className="text-lg font-bold text-white mb-2">Embed Code</h3>
+            <textarea readOnly className="w-full h-32 p-2 rounded-md bg-black/30 text-white">{embedCode}</textarea>
+            <div className="flex justify-end mt-4 gap-2">
+              <Button onClick={copyEmbedCode} className="bg-purple-600 hover:opacity-90">Copy</Button>
+              <Button onClick={() => setShowEmbedModal(false)} className="bg-red-500 hover:opacity-90">Close</Button>
             </div>
           </div>
         </div>
