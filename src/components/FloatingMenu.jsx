@@ -25,16 +25,19 @@ const navItems = [
 ];
 
 export default function FloatingMenu() {
+  // ✅ Updated logout function
   const handleLogout = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut({
+        redirectTo: "https://aiaera-frontend.vercel.app/login"
+      });
       if (error) throw error;
 
-      // Redirect after successful logout
-      window.location.href = "https://aiaera1.odoo.com/login";
+      // Fallback in case redirectTo fails
+      window.location.href = "https://aiaera-frontend.vercel.app/login";
     } catch (err) {
       console.error("Logout failed:", err.message);
-      window.location.href = "https://aiaera1.odoo.com/login"; // fallback
+      window.location.href = "https://aiaera-frontend.vercel.app/login";
     }
   };
 
@@ -54,7 +57,7 @@ export default function FloatingMenu() {
               transition-all duration-300 ease-in-out
               ${isActive 
                 ? "bg-purple-600 text-white shadow-md shadow-purple-500/40 scale-105" 
-                : "text-gray-300 hover:bg-white/10 hover:scale-105"}`
+                : "text-gray-300 hover:bg-white/10 hover:scale-105"}` 
             }
           >
             <Icon className="w-5 h-5" />
@@ -91,7 +94,7 @@ export default function FloatingMenu() {
               `flex flex-col items-center justify-center px-2 py-1 rounded-lg transition-all
               ${isActive 
                 ? "text-purple-400 scale-110 drop-shadow-lg" 
-                : "text-gray-300 hover:text-purple-300"}`
+                : "text-gray-300 hover:text-purple-300"}` 
             }
           >
             <Icon className="w-5 h-5 mb-0.5" />
