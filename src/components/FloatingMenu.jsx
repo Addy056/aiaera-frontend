@@ -1,4 +1,4 @@
-// src/components/Sidebar.jsx
+// src/components/FloatingMenu.jsx
 import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -10,13 +10,9 @@ import {
   LogOut,
   Settings,
 } from "lucide-react";
-import { createClient } from "@supabase/supabase-js";
 
-// Supabase client
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+// ✅ Import the existing Supabase client
+import { supabase } from "@/supabaseClient";
 
 const navItems = [
   { path: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -28,13 +24,13 @@ const navItems = [
   { path: "/settings", label: "Settings", icon: Settings },
 ];
 
-export default function Sidebar() {
+export default function FloatingMenu() {
   const handleLogout = async () => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
 
-      // ✅ Force redirect to Odoo login page
+      // Redirect after successful logout
       window.location.href = "https://aiaera1.odoo.com/login";
     } catch (err) {
       console.error("Logout failed:", err.message);
@@ -62,7 +58,6 @@ export default function Sidebar() {
             }
           >
             <Icon className="w-5 h-5" />
-            {/* Tooltip */}
             <span className="absolute left-14 opacity-0 group-hover:opacity-100 
               bg-black/70 text-white text-xs rounded-md px-2 py-1 transition-all duration-300 
               whitespace-nowrap shadow-md">
