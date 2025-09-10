@@ -13,6 +13,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
+// Helper to check subscription expiry
 function isExpired(dateStr) {
   if (!dateStr) return true;
   return new Date(dateStr) < new Date();
@@ -33,12 +34,11 @@ export default function Integrations() {
     business_lng: 72.8777,
   });
   const [loading, setLoading] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState(null);
   const [subscriptionActive, setSubscriptionActive] = useState(true);
+  const [toast, setToast] = useState({ message: "", type: "" }); // type: success | error
   const mountedRef = useRef(false);
 
-  const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000/api/integrations";
+  const API_BASE = import.meta.env.VITE_API_BASE || "https://aiaera-backend.onrender.com/api/integrations";
 
   useEffect(() => {
     mountedRef.current = true;
@@ -48,7 +48,6 @@ export default function Integrations() {
 
   const init = async () => {
     setLoading(true);
-    setError(null);
     try {
       const { data: { user }, error: userErr } = await supabase.auth.getUser();
       if (userErr || !user) throw new Error("Unable to fetch user session.");
@@ -74,8 +73,7 @@ export default function Integrations() {
       setSubscriptionActive(true);
       await fetchIntegrations(user.id);
     } catch (err) {
-      console.error(err);
-      setError("Failed to load integrations. Please try again.");
+      showToast(err.message, "error");
     } finally {
       if (mountedRef.current) setLoading(false);
     }
@@ -84,9 +82,11 @@ export default function Integrations() {
   const fetchIntegrations = async (userId) => {
     try {
       const res = await fetch(`${API_BASE}?user_id=${userId}`);
-      const text = await res.text();
-      if (!res.ok) throw new Error(`Backend error: ${text}`);
-      const data = JSON.parse(text);
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Backend error: ${text}`);
+      }
+      const data = await res.json();
       if (mountedRef.current && data?.integrations) {
         const integ = data.integrations;
         setForm((prev) => ({
@@ -105,8 +105,7 @@ export default function Integrations() {
         }));
       }
     } catch (err) {
-      console.error("❌ fetchIntegrations error:", err);
-      setError("Error fetching integrations: " + err.message);
+      showToast("Error fetching integrations: " + err.message, "error");
     }
   };
 
@@ -114,7 +113,6 @@ export default function Integrations() {
 
   const handleSave = async () => {
     setLoading(true);
-    setError(null);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not logged in.");
@@ -129,20 +127,22 @@ export default function Integrations() {
         body: JSON.stringify(payload),
       });
 
-      const text = await res.text();
-      const result = JSON.parse(text);
+      const result = await res.json();
       if (!res.ok) throw new Error(result?.error || "Failed to save integrations");
 
-      if (mountedRef.current) {
-        setSaved(true);
-        setTimeout(() => setSaved(false), 3000);
-      }
+      showToast("✅ Integrations saved successfully!", "success");
     } catch (err) {
-      console.error("❌ handleSave error:", err);
-      setError("Failed to save integrations: " + err.message);
+      showToast("Failed to save integrations: " + err.message, "error");
     } finally {
       if (mountedRef.current) setLoading(false);
     }
+  };
+
+  // Toast helper
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    setTimeout(() => setToast({ message: "", type: "" }), 4000);
   };
 
   if (!subscriptionActive) {
@@ -161,6 +161,15 @@ export default function Integrations() {
 
   return (
     <div className="relative min-h-screen p-4 sm:p-8 overflow-hidden">
+      {/* Toast */}
+      {toast.message && (
+        <div className={`fixed top-5 left-1/2 -translate-x-1/2 px-6 py-3 rounded-2xl shadow-lg text-white z-50 ${
+          toast.type === "success" ? "bg-green-600" : "bg-red-600"
+        }`}>
+          {toast.message}
+        </div>
+      )}
+
       {/* Background effects */}
       <div className="absolute inset-0 -z-10">
         <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-black to-purple-950 animate-gradient"></div>
@@ -177,12 +186,6 @@ export default function Integrations() {
             Connect your WhatsApp, Facebook, Instagram, Calendly, and business location ✨
           </p>
         </div>
-
-        {error && (
-          <div className="p-3 sm:p-4 rounded-2xl bg-red-600/30 border border-red-400/50 text-red-200 text-sm sm:text-base">
-            ⚠️ {error}
-          </div>
-        )}
 
         {/* Integration Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -223,8 +226,6 @@ export default function Integrations() {
         <button onClick={handleSave} disabled={loading} className="w-full py-3 rounded-2xl bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 text-white font-semibold shadow-xl hover:scale-105 hover:shadow-[0_0_35px_rgba(127,90,240,0.8)] transition-all disabled:opacity-50">
           {loading ? "Saving..." : "Save Integrations"}
         </button>
-
-        {saved && <p className="text-green-400 mt-4 text-center text-sm sm:text-base">✅ Integrations saved successfully!</p>}
       </div>
 
       <style>{`
