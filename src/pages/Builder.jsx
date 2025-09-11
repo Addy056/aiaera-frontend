@@ -18,7 +18,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaf
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
-// Fix default marker icon issue with Leaflet + Vite
+// Leaflet icon fix
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
@@ -36,17 +36,19 @@ export default function Builder() {
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [files, setFiles] = useState([]);
   const [logoUrl, setLogoUrl] = useState(null);
+  const [location, setLocation] = useState({ lat: 20.5937, lng: 78.9629 });
+  const [hasSelectedLocation, setHasSelectedLocation] = useState(false);
+
   const [loadingConfig, setLoadingConfig] = useState(false);
   const [savingConfig, setSavingConfig] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [loadingReply, setLoadingReply] = useState(false);
+
   const [user, setUser] = useState(null);
   const [chatbotId, setChatbotId] = useState(null);
   const [authToken, setAuthToken] = useState(null);
   const [isConfigSaved, setIsConfigSaved] = useState(false);
   const [showEmbedModal, setShowEmbedModal] = useState(false);
-  const [location, setLocation] = useState({ lat: 20.5937, lng: 78.9629 }); // Default India
-  const [hasSelectedLocation, setHasSelectedLocation] = useState(false);
 
   const fileInputRef = useRef(null);
   const logoInputRef = useRef(null);
@@ -55,10 +57,9 @@ export default function Builder() {
   const API_BASE = import.meta.env.VITE_BACKEND_URL;
   const BUCKET = import.meta.env.VITE_SUPABASE_BUCKET || "chatbot-files";
 
-  // Init Builder
+  // Initialize Builder
   useEffect(() => {
     let mounted = true;
-
     const init = async () => {
       setLoadingConfig(true);
       try {
@@ -89,14 +90,13 @@ export default function Builder() {
             setHasSelectedLocation(true);
           }
           setIsConfigSaved(true);
-        } else setChatbotId(null);
+        }
       } catch (err) {
         console.error("Init Builder error:", err);
       } finally {
         if (mounted) setLoadingConfig(false);
       }
     };
-
     init();
     return () => { mounted = false; };
   }, []);
@@ -109,49 +109,19 @@ export default function Builder() {
     setMessages((prev) => [...prev, { id: uuidv4(), sender, text }]);
   };
 
-  const upsertBusinessDataFromBuilder = async () => {
+  // --- Unified config save ---
+  const saveConfigToSupabase = async (extra = {}) => {
     if (!user) return;
-    try {
-      const payload = {
-        user_id: user.id,
-        business_type: "general",
-        title: businessName || "My Business",
-        description: businessDescription || "",
-        attributes: {
-          website_url: websiteUrl || null,
-          files: (files || []).map(f => ({ name: f.name, url: f.publicUrl, extractedContent: f.extractedContent || null })),
-          logo_url: logoUrl || null,
-          location: hasSelectedLocation ? location : null,
-          updated_from: "builder",
-        }
-      };
 
-      const { data: existing } = await supabase
-        .from("business_data")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("business_type", "general")
-        .eq("title", businessName)
-        .maybeSingle();
-
-      if (existing?.id) {
-        await supabase.from("business_data").update(payload).eq("id", existing.id);
-      } else {
-        await supabase.from("business_data").insert([payload]);
-      }
-    } catch (e) {
-      console.error("upsertBusinessDataFromBuilder error:", e);
-    }
-  };
-
-  const saveConfig = async () => {
-    if (!user) {
-      pushMessage("bot", "⚠️ Please log in to save your configuration.");
-      return;
-    }
     setSavingConfig(true);
     try {
-      const config = { website_url: websiteUrl, files, logo_url: logoUrl, location: hasSelectedLocation ? location : null };
+      const config = {
+        website_url: websiteUrl || "",
+        files: files || [],
+        logo_url: logoUrl || null,
+        location: hasSelectedLocation ? location : null,
+        ...extra,
+      };
 
       if (chatbotId) {
         await supabase
@@ -165,6 +135,7 @@ export default function Builder() {
           .eq("id", chatbotId)
           .eq("user_id", user.id);
       } else {
+        // Ensure subscription active
         const { data: subscription } = await supabase
           .from("user_subscriptions")
           .select("expires_at")
@@ -183,11 +154,8 @@ export default function Builder() {
           .insert([{ user_id: user.id, name: businessName, business_info: businessDescription, config }])
           .select()
           .single();
-
         setChatbotId(data.id);
       }
-
-      await upsertBusinessDataFromBuilder();
       pushMessage("bot", "✅ Configuration saved.");
       setIsConfigSaved(true);
     } catch (err) {
@@ -198,44 +166,7 @@ export default function Builder() {
     }
   };
 
-  const generateEmbedCode = () => setShowEmbedModal(true);
-  const embedCode = chatbotId ? `<script src="${API_BASE}/api/embed/${chatbotId}.js" async></script>` : "";
-  const copyEmbedCode = () => {
-    if (!embedCode) return;
-    navigator.clipboard.writeText(embedCode);
-    alert("Embed code copied to clipboard!");
-  };
-
-  const handleLogoUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
-
-    setUploading(true);
-    try {
-      const filePath = `${user.id}/logo-${Date.now()}-${file.name}`;
-      const { error } = await supabase.storage.from(BUCKET).upload(filePath, file, { cacheControl: "3600", upsert: false });
-      if (error) throw error;
-
-      const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(filePath);
-      const publicUrl = urlData?.publicUrl ?? null;
-
-      setLogoUrl(publicUrl);
-      pushMessage("bot", "📌 Logo uploaded successfully.");
-
-      if (chatbotId) {
-        await supabase.from("chatbots").update({ config: { website_url: websiteUrl, files, logo_url: publicUrl, location: hasSelectedLocation ? location : null }, updated_at: new Date().toISOString() }).eq("id", chatbotId).eq("user_id", user.id);
-      }
-
-      await upsertBusinessDataFromBuilder();
-    } catch (err) {
-      console.error("Logo upload error:", err);
-      pushMessage("bot", "❌ Logo upload failed.");
-    } finally {
-      setUploading(false);
-      if (logoInputRef.current) logoInputRef.current.value = "";
-    }
-  };
-
+  // --- File Upload ---
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
@@ -264,12 +195,8 @@ export default function Builder() {
 
       const updatedFiles = [newFileEntry, ...files];
       setFiles(updatedFiles);
+      await saveConfigToSupabase({ files: updatedFiles });
 
-      if (chatbotId) {
-        await supabase.from("chatbots").update({ config: { website_url: websiteUrl, files: updatedFiles, logo_url: logoUrl, location: hasSelectedLocation ? location : null }, updated_at: new Date().toISOString() }).eq("id", chatbotId).eq("user_id", user.id);
-      }
-
-      await upsertBusinessDataFromBuilder();
       pushMessage("bot", `📂 Uploaded and parsed ${file.name}`);
     } catch (err) {
       console.error("File upload error:", err.response?.data || err.message || err);
@@ -286,12 +213,7 @@ export default function Builder() {
       await supabase.storage.from(BUCKET).remove([filePath]);
       const updatedFiles = files.filter((f) => f.path !== filePath);
       setFiles(updatedFiles);
-
-      if (chatbotId) {
-        await supabase.from("chatbots").update({ config: { website_url: websiteUrl, files: updatedFiles, logo_url: logoUrl, location: hasSelectedLocation ? location : null }, updated_at: new Date().toISOString() }).eq("id", chatbotId).eq("user_id", user.id);
-      }
-
-      await upsertBusinessDataFromBuilder();
+      await saveConfigToSupabase({ files: updatedFiles });
       pushMessage("bot", "🗑️ File deleted.");
     } catch (err) {
       console.error("Delete file error:", err);
@@ -299,6 +221,33 @@ export default function Builder() {
     }
   };
 
+  // --- Logo Upload ---
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    setUploading(true);
+    try {
+      const filePath = `${user.id}/logo-${Date.now()}-${file.name}`;
+      const { error } = await supabase.storage.from(BUCKET).upload(filePath, file, { cacheControl: "3600", upsert: false });
+      if (error) throw error;
+
+      const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(filePath);
+      const publicUrl = urlData?.publicUrl ?? null;
+      setLogoUrl(publicUrl);
+      await saveConfigToSupabase({ logo_url: publicUrl });
+
+      pushMessage("bot", "📌 Logo uploaded successfully.");
+    } catch (err) {
+      console.error("Logo upload error:", err);
+      pushMessage("bot", "❌ Logo upload failed.");
+    } finally {
+      setUploading(false);
+      if (logoInputRef.current) logoInputRef.current.value = "";
+    }
+  };
+
+  // --- Chat Preview ---
   const sendMessage = async () => {
     if (!input.trim() || !user) return;
     const userText = input.trim();
@@ -323,7 +272,22 @@ export default function Builder() {
         { role: "user", content: userText },
       ];
 
-      const res = await axios.post(`${API_BASE}/api/chatbot/preview`, { userId: user.id, chatbotConfig: { businessName, businessDescription, websiteUrl, files, logoUrl, location: hasSelectedLocation ? location : null }, messages: augmentedMessages, retrievedData: data }, { headers: { Authorization: `Bearer ${authToken}` } });
+      // ✅ Always send full chatbotConfig object
+      const chatbotConfig = {
+        chatbotId: chatbotId || null,
+        businessName: businessName || "",
+        businessDescription: businessDescription || "",
+        websiteUrl: websiteUrl || "",
+        files: files || [],
+        logoUrl: logoUrl || null,
+        location: hasSelectedLocation ? location : null,
+      };
+
+      const res = await axios.post(
+        `${API_BASE}/api/chatbot/preview`,
+        { userId: user.id, chatbotConfig, messages: augmentedMessages, retrievedData: data },
+        { headers: { Authorization: `Bearer ${authToken}` } }
+      );
 
       const botReply = res.data?.reply || "🤖 (No reply received)";
       pushMessage("bot", botReply);
@@ -335,6 +299,7 @@ export default function Builder() {
     }
   };
 
+  // --- Retrain ---
   const retrainChatbot = async () => {
     if (!chatbotId || !user) {
       pushMessage("bot", "⚠️ Chatbot ID or user missing.");
@@ -351,21 +316,30 @@ export default function Builder() {
     }
   };
 
-  // Map click component
+  // --- Map ---
   function LocationMarker() {
     useMapEvents({
       click(e) {
         setLocation({ lat: e.latlng.lat, lng: e.latlng.lng });
         setHasSelectedLocation(true);
+        saveConfigToSupabase({ location: { lat: e.latlng.lat, lng: e.latlng.lng } });
       },
     });
-
     return hasSelectedLocation ? (
       <Marker position={[location.lat, location.lng]}>
         <Popup>Business Location</Popup>
       </Marker>
     ) : null;
   }
+
+  // --- Embed Code ---
+  const generateEmbedCode = () => setShowEmbedModal(true);
+  const embedCode = chatbotId ? `<script src="${API_BASE}/api/embed/${chatbotId}.js" async></script>` : "";
+  const copyEmbedCode = () => {
+    if (!embedCode) return;
+    navigator.clipboard.writeText(embedCode);
+    alert("Embed code copied!");
+  };
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 p-4 sm:p-6 h-full bg-gradient-to-br from-[#0f0f17] via-[#1a1a2e] to-[#0f0f17] min-h-screen">
@@ -390,7 +364,7 @@ export default function Builder() {
                 <Input placeholder="Website URL" value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} className="bg-black/30 border-0 text-white w-full" />
 
                 <div className="flex flex-col sm:flex-row gap-2 mt-4">
-                  <Button onClick={isConfigSaved ? generateEmbedCode : saveConfig} disabled={savingConfig} className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90">
+                  <Button onClick={isConfigSaved ? generateEmbedCode : () => saveConfigToSupabase()} disabled={savingConfig} className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90">
                     {isConfigSaved ? "Generate Embed Code" : savingConfig ? "Saving..." : "Save Info"}
                   </Button>
 
