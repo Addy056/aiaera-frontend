@@ -1,5 +1,19 @@
 import { useState, useRef, useEffect } from "react";
 import axios from "axios";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+
+// Fix for default marker icon in Leaflet
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+  iconUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+});
 
 export default function ChatbotPreview({ chatbotConfig, user }) {
   const [messages, setMessages] = useState([
@@ -36,7 +50,7 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
       const res = await axios.post("/api/chatbot/preview", {
         messages: newMessages,
         chatbotConfig,
-        userId: user?.id, // ✅ backend will fetch business_data itself
+        userId: user?.id,
         language: chatbotConfig?.language || "en",
       });
 
@@ -125,6 +139,22 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {/* Location Map */}
+      {chatbotConfig?.location && (
+        <div style={{ height: "200px", margin: "8px 12px", borderRadius: "12px", overflow: "hidden" }}>
+          <MapContainer
+            center={[chatbotConfig.location.lat, chatbotConfig.location.lng]}
+            zoom={13}
+            style={{ width: "100%", height: "100%" }}
+          >
+            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+            <Marker position={[chatbotConfig.location.lat, chatbotConfig.location.lng]}>
+              <Popup>Business Location</Popup>
+            </Marker>
+          </MapContainer>
         </div>
       )}
 

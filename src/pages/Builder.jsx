@@ -272,7 +272,6 @@ export default function Builder() {
         { role: "user", content: userText },
       ];
 
-      // ✅ Always send full chatbotConfig object
       const chatbotConfig = {
         chatbotId: chatbotId || null,
         businessName: businessName || "",

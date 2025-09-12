@@ -14,10 +14,7 @@ L.Icon.Default.mergeOptions({
 });
 
 // Helper to check subscription expiry
-function isExpired(dateStr) {
-  if (!dateStr) return true;
-  return new Date(dateStr) < new Date();
-}
+const isExpired = (dateStr) => !dateStr || new Date(dateStr) < new Date();
 
 export default function Integrations() {
   const [form, setForm] = useState({
@@ -30,15 +27,15 @@ export default function Integrations() {
     instagram_page_id: "",
     instagram_access_token: "",
     business_address: "",
-    business_lat: 19.0760, // default Mumbai
+    business_lat: 19.076, // Mumbai default
     business_lng: 72.8777,
   });
   const [loading, setLoading] = useState(false);
   const [subscriptionActive, setSubscriptionActive] = useState(true);
-  const [toast, setToast] = useState({ message: "", type: "" }); // type: success | error
+  const [toast, setToast] = useState({ message: "", type: "" });
   const mountedRef = useRef(false);
 
-  const API_BASE = import.meta.env.VITE_API_BASE || "https://aiaera-backend.onrender.com/api/integrations";
+  const API_BASE = import.meta.env.VITE_BACKEND_URL + "/api/integrations";
 
   useEffect(() => {
     mountedRef.current = true;
@@ -52,6 +49,7 @@ export default function Integrations() {
       const { data: { user }, error: userErr } = await supabase.auth.getUser();
       if (userErr || !user) throw new Error("Unable to fetch user session.");
 
+      // Bypass subscription for admin
       if (user.email === "aiaera056@gmail.com") {
         setSubscriptionActive(true);
         await fetchIntegrations(user.id);
@@ -95,12 +93,12 @@ export default function Integrations() {
           whatsapp_token: integ.whatsapp_token || "",
           fb_page_id: integ.fb_page_id || "",
           fb_page_token: integ.fb_page_token || "",
-          calendly_link: integ.calendly_link ? integ.calendly_link.replace(/<[^>]*>/g, "").trim() : "",
+          calendly_link: integ.calendly_link?.replace(/<[^>]*>/g, "").trim() || "",
           instagram_user_id: integ.instagram_user_id || "",
           instagram_page_id: integ.instagram_page_id || "",
           instagram_access_token: integ.instagram_access_token || "",
           business_address: integ.business_address || "",
-          business_lat: integ.business_lat || 19.0760,
+          business_lat: integ.business_lat || 19.076,
           business_lng: integ.business_lng || 72.8777,
         }));
       }
@@ -126,7 +124,6 @@ export default function Integrations() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-
       const result = await res.json();
       if (!res.ok) throw new Error(result?.error || "Failed to save integrations");
 
@@ -138,11 +135,9 @@ export default function Integrations() {
     }
   };
 
-  // Toast helper
   const showToast = (message, type = "success") => {
     setToast({ message, type });
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    setTimeout(() => setToast({ message: "", type: "" }), 4000);
+    setTimeout(() => { if (mountedRef.current) setToast({ message: "", type: "" }); }, 4000);
   };
 
   if (!subscriptionActive) {
@@ -161,16 +156,13 @@ export default function Integrations() {
 
   return (
     <div className="relative min-h-screen p-4 sm:p-8 overflow-hidden">
-      {/* Toast */}
       {toast.message && (
-        <div className={`fixed top-5 left-1/2 -translate-x-1/2 px-6 py-3 rounded-2xl shadow-lg text-white z-50 ${
-          toast.type === "success" ? "bg-green-600" : "bg-red-600"
-        }`}>
+        <div className={`fixed top-5 left-1/2 -translate-x-1/2 px-6 py-3 rounded-2xl shadow-lg text-white z-50 ${toast.type === "success" ? "bg-green-600" : "bg-red-600"}`}>
           {toast.message}
         </div>
       )}
 
-      {/* Background effects */}
+      {/* Background */}
       <div className="absolute inset-0 -z-10">
         <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-black to-purple-950 animate-gradient"></div>
         <div className="absolute w-[400px] sm:w-[600px] h-[400px] sm:h-[600px] bg-purple-600/30 rounded-full blur-3xl top-10 sm:top-20 left-5 sm:left-10 animate-pulse"></div>
@@ -187,7 +179,6 @@ export default function Integrations() {
           </p>
         </div>
 
-        {/* Integration Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           <IntegrationCard title="WhatsApp Integration">
             <input type="text" name="whatsapp_number" value={form.whatsapp_number} onChange={handleChange} placeholder="WhatsApp Business Number" className="input-field" />
@@ -212,10 +203,7 @@ export default function Integrations() {
           <IntegrationCard title="Business Location">
             <input type="text" name="business_address" value={form.business_address} onChange={handleChange} placeholder="Enter your business address" className="input-field" />
             <MapContainer center={[form.business_lat, form.business_lng]} zoom={12} style={{ height: "250px", width: "100%", borderRadius: "1rem" }}>
-              <TileLayer
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                attribution="&copy; OpenStreetMap contributors"
-              />
+              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap contributors" />
               <Marker position={[form.business_lat, form.business_lng]}>
                 <Popup>{form.business_address || "Business Location"}</Popup>
               </Marker>
