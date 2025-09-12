@@ -104,7 +104,7 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
         <span>{chatbotConfig?.name || "AI Chatbot"} Preview</span>
       </div>
 
-      {/* Business Description and Website */}
+      {/* Business Description, Website, Address, Appointment */}
       {chatbotConfig?.businessDescription && (
         <div style={styles.businessInfo}>
           {chatbotConfig.businessDescription}
@@ -119,6 +119,23 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
         >
           Visit Website
         </a>
+      )}
+      {chatbotConfig?.address && (
+        <div style={styles.address}>
+          <strong>Address:</strong> {chatbotConfig.address}
+        </div>
+      )}
+      {chatbotConfig?.calendlyUrl && (
+        <div style={styles.appointment}>
+          <a
+            href={chatbotConfig.calendlyUrl}
+            target="_blank"
+            rel="noreferrer"
+            style={{ color: "#7f5af0", textDecoration: "underline" }}
+          >
+            📅 Book a Call
+          </a>
+        </div>
       )}
 
       {/* Uploaded Files */}
@@ -144,14 +161,23 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
 
       {/* Location Map */}
       {chatbotConfig?.location && (
-        <div style={{ height: "200px", margin: "8px 12px", borderRadius: "12px", overflow: "hidden" }}>
+        <div
+          style={{
+            height: "200px",
+            margin: "8px 12px",
+            borderRadius: "12px",
+            overflow: "hidden",
+          }}
+        >
           <MapContainer
             center={[chatbotConfig.location.lat, chatbotConfig.location.lng]}
             zoom={13}
             style={{ width: "100%", height: "100%" }}
           >
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-            <Marker position={[chatbotConfig.location.lat, chatbotConfig.location.lng]}>
+            <Marker
+              position={[chatbotConfig.location.lat, chatbotConfig.location.lng]}
+            >
               <Popup>Business Location</Popup>
             </Marker>
           </MapContainer>
@@ -182,9 +208,7 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
         ))}
         {loading && (
           <div style={{ ...styles.message, ...styles.assistantMsg }}>
-            <div style={{ ...styles.bubble, ...styles.assistantBubble }}>
-              ...
-            </div>
+            <div style={{ ...styles.bubble, ...styles.assistantBubble }}>...</div>
           </div>
         )}
         <div ref={messagesEndRef} />
@@ -265,6 +289,16 @@ const styles = {
     textAlign: "center",
     display: "block",
     marginBottom: "6px",
+  },
+  address: {
+    color: "white",
+    textAlign: "center",
+    padding: "4px 12px",
+    fontStyle: "italic",
+  },
+  appointment: {
+    textAlign: "center",
+    margin: "4px 0",
   },
   filesContainer: {
     background: "rgba(255,255,255,0.1)",
