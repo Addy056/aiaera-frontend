@@ -15,17 +15,20 @@ export default function PublicChatbot() {
         const res = await fetch(`/api/chatbots/public/${id}`);
         const data = await res.json();
 
-        if (data.success && data.chatbot) {
-          const chatbot = data.chatbot;
+        if (data.success && data.data) {
+          const chatbot = data.data;
 
           // Normalize config fields safely
           const normalizedConfig = {
             id: chatbot.id,
             name: chatbot.name || "AI Chatbot",
-            businessDescription: chatbot.business_info || "",
-            websiteUrl: chatbot.config?.website_url || "",
-            files: Array.isArray(chatbot.config?.files) ? chatbot.config.files : [],
-            logoUrl: chatbot.config?.logo_url || null,
+            businessDescription: chatbot.businessDescription || "",
+            websiteUrl: chatbot.websiteUrl || "",
+            files: Array.isArray(chatbot.files) ? chatbot.files : [],
+            logoUrl: chatbot.logoUrl || null,
+            // 🔑 NEW: address + calendly link
+            businessAddress: chatbot.business_address || null,
+            calendlyLink: chatbot.calendly_link || null,
           };
 
           setChatbotConfig(normalizedConfig);
@@ -87,6 +90,28 @@ export default function PublicChatbot() {
               className="text-purple-400 underline"
             >
               Visit Website
+            </a>
+          </div>
+        )}
+
+        {/* 🔑 Business Address */}
+        {chatbotConfig.businessAddress && (
+          <div className="text-center mt-2 text-white/80">
+            <span className="font-semibold">Address: </span>
+            {chatbotConfig.businessAddress}
+          </div>
+        )}
+
+        {/* 🔑 Calendly Link */}
+        {chatbotConfig.calendlyLink && (
+          <div className="text-center mt-2">
+            <a
+              href={chatbotConfig.calendlyLink}
+              target="_blank"
+              rel="noreferrer"
+              className="text-purple-400 underline"
+            >
+              Book an Appointment
             </a>
           </div>
         )}

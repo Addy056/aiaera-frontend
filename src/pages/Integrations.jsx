@@ -1,7 +1,7 @@
 // src/pages/Integrations.jsx
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "../supabaseClient";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
@@ -40,7 +40,9 @@ export default function Integrations() {
   useEffect(() => {
     mountedRef.current = true;
     init();
-    return () => { mountedRef.current = false; };
+    return () => {
+      mountedRef.current = false;
+    };
   }, []);
 
   const init = async () => {
@@ -107,7 +109,11 @@ export default function Integrations() {
     }
   };
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) =>
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value,
+    });
 
   const handleSave = async () => {
     setLoading(true);
@@ -116,9 +122,16 @@ export default function Integrations() {
       if (!user) throw new Error("User not logged in.");
 
       let cleanCalendly = form.calendly_link.replace(/<[^>]*>/g, "").trim();
-      if (cleanCalendly && !/^https?:\/\//i.test(cleanCalendly)) cleanCalendly = "https://" + cleanCalendly;
+      if (cleanCalendly && !/^https?:\/\//i.test(cleanCalendly)) {
+        cleanCalendly = "https://" + cleanCalendly;
+      }
 
-      const payload = { ...form, calendly_link: cleanCalendly, user_id: user.id };
+      const payload = {
+        ...form,
+        calendly_link: cleanCalendly,
+        user_id: user.id,
+      };
+
       const res = await fetch(API_BASE, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -137,7 +150,23 @@ export default function Integrations() {
 
   const showToast = (message, type = "success") => {
     setToast({ message, type });
-    setTimeout(() => { if (mountedRef.current) setToast({ message: "", type: "" }); }, 4000);
+    setTimeout(() => {
+      if (mountedRef.current) setToast({ message: "", type: "" });
+    }, 4000);
+  };
+
+  // Map click handler to update lat/lng
+  const LocationSelector = () => {
+    useMapEvents({
+      click(e) {
+        setForm((prev) => ({
+          ...prev,
+          business_lat: e.latlng.lat,
+          business_lng: e.latlng.lng,
+        }));
+      },
+    });
+    return null;
   };
 
   if (!subscriptionActive) {
@@ -147,7 +176,10 @@ export default function Integrations() {
         <p className="text-lg sm:text-xl text-gray-300 mb-6 text-center">
           Your subscription has expired. Please renew to access Integrations.
         </p>
-        <a href="/pricing" className="px-6 py-3 rounded-2xl bg-purple-600/80 hover:bg-purple-700 transition font-semibold">
+        <a
+          href="/pricing"
+          className="px-6 py-3 rounded-2xl bg-purple-600/80 hover:bg-purple-700 transition font-semibold"
+        >
           Renew Now
         </a>
       </div>
@@ -157,7 +189,11 @@ export default function Integrations() {
   return (
     <div className="relative min-h-screen p-4 sm:p-8 overflow-hidden">
       {toast.message && (
-        <div className={`fixed top-5 left-1/2 -translate-x-1/2 px-6 py-3 rounded-2xl shadow-lg text-white z-50 ${toast.type === "success" ? "bg-green-600" : "bg-red-600"}`}>
+        <div
+          className={`fixed top-5 left-1/2 -translate-x-1/2 px-6 py-3 rounded-2xl shadow-lg text-white z-50 ${
+            toast.type === "success" ? "bg-green-600" : "bg-red-600"
+          }`}
+        >
           {toast.message}
         </div>
       )}
@@ -181,37 +217,115 @@ export default function Integrations() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           <IntegrationCard title="WhatsApp Integration">
-            <input type="text" name="whatsapp_number" value={form.whatsapp_number} onChange={handleChange} placeholder="WhatsApp Business Number" className="input-field" />
-            <input type="text" name="whatsapp_token" value={form.whatsapp_token} onChange={handleChange} placeholder="WhatsApp API Token" className="input-field" />
+            <input
+              type="text"
+              name="whatsapp_number"
+              value={form.whatsapp_number}
+              onChange={handleChange}
+              placeholder="WhatsApp Business Number"
+              className="input-field"
+            />
+            <input
+              type="text"
+              name="whatsapp_token"
+              value={form.whatsapp_token}
+              onChange={handleChange}
+              placeholder="WhatsApp API Token"
+              className="input-field"
+            />
           </IntegrationCard>
 
           <IntegrationCard title="Facebook Messenger Integration">
-            <input type="text" name="fb_page_id" value={form.fb_page_id} onChange={handleChange} placeholder="Facebook Page ID" className="input-field" />
-            <input type="text" name="fb_page_token" value={form.fb_page_token} onChange={handleChange} placeholder="Facebook Page Access Token" className="input-field" />
+            <input
+              type="text"
+              name="fb_page_id"
+              value={form.fb_page_id}
+              onChange={handleChange}
+              placeholder="Facebook Page ID"
+              className="input-field"
+            />
+            <input
+              type="text"
+              name="fb_page_token"
+              value={form.fb_page_token}
+              onChange={handleChange}
+              placeholder="Facebook Page Access Token"
+              className="input-field"
+            />
           </IntegrationCard>
 
           <IntegrationCard title="Instagram Integration">
-            <input type="text" name="instagram_user_id" value={form.instagram_user_id} onChange={handleChange} placeholder="Instagram User ID" className="input-field" />
-            <input type="text" name="instagram_page_id" value={form.instagram_page_id} onChange={handleChange} placeholder="Connected Facebook Page ID" className="input-field" />
-            <input type="text" name="instagram_access_token" value={form.instagram_access_token} onChange={handleChange} placeholder="Instagram Access Token" className="input-field" />
+            <input
+              type="text"
+              name="instagram_user_id"
+              value={form.instagram_user_id}
+              onChange={handleChange}
+              placeholder="Instagram User ID"
+              className="input-field"
+            />
+            <input
+              type="text"
+              name="instagram_page_id"
+              value={form.instagram_page_id}
+              onChange={handleChange}
+              placeholder="Connected Facebook Page ID"
+              className="input-field"
+            />
+            <input
+              type="text"
+              name="instagram_access_token"
+              value={form.instagram_access_token}
+              onChange={handleChange}
+              placeholder="Instagram Access Token"
+              className="input-field"
+            />
           </IntegrationCard>
 
           <IntegrationCard title="Calendly Integration">
-            <input type="text" name="calendly_link" value={form.calendly_link} onChange={handleChange} placeholder="Calendly Link" className="input-field" />
+            <input
+              type="text"
+              name="calendly_link"
+              value={form.calendly_link}
+              onChange={handleChange}
+              placeholder="Calendly Link"
+              className="input-field"
+            />
           </IntegrationCard>
 
           <IntegrationCard title="Business Location">
-            <input type="text" name="business_address" value={form.business_address} onChange={handleChange} placeholder="Enter your business address" className="input-field" />
-            <MapContainer center={[form.business_lat, form.business_lng]} zoom={12} style={{ height: "250px", width: "100%", borderRadius: "1rem" }}>
-              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap contributors" />
-              <Marker position={[form.business_lat, form.business_lng]}>
+            <input
+              type="text"
+              name="business_address"
+              value={form.business_address}
+              onChange={handleChange}
+              placeholder="Enter your business address"
+              className="input-field"
+            />
+            <MapContainer
+              center={[form.business_lat || 19.076, form.business_lng || 72.8777]}
+              zoom={12}
+              style={{ height: "250px", width: "100%", borderRadius: "1rem" }}
+            >
+              <TileLayer
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution="&copy; OpenStreetMap contributors"
+              />
+              <Marker position={[form.business_lat || 19.076, form.business_lng || 72.8777]}>
                 <Popup>{form.business_address || "Business Location"}</Popup>
               </Marker>
+              <LocationSelector />
             </MapContainer>
+            <p className="text-sm text-gray-300 mt-2">
+              Click on the map to update your business location.
+            </p>
           </IntegrationCard>
         </div>
 
-        <button onClick={handleSave} disabled={loading} className="w-full py-3 rounded-2xl bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 text-white font-semibold shadow-xl hover:scale-105 hover:shadow-[0_0_35px_rgba(127,90,240,0.8)] transition-all disabled:opacity-50">
+        <button
+          onClick={handleSave}
+          disabled={loading}
+          className="w-full py-3 rounded-2xl bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 text-white font-semibold shadow-xl hover:scale-105 hover:shadow-[0_0_35px_rgba(127,90,240,0.8)] transition-all disabled:opacity-50"
+        >
           {loading ? "Saving..." : "Save Integrations"}
         </button>
       </div>

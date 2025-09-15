@@ -1,3 +1,4 @@
+// src/components/ChatbotPreview.jsx
 import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
@@ -120,15 +121,15 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
           Visit Website
         </a>
       )}
-      {chatbotConfig?.address && (
+      {chatbotConfig?.businessAddress && (
         <div style={styles.address}>
-          <strong>Address:</strong> {chatbotConfig.address}
+          <strong>Address:</strong> {chatbotConfig.businessAddress}
         </div>
       )}
-      {chatbotConfig?.calendlyUrl && (
+      {chatbotConfig?.calendlyLink && (
         <div style={styles.appointment}>
           <a
-            href={chatbotConfig.calendlyUrl}
+            href={chatbotConfig.calendlyLink}
             target="_blank"
             rel="noreferrer"
             style={{ color: "#7f5af0", textDecoration: "underline" }}
@@ -160,29 +161,33 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
       )}
 
       {/* Location Map */}
-      {chatbotConfig?.location && (
-        <div
-          style={{
-            height: "200px",
-            margin: "8px 12px",
-            borderRadius: "12px",
-            overflow: "hidden",
-          }}
-        >
-          <MapContainer
-            center={[chatbotConfig.location.lat, chatbotConfig.location.lng]}
-            zoom={13}
-            style={{ width: "100%", height: "100%" }}
+      {chatbotConfig?.location?.lat &&
+        chatbotConfig?.location?.lng && (
+          <div
+            style={{
+              height: "200px",
+              margin: "8px 12px",
+              borderRadius: "12px",
+              overflow: "hidden",
+            }}
           >
-            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-            <Marker
-              position={[chatbotConfig.location.lat, chatbotConfig.location.lng]}
+            <MapContainer
+              center={[chatbotConfig.location.lat, chatbotConfig.location.lng]}
+              zoom={13}
+              style={{ width: "100%", height: "100%" }}
             >
-              <Popup>Business Location</Popup>
-            </Marker>
-          </MapContainer>
-        </div>
-      )}
+              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+              <Marker
+                position={[
+                  chatbotConfig.location.lat,
+                  chatbotConfig.location.lng,
+                ]}
+              >
+                <Popup>Business Location</Popup>
+              </Marker>
+            </MapContainer>
+          </div>
+        )}
 
       {/* Chat Messages */}
       <div style={styles.messages}>

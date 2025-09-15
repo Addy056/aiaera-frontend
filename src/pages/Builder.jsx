@@ -34,8 +34,6 @@ export default function Builder() {
   const [businessName, setBusinessName] = useState("");
   const [businessDescription, setBusinessDescription] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
-  const [businessAddress, setBusinessAddress] = useState("");
-  const [calendlyLink, setCalendlyLink] = useState("");
   const [files, setFiles] = useState([]);
   const [logoUrl, setLogoUrl] = useState(null);
   const [location, setLocation] = useState({ lat: 20.5937, lng: 78.9629 });
@@ -85,13 +83,16 @@ export default function Builder() {
           setBusinessName(data.name || "");
           setBusinessDescription(data.business_info || "");
           setWebsiteUrl(data.config?.website_url || "");
-          setBusinessAddress(data.config?.business_address || "");
-          setCalendlyLink(data.config?.calendly_link || "");
           setLogoUrl(data.config?.logo_url || null);
           if (Array.isArray(data.config?.files)) setFiles(data.config.files);
-          if (data.config?.location) {
+
+          // Ensure valid location
+          if (data.config?.location?.lat && data.config?.location?.lng) {
             setLocation(data.config.location);
             setHasSelectedLocation(true);
+          } else {
+            setLocation({ lat: 20.5937, lng: 78.9629 }); // default India coords
+            setHasSelectedLocation(false);
           }
           setIsConfigSaved(true);
         }
@@ -124,8 +125,6 @@ export default function Builder() {
         files: files || [],
         logo_url: logoUrl || null,
         location: hasSelectedLocation ? location : null,
-        business_address: businessAddress || "",
-        calendly_link: calendlyLink || "",
         ...extra,
       };
 
@@ -283,8 +282,6 @@ export default function Builder() {
         businessName: businessName || "",
         businessDescription: businessDescription || "",
         websiteUrl: websiteUrl || "",
-        businessAddress: businessAddress || "",
-        calendlyLink: calendlyLink || "",
         files: files || [],
         logoUrl: logoUrl || null,
         location: hasSelectedLocation ? location : null,
@@ -297,8 +294,6 @@ export default function Builder() {
       );
 
       let botReply = res.data?.reply || "🤖 (No reply received)";
-      if (botReply.includes("book a call") && calendlyLink) botReply += `\nBook here: ${calendlyLink}`;
-
       pushMessage("bot", botReply);
     } catch (err) {
       console.error("Preview chat error:", err.response?.data || err.message || err);
@@ -357,13 +352,12 @@ export default function Builder() {
         <Card className="backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl rounded-2xl p-4 sm:p-6">
           <h2 className="text-xl sm:text-2xl font-bold text-white mb-4">⚡ Build Your Chatbot</h2>
           <Tabs defaultValue="business">
-            <TabsList className="grid grid-cols-2 sm:grid-cols-6 bg-black/30 rounded-xl p-1 mb-6 gap-2">
+            <TabsList className="grid grid-cols-2 sm:grid-cols-5 bg-black/30 rounded-xl p-1 mb-6 gap-2">
               <TabsTrigger value="business">Business</TabsTrigger>
               <TabsTrigger value="files">Files</TabsTrigger>
               <TabsTrigger value="scraping">Website</TabsTrigger>
               <TabsTrigger value="logo">Logo</TabsTrigger>
               <TabsTrigger value="map">Location</TabsTrigger>
-              <TabsTrigger value="address">Address</TabsTrigger>
             </TabsList>
 
             {/* Business */}
@@ -372,8 +366,6 @@ export default function Builder() {
                 <Input placeholder="Business Name" value={businessName} onChange={(e) => setBusinessName(e.target.value)} className="bg-black/30 border-0 text-white w-full" />
                 <Textarea placeholder="Business Description" value={businessDescription} onChange={(e) => setBusinessDescription(e.target.value)} className="bg-black/30 border-0 text-white w-full" />
                 <Input placeholder="Website URL" value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} className="bg-black/30 border-0 text-white w-full" />
-                <Input placeholder="Business Address" value={businessAddress} onChange={(e) => setBusinessAddress(e.target.value)} className="bg-black/30 border-0 text-white w-full" />
-                <Input placeholder="Calendly Link" value={calendlyLink} onChange={(e) => setCalendlyLink(e.target.value)} className="bg-black/30 border-0 text-white w-full" />
 
                 <div className="flex flex-col sm:flex-row gap-2 mt-4">
                   <Button onClick={isConfigSaved ? generateEmbedCode : () => saveConfigToSupabase()} disabled={savingConfig} className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90">
@@ -435,7 +427,11 @@ export default function Builder() {
             {/* Map */}
             <TabsContent value="map">
               <div className="w-full h-64">
-                <MapContainer center={[location.lat, location.lng]} zoom={5} className="w-full h-full rounded-lg">
+                <MapContainer
+                  center={[location?.lat || 20.5937, location?.lng || 78.9629]}
+                  zoom={5}
+                  className="w-full h-full rounded-lg"
+                >
                   <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                   <LocationMarker />
                 </MapContainer>
