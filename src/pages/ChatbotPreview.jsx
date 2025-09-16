@@ -1,20 +1,6 @@
 // src/components/ChatbotPreview.jsx
 import { useState, useRef, useEffect } from "react";
 import axios from "axios";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import L from "leaflet";
-
-// Fix for default marker icon in Leaflet
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-  iconUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  shadowUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-});
 
 export default function ChatbotPreview({ chatbotConfig, user }) {
   const [messages, setMessages] = useState([
@@ -55,8 +41,26 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
         language: chatbotConfig?.language || "en",
       });
 
-      const reply = res.data.reply || "Sorry, I couldn't generate a response.";
-      setMessages([...newMessages, { role: "assistant", content: reply }]);
+      const reply = res.data.reply;
+
+      if (!reply) {
+        setMessages([
+          ...newMessages,
+          { role: "assistant", content: "🤖 (No reply received)" },
+        ]);
+      } else if (reply.type === "button") {
+        // Structured button reply
+        setMessages([
+          ...newMessages,
+          { role: "assistant", type: "button", label: reply.label, url: reply.url },
+        ]);
+      } else {
+        // Fallback to text
+        setMessages([
+          ...newMessages,
+          { role: "assistant", content: reply.text || String(reply) },
+        ]);
+      }
     } catch (error) {
       console.error("Chatbot preview error:", error);
       setMessages([
@@ -75,6 +79,7 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
     }
   };
 
+  // 🔹 Format normal text replies (auto-link URLs)
   const formatText = (text) => {
     if (!text) return "";
     const urlRegex = /(https?:\/\/[^\s]+)/g;
@@ -94,6 +99,27 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
       )
     );
   };
+
+  // 🔹 Render message (text or button)
+  const renderMessage = (msg) => {
+    if (msg.type === "button") {
+      return (
+        <a
+          href={msg.url}
+          target="_blank"
+          rel="noreferrer"
+          style={styles.calendlyButton}
+        >
+          {msg.label || "Open Link"}
+        </a>
+      );
+    }
+    return formatText(msg.content);
+  };
+
+  // 🔹 Generate Google Maps URL
+  const getGoogleMapsLink = (lat, lng) =>
+    `https://www.google.com/maps?q=${lat},${lng}`;
 
   return (
     <div style={styles.chatbotPreview}>
@@ -123,7 +149,22 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
       )}
       {chatbotConfig?.businessAddress && (
         <div style={styles.address}>
-          <strong>Address:</strong> {chatbotConfig.businessAddress}
+          <strong>Address:</strong>{" "}
+          {chatbotConfig.location?.lat && chatbotConfig.location?.lng ? (
+            <a
+              href={getGoogleMapsLink(
+                chatbotConfig.location.lat,
+                chatbotConfig.location.lng
+              )}
+              target="_blank"
+              rel="noreferrer"
+              style={{ color: "#7f5af0", textDecoration: "underline" }}
+            >
+              {chatbotConfig.businessAddress}
+            </a>
+          ) : (
+            chatbotConfig.businessAddress
+          )}
         </div>
       )}
       {chatbotConfig?.calendlyLink && (
@@ -160,35 +201,6 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
         </div>
       )}
 
-      {/* Location Map */}
-      {chatbotConfig?.location?.lat &&
-        chatbotConfig?.location?.lng && (
-          <div
-            style={{
-              height: "200px",
-              margin: "8px 12px",
-              borderRadius: "12px",
-              overflow: "hidden",
-            }}
-          >
-            <MapContainer
-              center={[chatbotConfig.location.lat, chatbotConfig.location.lng]}
-              zoom={13}
-              style={{ width: "100%", height: "100%" }}
-            >
-              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-              <Marker
-                position={[
-                  chatbotConfig.location.lat,
-                  chatbotConfig.location.lng,
-                ]}
-              >
-                <Popup>Business Location</Popup>
-              </Marker>
-            </MapContainer>
-          </div>
-        )}
-
       {/* Chat Messages */}
       <div style={styles.messages}>
         {messages.map((msg, i) => (
@@ -207,7 +219,7 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
                   : styles.assistantBubble),
               }}
             >
-              {formatText(msg.content)}
+              {renderMessage(msg)}
             </div>
           </div>
         ))}
@@ -353,6 +365,16 @@ const styles = {
   assistantBubble: {
     background: "rgba(255,255,255,0.15)",
     color: "#f5f5f5",
+  },
+  calendlyButton: {
+    display: "inline-block",
+    padding: "8px 16px",
+    background: "#16a34a",
+    color: "white",
+    borderRadius: "12px",
+    textDecoration: "none",
+    fontWeight: "bold",
+    transition: "0.2s",
   },
   inputArea: {
     display: "flex",
