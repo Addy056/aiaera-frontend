@@ -17,7 +17,7 @@ import { supabase } from "../supabaseClient.js";
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import ChatbotPreview from "./ChatbotPreview";
+import ChatbotPreview from "../components/ChatbotPreview.jsx";
 
 // Leaflet icon fix
 delete L.Icon.Default.prototype._getIconUrl;
