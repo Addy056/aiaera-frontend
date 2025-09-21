@@ -6,19 +6,16 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
   const [messages, setMessages] = useState([
     {
       role: "assistant",
-      content: `Hi 👋 I'm your AI assistant for ${
-        chatbotConfig?.name || "this business"
-      }. How can I help you today?`,
+      content: `Hi 👋 I'm your AI assistant for ${chatbotConfig?.name || "this business"}. How can I help you today?`,
     },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
-  const API_BASE =
-    import.meta.env.VITE_BACKEND_URL || "http://localhost:5000"; // backend URL
+  const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
-  // 🔹 Scroll to the latest message
+  // Scroll to latest message
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -27,9 +24,9 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
     scrollToBottom();
   }, [messages]);
 
-  // 🔹 Send message to backend API
+  // Send message to backend
   const sendMessage = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || !user) return;
 
     const newMessages = [...messages, { role: "user", content: input }];
     setMessages(newMessages);
@@ -37,19 +34,23 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
     setLoading(true);
 
     try {
-      const res = await axios.post(`${API_BASE}/api/chatbot/preview`, {
-        messages: newMessages,
-        chatbotConfig,
-        userId: user?.id,
-        language: chatbotConfig?.language || "en",
-      });
+      const res = await axios.post(
+        `${API_BASE}/api/chatbot/preview`,
+        {
+          messages: newMessages,
+          chatbotConfig,
+          userId: user.id,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${user?.access_token || ""}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-      const reply = res.data.reply;
-
-      setMessages([
-        ...newMessages,
-        { role: "assistant", content: reply || "🤖 (No reply received)" },
-      ]);
+      const reply = res.data?.reply || "🤖 (No reply received)";
+      setMessages([...newMessages, { role: "assistant", content: reply }]);
     } catch (error) {
       console.error("Chatbot preview error:", error);
       setMessages([
@@ -68,7 +69,6 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
     }
   };
 
-  // 🔹 Format normal text replies (auto-link URLs)
   const formatText = (text) => {
     if (!text) return "";
     const urlRegex = /(https?:\/\/[^\s]+)/g;
@@ -89,16 +89,12 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
     );
   };
 
-  // 🔹 Render message
-  const renderMessage = (msg) => formatText(msg.content);
-
-  // 🔹 Generate Google Maps URL
   const getGoogleMapsLink = (lat, lng) =>
     `https://www.google.com/maps?q=${lat},${lng}`;
 
   return (
     <div style={styles.chatbotPreview}>
-      {/* Header with Logo */}
+      {/* Header */}
       <div style={styles.header}>
         {chatbotConfig?.logoUrl && (
           <img src={chatbotConfig.logoUrl} alt="Logo" style={styles.logo} />
@@ -106,11 +102,9 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
         <span>{chatbotConfig?.name || "AI Chatbot"} Preview</span>
       </div>
 
-      {/* Business Description, Website, Address, Appointment */}
+      {/* Business Info */}
       {chatbotConfig?.businessDescription && (
-        <div style={styles.businessInfo}>
-          {chatbotConfig.businessDescription}
-        </div>
+        <div style={styles.businessInfo}>{chatbotConfig.businessDescription}</div>
       )}
       {chatbotConfig?.websiteUrl && (
         <a
@@ -189,12 +183,10 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
             <div
               style={{
                 ...styles.bubble,
-                ...(msg.role === "user"
-                  ? styles.userBubble
-                  : styles.assistantBubble),
+                ...(msg.role === "user" ? styles.userBubble : styles.assistantBubble),
               }}
             >
-              {renderMessage(msg)}
+              {formatText(msg.content)}
             </div>
           </div>
         ))}
@@ -222,9 +214,7 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
 
       {/* Embed Code Section */}
       <div style={styles.embedSection}>
-        <label
-          style={{ marginBottom: "6px", color: "white", fontWeight: "bold" }}
-        >
+        <label style={{ marginBottom: "6px", color: "white", fontWeight: "bold" }}>
           Embed this chatbot on your website:
         </label>
         <textarea
@@ -340,16 +330,6 @@ const styles = {
   assistantBubble: {
     background: "rgba(255,255,255,0.15)",
     color: "#f5f5f5",
-  },
-  calendlyButton: {
-    display: "inline-block",
-    padding: "8px 16px",
-    background: "#16a34a",
-    color: "white",
-    borderRadius: "12px",
-    textDecoration: "none",
-    fontWeight: "bold",
-    transition: "0.2s",
   },
   inputArea: {
     display: "flex",

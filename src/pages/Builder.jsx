@@ -22,14 +22,21 @@ import ChatbotPreview from "../components/ChatbotPreview.jsx";
 // Leaflet icon fix
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+  iconRetinaUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+  iconUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
 export default function Builder() {
   const [messages, setMessages] = useState([
-    { id: uuidv4(), sender: "bot", text: "👋 Hi! I’m your AIAERA assistant. Let’s start building." },
+    {
+      id: uuidv4(),
+      sender: "bot",
+      text: "👋 Hi! I’m your AIAERA assistant. Let’s start building.",
+    },
   ]);
   const [input, setInput] = useState("");
   const [businessName, setBusinessName] = useState("");
@@ -103,6 +110,7 @@ export default function Builder() {
     return () => { mounted = false; };
   }, []);
 
+  // Scroll chat to bottom
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loadingReply]);
@@ -135,6 +143,7 @@ export default function Builder() {
           .eq("id", chatbotId)
           .eq("user_id", user.id);
       } else {
+        // Check subscription before creating new chatbot
         const { data: subscription } = await supabase
           .from("user_subscriptions")
           .select("expires_at")
@@ -282,8 +291,8 @@ export default function Builder() {
 
       const res = await axios.post(
         `${API_BASE}/api/chatbot/preview`,
-        { userId: user.id, chatbotConfig, messages: augmentedMessages, retrievedData: data },
-        { headers: { Authorization: `Bearer ${authToken}` } }
+        { chatbotConfig, messages: augmentedMessages, retrievedData: data },
+        { headers: { Authorization: `Bearer ${authToken}`, "Content-Type": "application/json" } }
       );
 
       let botReply = res.data?.reply || "🤖 (No reply received)";
@@ -304,7 +313,11 @@ export default function Builder() {
     }
     try {
       pushMessage("bot", "⚡ Retraining your chatbot...");
-      const res = await axios.post(`${API_BASE}/api/chatbot/retrain`, { chatbotId, userId: user.id }, { headers: { Authorization: `Bearer ${authToken}` } });
+      const res = await axios.post(
+        `${API_BASE}/api/chatbot/retrain`,
+        { chatbotId },
+        { headers: { Authorization: `Bearer ${authToken}`, "Content-Type": "application/json" } }
+      );
       pushMessage("bot", "✅ Chatbot retraining started successfully!");
       console.log("Retrain response:", res.data);
     } catch (err) {
@@ -332,7 +345,12 @@ export default function Builder() {
   return (
     <div className="flex flex-col lg:flex-row gap-6 p-4 sm:p-6 h-full bg-gradient-to-br from-[#0f0f17] via-[#1a1a2e] to-[#0f0f17] min-h-screen">
       {/* Left Panel */}
-      <motion.div initial={{ x: -40, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.6 }} className="lg:w-1/2 w-full">
+      <motion.div
+        initial={{ x: -40, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        transition={{ duration: 0.6 }}
+        className="lg:w-1/2 w-full"
+      >
         <Card className="backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl rounded-2xl p-4 sm:p-6">
           <h2 className="text-xl sm:text-2xl font-bold text-white mb-4">⚡ Build Your Chatbot</h2>
           <Tabs defaultValue="business">
@@ -347,8 +365,18 @@ export default function Builder() {
             {/* Business */}
             <TabsContent value="business">
               <div className="space-y-4">
-                <Input placeholder="Business Name" value={businessName} onChange={(e) => setBusinessName(e.target.value)} className="bg-black/30 border-0 text-white w-full" />
-                <Textarea placeholder="Business Description" value={businessDescription} onChange={(e) => setBusinessDescription(e.target.value)} className="bg-black/30 border-0 text-white w-full" />
+                <Input
+                  placeholder="Business Name"
+                  value={businessName}
+                  onChange={(e) => setBusinessName(e.target.value)}
+                  className="bg-black/30 border-0 text-white w-full"
+                />
+                <Textarea
+                  placeholder="Business Description"
+                  value={businessDescription}
+                  onChange={(e) => setBusinessDescription(e.target.value)}
+                  className="bg-black/30 border-0 text-white w-full"
+                />
 
                 {isConfigSaved && (
                   <Button onClick={retrainChatbot} className="w-full bg-green-500 hover:opacity-90">
@@ -361,30 +389,58 @@ export default function Builder() {
             {/* Files */}
             <TabsContent value="files">
               <div className="space-y-4">
-                <input ref={fileInputRef} type="file" onChange={handleFileChange} className="w-full text-sm text-gray-200" />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  onChange={handleFileChange}
+                  className="w-full text-sm text-gray-200"
+                />
                 {uploading && <p className="text-sm text-gray-300">Uploading...</p>}
-                {files.length === 0 ? <p className="text-sm text-gray-300">No files uploaded yet.</p> : files.map((f) => (
-                  <div key={f.path} className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-white/5 p-3 rounded-lg gap-2">
-                    <div className="flex flex-col sm:flex-row items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-md flex items-center justify-center text-xs font-semibold">
-                        {f.name[0]?.toUpperCase() ?? "F"}
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium">{f.name}</div>
-                        <div className="text-xs text-gray-300">{f.uploaded_at ? new Date(f.uploaded_at).toLocaleString() : ""}</div>
-                        {f.extractedContent?.text && (
-                          <div className="mt-2 text-xs text-gray-200 max-h-32 overflow-y-auto p-2 bg-white/5 rounded-md">
-                            <strong>Preview:</strong> {f.extractedContent.text.slice(0, 200)}...
+                {files.length === 0 ? (
+                  <p className="text-sm text-gray-300">No files uploaded yet.</p>
+                ) : (
+                  files.map((f) => (
+                    <div
+                      key={f.path}
+                      className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-white/5 p-3 rounded-lg gap-2"
+                    >
+                      <div className="flex flex-col sm:flex-row items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-md flex items-center justify-center text-xs font-semibold">
+                          {f.name[0]?.toUpperCase() ?? "F"}
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium">{f.name}</div>
+                          <div className="text-xs text-gray-300">
+                            {f.uploaded_at ? new Date(f.uploaded_at).toLocaleString() : ""}
                           </div>
+                          {f.extractedContent?.text && (
+                            <div className="mt-2 text-xs text-gray-200 max-h-32 overflow-y-auto p-2 bg-white/5 rounded-md">
+                              <strong>Preview:</strong> {f.extractedContent.text.slice(0, 200)}...
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 mt-2 sm:mt-0">
+                        {f.publicUrl && (
+                          <a
+                            href={f.publicUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-sm underline text-purple-200"
+                          >
+                            Open
+                          </a>
                         )}
+                        <button
+                          onClick={() => handleDeleteFile(f.path)}
+                          className="text-sm text-red-400 hover:underline"
+                        >
+                          Delete
+                        </button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 mt-2 sm:mt-0">
-                      {f.publicUrl && <a href={f.publicUrl} target="_blank" rel="noreferrer" className="text-sm underline text-purple-200">Open</a>}
-                      <button onClick={() => handleDeleteFile(f.path)} className="text-sm text-red-400 hover:underline">Delete</button>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </TabsContent>
 
@@ -413,7 +469,9 @@ export default function Builder() {
                   <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                   <LocationMarker />
                 </MapContainer>
-                <p className="text-sm text-gray-300 mt-2">Click on the map to select your business location.</p>
+                <p className="text-sm text-gray-300 mt-2">
+                  Click on the map to select your business location.
+                </p>
               </div>
             </TabsContent>
           </Tabs>
@@ -421,9 +479,25 @@ export default function Builder() {
       </motion.div>
 
       {/* Right Panel: Chat Preview */}
-      <motion.div initial={{ x: 40, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.6 }} className="lg:w-1/2 w-full flex flex-col h-full">
+      <motion.div
+        initial={{ x: 40, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        transition={{ duration: 0.6 }}
+        className="lg:w-1/2 w-full flex flex-col h-full"
+      >
         <Card className="backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl rounded-2xl flex-1 p-4 flex flex-col">
-          <ChatbotPreview messages={messages} input={input} setInput={setInput} sendMessage={sendMessage} loadingReply={loadingReply} chatEndRef={chatEndRef} />
+          <ChatbotPreview
+            chatbotConfig={{
+              id: chatbotId,
+              name: businessName,
+              businessDescription,
+              files,
+              logoUrl,
+              location: hasSelectedLocation ? location : null,
+            }}
+            user={user}
+          />
+          <div ref={chatEndRef} />
         </Card>
       </motion.div>
     </div>
