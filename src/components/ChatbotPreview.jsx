@@ -15,6 +15,9 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
+  const API_BASE =
+    import.meta.env.VITE_BACKEND_URL || "http://localhost:5000"; // backend URL
+
   // 🔹 Scroll to the latest message
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -34,7 +37,7 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
     setLoading(true);
 
     try {
-      const res = await axios.post("/api/chatbot/preview", {
+      const res = await axios.post(`${API_BASE}/api/chatbot/preview`, {
         messages: newMessages,
         chatbotConfig,
         userId: user?.id,
@@ -43,24 +46,10 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
 
       const reply = res.data.reply;
 
-      if (!reply) {
-        setMessages([
-          ...newMessages,
-          { role: "assistant", content: "🤖 (No reply received)" },
-        ]);
-      } else if (reply.type === "button") {
-        // Structured button reply
-        setMessages([
-          ...newMessages,
-          { role: "assistant", type: "button", label: reply.label, url: reply.url },
-        ]);
-      } else {
-        // Fallback to text
-        setMessages([
-          ...newMessages,
-          { role: "assistant", content: reply.text || String(reply) },
-        ]);
-      }
+      setMessages([
+        ...newMessages,
+        { role: "assistant", content: reply || "🤖 (No reply received)" },
+      ]);
     } catch (error) {
       console.error("Chatbot preview error:", error);
       setMessages([
@@ -100,22 +89,8 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
     );
   };
 
-  // 🔹 Render message (text or button)
-  const renderMessage = (msg) => {
-    if (msg.type === "button") {
-      return (
-        <a
-          href={msg.url}
-          target="_blank"
-          rel="noreferrer"
-          style={styles.calendlyButton}
-        >
-          {msg.label || "Open Link"}
-        </a>
-      );
-    }
-    return formatText(msg.content);
-  };
+  // 🔹 Render message
+  const renderMessage = (msg) => formatText(msg.content);
 
   // 🔹 Generate Google Maps URL
   const getGoogleMapsLink = (lat, lng) =>
@@ -254,9 +229,9 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
         </label>
         <textarea
           readOnly
-          value={`<div id="aiaera-chatbot"></div>\n<script src="https://yourapp.com/api/embed/${
-            chatbotConfig?.id || "demo"
-          }.js" async></script>`}
+          value={`<div id="aiaera-chatbot"></div>\n<script src="${
+            API_BASE.replace(/\/$/, "")
+          }/api/embed/${chatbotConfig?.id || "demo"}.js" async></script>`}
           style={styles.embedTextarea}
         />
       </div>
