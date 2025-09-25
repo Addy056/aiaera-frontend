@@ -1,6 +1,7 @@
 // src/components/ChatbotPreview.jsx
 import { useState, useRef, useEffect } from "react";
 import axios from "axios";
+import { supabase } from "../supabaseClient"; // ✅ use Supabase for session token
 
 export default function ChatbotPreview({ chatbotConfig, user }) {
   const [messages, setMessages] = useState([
@@ -34,6 +35,15 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
     setLoading(true);
 
     try {
+      // ✅ fetch fresh Supabase session token
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
+      if (sessionError) throw sessionError;
+      if (!session) throw new Error("No active Supabase session found");
+
       const res = await axios.post(
         `${API_BASE}/api/chatbot/preview`,
         {
@@ -43,7 +53,7 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
         },
         {
           headers: {
-            Authorization: `Bearer ${user?.access_token || ""}`,
+            Authorization: `Bearer ${session.access_token}`, // ✅ correct token
             "Content-Type": "application/json",
           },
         }
@@ -55,7 +65,10 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
       console.error("Chatbot preview error:", error);
       setMessages([
         ...newMessages,
-        { role: "assistant", content: "⚠️ Error: Failed to fetch reply." },
+        {
+          role: "assistant",
+          content: "⚠️ Error: Failed to fetch reply.",
+        },
       ]);
     } finally {
       setLoading(false);
@@ -104,7 +117,9 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
 
       {/* Business Info */}
       {chatbotConfig?.businessDescription && (
-        <div style={styles.businessInfo}>{chatbotConfig.businessDescription}</div>
+        <div style={styles.businessInfo}>
+          {chatbotConfig.businessDescription}
+        </div>
       )}
       {chatbotConfig?.websiteUrl && (
         <a
@@ -177,13 +192,17 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
             key={i}
             style={{
               ...styles.message,
-              ...(msg.role === "user" ? styles.userMsg : styles.assistantMsg),
+              ...(msg.role === "user"
+                ? styles.userMsg
+                : styles.assistantMsg),
             }}
           >
             <div
               style={{
                 ...styles.bubble,
-                ...(msg.role === "user" ? styles.userBubble : styles.assistantBubble),
+                ...(msg.role === "user"
+                  ? styles.userBubble
+                  : styles.assistantBubble),
               }}
             >
               {formatText(msg.content)}
@@ -192,7 +211,9 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
         ))}
         {loading && (
           <div style={{ ...styles.message, ...styles.assistantMsg }}>
-            <div style={{ ...styles.bubble, ...styles.assistantBubble }}>...</div>
+            <div style={{ ...styles.bubble, ...styles.assistantBubble }}>
+              ...
+            </div>
           </div>
         )}
         <div ref={messagesEndRef} />
@@ -214,7 +235,9 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
 
       {/* Embed Code Section */}
       <div style={styles.embedSection}>
-        <label style={{ marginBottom: "6px", color: "white", fontWeight: "bold" }}>
+        <label
+          style={{ marginBottom: "6px", color: "white", fontWeight: "bold" }}
+        >
           Embed this chatbot on your website:
         </label>
         <textarea
