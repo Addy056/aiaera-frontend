@@ -20,29 +20,38 @@ export default function PublicChatbot() {
         if (data.success && data.data) {
           const chatbot = data.data;
 
+          let config = {};
+          try {
+            config =
+              typeof chatbot.config === "string"
+                ? JSON.parse(chatbot.config)
+                : chatbot.config || {};
+          } catch {
+            config = {};
+          }
+
           const normalizedConfig = {
             id: chatbot.id,
             name: chatbot.name || "AI Chatbot",
             businessDescription: chatbot.business_info || "",
-            websiteUrl: chatbot.config?.website_url || "",
-            files: Array.isArray(chatbot.config?.files) ? chatbot.config.files : [],
-            logoUrl: chatbot.config?.logo_url || null,
+            websiteUrl: config.website_url || "",
+            files: Array.isArray(config.files) ? config.files : [],
+            logoUrl: config.logo_url || null,
             businessAddress: chatbot.businessAddress || null,
             calendlyLink: chatbot.calendlyLink || null,
-            themeColors: chatbot.config?.themeColors || {
+            themeColors: config.themeColors || {
               background: "#0f0f17",
               userBubble: "#7f5af0",
               botBubble: "#6b21a8",
               text: "#ffffff",
             },
             location: {
-              lat: chatbot.config?.location?.lat || null,
-              lng: chatbot.config?.location?.lng || null,
+              lat: config.location?.lat || null,
+              lng: config.location?.lng || null,
               googleMapsLink:
-                chatbot.config?.location?.googleMapsLink ||
-                (chatbot.config?.location?.lat &&
-                chatbot.config?.location?.lng
-                  ? `https://www.google.com/maps/search/?api=1&query=${chatbot.config.location.lat},${chatbot.config.location.lng}`
+                config.location?.googleMapsLink ||
+                (config.location?.lat && config.location?.lng
+                  ? `https://www.google.com/maps/search/?api=1&query=${config.location.lat},${config.location.lng}`
                   : null),
             },
           };
@@ -50,9 +59,11 @@ export default function PublicChatbot() {
           setChatbotConfig(normalizedConfig);
         } else {
           console.error("Chatbot fetch error:", data.error || "No chatbot found");
+          setChatbotConfig(null);
         }
       } catch (err) {
         console.error("Failed to fetch chatbot:", err);
+        setChatbotConfig(null);
       } finally {
         setLoading(false);
       }
@@ -62,11 +73,14 @@ export default function PublicChatbot() {
   }, [id]);
 
   if (loading)
-    return <div className="text-white text-center mt-8">Loading chatbot...</div>;
+    return (
+      <div className="text-white text-center mt-8">Loading chatbot...</div>
+    );
   if (!chatbotConfig)
-    return <div className="text-red-400 text-center mt-8">Chatbot not found.</div>;
+    return (
+      <div className="text-red-400 text-center mt-8">Chatbot not found.</div>
+    );
 
-  // ✅ Add full height and flex so iframe can scale
   return (
     <div
       className="w-full h-full min-h-screen bg-gradient-to-br from-[#0f0f17] via-[#1a1a2e] to-[#0f0f17] flex justify-center items-start p-4"
@@ -91,11 +105,15 @@ export default function PublicChatbot() {
         )}
 
         {/* Business Name */}
-        <h1 className="text-3xl font-bold text-white text-center">{chatbotConfig.name}</h1>
+        <h1 className="text-3xl font-bold text-white text-center">
+          {chatbotConfig.name}
+        </h1>
 
         {/* Business Description */}
         {chatbotConfig.businessDescription && (
-          <p className="text-white/80 text-center">{chatbotConfig.businessDescription}</p>
+          <p className="text-white/80 text-center">
+            {chatbotConfig.businessDescription}
+          </p>
         )}
 
         {/* Website Link */}
@@ -150,15 +168,15 @@ export default function PublicChatbot() {
           <div className="bg-white/10 p-4 rounded-xl space-y-2">
             <h3 className="text-white font-semibold">Files:</h3>
             <ul className="list-disc list-inside text-white/80">
-              {chatbotConfig.files.map((file) => (
-                <li key={file.publicUrl}>
+              {chatbotConfig.files.map((file, idx) => (
+                <li key={file.publicUrl || file.name || idx}>
                   <a
-                    href={file.publicUrl}
+                    href={file.publicUrl || "#"}
                     target="_blank"
                     rel="noreferrer"
                     className="underline text-purple-300"
                   >
-                    {file.name}
+                    {file.name || "File"}
                   </a>
                 </li>
               ))}
