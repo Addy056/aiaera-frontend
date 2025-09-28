@@ -1,7 +1,7 @@
 // src/components/ChatbotPreview.jsx
 import { useState, useRef, useEffect } from "react";
 import axios from "axios";
-import { supabase } from "../supabaseClient"; // ✅ use Supabase for session token
+import { supabase } from "../supabaseClient";
 
 export default function ChatbotPreview({ chatbotConfig, user }) {
   const [messages, setMessages] = useState([
@@ -13,6 +13,14 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
+
+  // Use colors passed from Builder
+  const themeColors = chatbotConfig?.themeColors || {
+    background: "#1a1a2e",
+    userBubble: "#7f5af0",
+    botBubble: "#6b21a8",
+    text: "#ffffff",
+  };
 
   const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
@@ -35,13 +43,7 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
     setLoading(true);
 
     try {
-      // ✅ fetch fresh Supabase session token
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession();
-
-      if (sessionError) throw sessionError;
+      const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("No active Supabase session found");
 
       const res = await axios.post(
@@ -53,7 +55,7 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
         },
         {
           headers: {
-            Authorization: `Bearer ${session.access_token}`, // ✅ correct token
+            Authorization: `Bearer ${session.access_token}`,
             "Content-Type": "application/json",
           },
         }
@@ -65,10 +67,7 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
       console.error("Chatbot preview error:", error);
       setMessages([
         ...newMessages,
-        {
-          role: "assistant",
-          content: "⚠️ Error: Failed to fetch reply.",
-        },
+        { role: "assistant", content: "⚠️ Error: Failed to fetch reply." },
       ]);
     } finally {
       setLoading(false);
@@ -92,7 +91,7 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
           href={part}
           target="_blank"
           rel="noopener noreferrer"
-          style={{ color: "#7f5af0", textDecoration: "underline" }}
+          style={{ color: themeColors.userBubble, textDecoration: "underline" }}
         >
           {part}
         </a>
@@ -106,153 +105,173 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
     `https://www.google.com/maps?q=${lat},${lng}`;
 
   return (
-    <div style={styles.chatbotPreview}>
-      {/* Header */}
-      <div style={styles.header}>
-        {chatbotConfig?.logoUrl && (
-          <img src={chatbotConfig.logoUrl} alt="Logo" style={styles.logo} />
-        )}
-        <span>{chatbotConfig?.name || "AI Chatbot"} Preview</span>
-      </div>
-
-      {/* Business Info */}
-      {chatbotConfig?.businessDescription && (
-        <div style={styles.businessInfo}>
-          {chatbotConfig.businessDescription}
-        </div>
-      )}
-      {chatbotConfig?.websiteUrl && (
-        <a
-          href={chatbotConfig.websiteUrl}
-          target="_blank"
-          rel="noreferrer"
-          style={styles.websiteLink}
+    <div style={{ ...styles.wrapper, background: themeColors.background }}>
+      <div style={styles.chatbotPreview}>
+        {/* Header */}
+        <div
+          style={{
+            ...styles.header,
+            background: `linear-gradient(135deg, ${themeColors.userBubble}, ${darkenColor(themeColors.userBubble, 20)})`,
+          }}
         >
-          Visit Website
-        </a>
-      )}
-      {chatbotConfig?.businessAddress && (
-        <div style={styles.address}>
-          <strong>Address:</strong>{" "}
-          {chatbotConfig.location?.lat && chatbotConfig.location?.lng ? (
-            <a
-              href={getGoogleMapsLink(
-                chatbotConfig.location.lat,
-                chatbotConfig.location.lng
-              )}
-              target="_blank"
-              rel="noreferrer"
-              style={{ color: "#7f5af0", textDecoration: "underline" }}
-            >
-              {chatbotConfig.businessAddress}
-            </a>
-          ) : (
-            chatbotConfig.businessAddress
+          {chatbotConfig?.logoUrl && (
+            <img src={chatbotConfig.logoUrl} alt="Logo" style={styles.logo} />
           )}
+          {/* Removed business name */}
         </div>
-      )}
-      {chatbotConfig?.calendlyLink && (
-        <div style={styles.appointment}>
+
+        {/* Business Info */}
+        {chatbotConfig?.businessDescription && (
+          <div style={styles.businessInfo}>{chatbotConfig.businessDescription}</div>
+        )}
+        {chatbotConfig?.websiteUrl && (
           <a
-            href={chatbotConfig.calendlyLink}
+            href={chatbotConfig.websiteUrl}
             target="_blank"
             rel="noreferrer"
-            style={{ color: "#7f5af0", textDecoration: "underline" }}
+            style={{ ...styles.websiteLink, color: themeColors.userBubble }}
           >
-            📅 Book a Call
+            Visit Website
           </a>
-        </div>
-      )}
-
-      {/* Uploaded Files */}
-      {chatbotConfig?.files?.length > 0 && (
-        <div style={styles.filesContainer}>
-          <strong>Files:</strong>
-          <ul style={styles.fileList}>
-            {chatbotConfig.files.map((f) => (
-              <li key={f.publicUrl}>
-                <a
-                  href={f.publicUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={styles.fileLink}
-                >
-                  {f.name}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* Chat Messages */}
-      <div style={styles.messages}>
-        {messages.map((msg, i) => (
-          <div
-            key={i}
-            style={{
-              ...styles.message,
-              ...(msg.role === "user"
-                ? styles.userMsg
-                : styles.assistantMsg),
-            }}
-          >
-            <div
-              style={{
-                ...styles.bubble,
-                ...(msg.role === "user"
-                  ? styles.userBubble
-                  : styles.assistantBubble),
-              }}
-            >
-              {formatText(msg.content)}
-            </div>
-          </div>
-        ))}
-        {loading && (
-          <div style={{ ...styles.message, ...styles.assistantMsg }}>
-            <div style={{ ...styles.bubble, ...styles.assistantBubble }}>
-              ...
-            </div>
+        )}
+        {chatbotConfig?.businessAddress && (
+          <div style={styles.address}>
+            <strong>Address:</strong>{" "}
+            {chatbotConfig.location?.lat && chatbotConfig.location?.lng ? (
+              <a
+                href={getGoogleMapsLink(chatbotConfig.location.lat, chatbotConfig.location.lng)}
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: themeColors.userBubble, textDecoration: "underline" }}
+              >
+                {chatbotConfig.businessAddress}
+              </a>
+            ) : (
+              chatbotConfig.businessAddress
+            )}
           </div>
         )}
-        <div ref={messagesEndRef} />
-      </div>
+        {chatbotConfig?.calendlyLink && (
+          <div style={styles.appointment}>
+            <a
+              href={chatbotConfig.calendlyLink}
+              target="_blank"
+              rel="noreferrer"
+              style={{ color: themeColors.userBubble, textDecoration: "underline" }}
+            >
+              📅 Book a Call
+            </a>
+          </div>
+        )}
 
-      {/* Input Area */}
-      <div style={styles.inputArea}>
-        <textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Type a message..."
-          style={styles.textarea}
-        />
-        <button onClick={sendMessage} disabled={loading} style={styles.button}>
-          Send
-        </button>
-      </div>
+        {/* Uploaded Files */}
+        {chatbotConfig?.files?.length > 0 && (
+          <div style={styles.filesContainer}>
+            <strong>Files:</strong>
+            <ul style={styles.fileList}>
+              {chatbotConfig.files.map((f) => (
+                <li key={f.publicUrl}>
+                  <a
+                    href={f.publicUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ ...styles.fileLink, color: themeColors.userBubble }}
+                  >
+                    {f.name}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
-      {/* Embed Code Section */}
-      <div style={styles.embedSection}>
-        <label
-          style={{ marginBottom: "6px", color: "white", fontWeight: "bold" }}
-        >
-          Embed this chatbot on your website:
-        </label>
-        <textarea
-          readOnly
-          value={`<div id="aiaera-chatbot"></div>\n<script src="${
-            API_BASE.replace(/\/$/, "")
-          }/api/embed/${chatbotConfig?.id || "demo"}.js" async></script>`}
-          style={styles.embedTextarea}
-        />
+        {/* Chat Messages */}
+        <div style={styles.messages}>
+          {messages.map((msg, i) => (
+            <div
+              key={i}
+              style={{
+                ...styles.message,
+                ...(msg.role === "user" ? styles.userMsg : styles.assistantMsg),
+              }}
+            >
+              <div
+                style={{
+                  ...styles.bubble,
+                  backgroundColor: msg.role === "user" ? themeColors.userBubble : themeColors.botBubble,
+                  color: themeColors.text,
+                }}
+              >
+                {formatText(msg.content)}
+              </div>
+            </div>
+          ))}
+          {loading && (
+            <div style={{ ...styles.message, ...styles.assistantMsg }}>
+              <div style={{ ...styles.bubble, backgroundColor: themeColors.botBubble }}>...</div>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input Area */}
+        <div style={styles.inputArea}>
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Type a message..."
+            style={{ ...styles.textarea, color: themeColors.text }}
+          />
+          <button
+            onClick={sendMessage}
+            disabled={loading}
+            style={{ ...styles.button, background: themeColors.userBubble }}
+          >
+            Send
+          </button>
+        </div>
+
+        {/* Embed Code */}
+        <div style={styles.embedSection}>
+          <label style={{ marginBottom: "6px", color: "white", fontWeight: "bold" }}>
+            Embed this chatbot on your website:
+          </label>
+          <textarea
+            readOnly
+            value={`<div id="aiaera-chatbot"></div>\n<script src="${API_BASE.replace(/\/$/, "")}/api/embed/${chatbotConfig?.id || "demo"}.js" async></script>`}
+            style={styles.embedTextarea}
+          />
+        </div>
       </div>
     </div>
   );
 }
 
+// --- Helper to darken color ---
+function darkenColor(hex, percent) {
+  const num = parseInt(hex.replace("#", ""), 16);
+  const amt = Math.round(2.55 * percent);
+  const R = (num >> 16) - amt;
+  const G = ((num >> 8) & 0x00ff) - amt;
+  const B = (num & 0x0000ff) - amt;
+  return `#${(
+    0x1000000 +
+    (R < 0 ? 0 : R > 255 ? 255 : R) * 0x10000 +
+    (G < 0 ? 0 : G > 255 ? 255 : G) * 0x100 +
+    (B < 0 ? 0 : B > 255 ? 255 : B)
+  )
+    .toString(16)
+    .slice(1)}`;
+}
+
 const styles = {
+  wrapper: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "16px",
+    height: "100%",
+  },
   chatbotPreview: {
     display: "flex",
     flexDirection: "column",
@@ -271,131 +290,26 @@ const styles = {
     padding: "12px",
     fontWeight: "bold",
     textAlign: "center",
-    background: "linear-gradient(135deg, #7f5af0, #6c3ef8)",
     color: "white",
     borderRadius: "16px 16px 0 0",
     justifyContent: "center",
   },
-  logo: {
-    height: "36px",
-    width: "36px",
-    objectFit: "contain",
-    borderRadius: "6px",
-    boxShadow: "0 2px 10px rgba(0,0,0,0.3)",
-  },
-  businessInfo: {
-    color: "white",
-    textAlign: "center",
-    padding: "6px 12px",
-  },
-  websiteLink: {
-    color: "#7f5af0",
-    textDecoration: "underline",
-    textAlign: "center",
-    display: "block",
-    marginBottom: "6px",
-  },
-  address: {
-    color: "white",
-    textAlign: "center",
-    padding: "4px 12px",
-    fontStyle: "italic",
-  },
-  appointment: {
-    textAlign: "center",
-    margin: "4px 0",
-  },
-  filesContainer: {
-    background: "rgba(255,255,255,0.1)",
-    padding: "8px",
-    borderRadius: "12px",
-    margin: "8px 12px",
-  },
-  fileList: {
-    listStyleType: "disc",
-    paddingLeft: "16px",
-    color: "white",
-  },
-  fileLink: {
-    color: "#a78bfa",
-    textDecoration: "underline",
-  },
-  messages: {
-    flex: 1,
-    overflowY: "auto",
-    padding: "12px",
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-  },
-  message: {
-    display: "flex",
-    maxWidth: "80%",
-  },
-  userMsg: {
-    alignSelf: "flex-end",
-    justifyContent: "flex-end",
-  },
-  assistantMsg: {
-    alignSelf: "flex-start",
-    justifyContent: "flex-start",
-  },
-  bubble: {
-    padding: "10px 14px",
-    borderRadius: "18px",
-    backdropFilter: "blur(10px)",
-    wordBreak: "break-word",
-  },
-  userBubble: {
-    background: "#7f5af0",
-    color: "white",
-  },
-  assistantBubble: {
-    background: "rgba(255,255,255,0.15)",
-    color: "#f5f5f5",
-  },
-  inputArea: {
-    display: "flex",
-    gap: "8px",
-    padding: "12px",
-    borderTop: "1px solid rgba(255,255,255,0.1)",
-  },
-  textarea: {
-    flex: 1,
-    resize: "none",
-    padding: "10px",
-    borderRadius: "12px",
-    border: "none",
-    outline: "none",
-    fontSize: "14px",
-    background: "rgba(255,255,255,0.1)",
-    color: "white",
-  },
-  button: {
-    background: "#7f5af0",
-    color: "white",
-    border: "none",
-    padding: "0 18px",
-    borderRadius: "12px",
-    cursor: "pointer",
-    fontWeight: "bold",
-    transition: "0.2s",
-  },
-  embedSection: {
-    margin: "12px",
-    display: "flex",
-    flexDirection: "column",
-  },
-  embedTextarea: {
-    width: "100%",
-    height: "80px",
-    borderRadius: "12px",
-    border: "none",
-    padding: "10px",
-    resize: "none",
-    background: "rgba(255,255,255,0.1)",
-    color: "white",
-    fontFamily: "monospace",
-    fontSize: "12px",
-  },
+  logo: { height: "36px", width: "36px", objectFit: "contain", borderRadius: "6px", boxShadow: "0 2px 10px rgba(0,0,0,0.3)" },
+  businessInfo: { color: "white", textAlign: "center", padding: "6px 12px" },
+  websiteLink: { textDecoration: "underline", textAlign: "center", display: "block", marginBottom: "6px" },
+  address: { color: "white", textAlign: "center", padding: "4px 12px", fontStyle: "italic" },
+  appointment: { textAlign: "center", margin: "4px 0" },
+  filesContainer: { background: "rgba(255,255,255,0.1)", padding: "8px", borderRadius: "12px", margin: "8px 12px" },
+  fileList: { listStyleType: "disc", paddingLeft: "16px", color: "white" },
+  fileLink: { textDecoration: "underline" },
+  messages: { flex: 1, overflowY: "auto", padding: "12px", display: "flex", flexDirection: "column", gap: "8px" },
+  message: { display: "flex", maxWidth: "80%" },
+  userMsg: { alignSelf: "flex-end", justifyContent: "flex-end" },
+  assistantMsg: { alignSelf: "flex-start", justifyContent: "flex-start" },
+  bubble: { padding: "10px 14px", borderRadius: "18px", backdropFilter: "blur(10px)", wordBreak: "break-word" },
+  inputArea: { display: "flex", gap: "8px", padding: "12px", borderTop: "1px solid rgba(255,255,255,0.1)" },
+  textarea: { flex: 1, resize: "none", padding: "10px", borderRadius: "12px", border: "none", outline: "none", fontSize: "14px", background: "rgba(255,255,255,0.1)" },
+  button: { color: "white", border: "none", padding: "0 18px", borderRadius: "12px", cursor: "pointer", fontWeight: "bold", transition: "0.2s" },
+  embedSection: { margin: "12px", display: "flex", flexDirection: "column" },
+  embedTextarea: { width: "100%", height: "80px", borderRadius: "12px", border: "none", padding: "10px", resize: "none", background: "rgba(255,255,255,0.1)", color: "white", fontFamily: "monospace", fontSize: "12px" },
 };
