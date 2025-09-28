@@ -7,7 +7,7 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
   const [messages, setMessages] = useState([
     {
       role: "assistant",
-      content: `Hi 👋 I'm your AI assistant for ${chatbotConfig?.name || "this business"}. How can I help you today?`,
+      content: `Hi 👋 I'm your AI assistant. How can I help you today?`,
     },
   ]);
   const [input, setInput] = useState("");
@@ -151,18 +151,6 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
             )}
           </div>
         )}
-        {chatbotConfig?.calendlyLink && (
-          <div style={styles.appointment}>
-            <a
-              href={chatbotConfig.calendlyLink}
-              target="_blank"
-              rel="noreferrer"
-              style={{ color: themeColors.userBubble, textDecoration: "underline" }}
-            >
-              📅 Book a Call
-            </a>
-          </div>
-        )}
 
         {/* Uploaded Files */}
         {chatbotConfig?.files?.length > 0 && (
@@ -298,7 +286,6 @@ const styles = {
   businessInfo: { color: "white", textAlign: "center", padding: "6px 12px" },
   websiteLink: { textDecoration: "underline", textAlign: "center", display: "block", marginBottom: "6px" },
   address: { color: "white", textAlign: "center", padding: "4px 12px", fontStyle: "italic" },
-  appointment: { textAlign: "center", margin: "4px 0" },
   filesContainer: { background: "rgba(255,255,255,0.1)", padding: "8px", borderRadius: "12px", margin: "8px 12px" },
   fileList: { listStyleType: "disc", paddingLeft: "16px", color: "white" },
   fileLink: { textDecoration: "underline" },
