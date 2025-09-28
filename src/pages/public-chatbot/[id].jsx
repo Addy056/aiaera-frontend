@@ -12,37 +12,38 @@ export default function PublicChatbot() {
     const fetchChatbot = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/chatbot/public/${id}`);
+        const res = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/api/chatbot/public/${id}`
+        );
         const data = await res.json();
 
         if (data.success && data.data) {
           const chatbot = data.data;
 
-          // ✅ Normalize config fields safely
           const normalizedConfig = {
             id: chatbot.id,
             name: chatbot.name || "AI Chatbot",
             businessDescription: chatbot.business_info || "",
-            websiteUrl: chatbot.websiteUrl || "",
+            websiteUrl: chatbot.config?.website_url || "",
             files: Array.isArray(chatbot.config?.files) ? chatbot.config.files : [],
             logoUrl: chatbot.config?.logo_url || null,
             businessAddress: chatbot.businessAddress || null,
             calendlyLink: chatbot.calendlyLink || null,
-            // ✅ Location (lat/lng + Google Maps link)
+            themeColors: chatbot.config?.themeColors || {
+              background: "#0f0f17",
+              userBubble: "#7f5af0",
+              botBubble: "#6b21a8",
+              text: "#ffffff",
+            },
             location: {
               lat: chatbot.config?.location?.lat || null,
               lng: chatbot.config?.location?.lng || null,
               googleMapsLink:
                 chatbot.config?.location?.googleMapsLink ||
-                (chatbot.config?.location?.lat && chatbot.config?.location?.lng
+                (chatbot.config?.location?.lat &&
+                chatbot.config?.location?.lng
                   ? `https://www.google.com/maps/search/?api=1&query=${chatbot.config.location.lat},${chatbot.config.location.lng}`
                   : null),
-            },
-            themeColors: chatbot.config?.themeColors || {
-              background: "#1a1a2e",
-              userBubble: "#7f5af0",
-              botBubble: "#6b21a8",
-              text: "#ffffff",
             },
           };
 
@@ -61,17 +62,17 @@ export default function PublicChatbot() {
   }, [id]);
 
   if (loading)
-    return (
-      <div className="text-white text-center mt-8">Loading chatbot...</div>
-    );
+    return <div className="text-white text-center mt-8">Loading chatbot...</div>;
   if (!chatbotConfig)
-    return (
-      <div className="text-red-400 text-center mt-8">Chatbot not found.</div>
-    );
+    return <div className="text-red-400 text-center mt-8">Chatbot not found.</div>;
 
+  // ✅ Add full height and flex so iframe can scale
   return (
-    <div className="p-4 min-h-screen bg-gradient-to-br from-[#0f0f17] via-[#1a1a2e] to-[#0f0f17] flex justify-center">
-      <div className="w-full max-w-2xl space-y-6">
+    <div
+      className="w-full h-full min-h-screen bg-gradient-to-br from-[#0f0f17] via-[#1a1a2e] to-[#0f0f17] flex justify-center items-start p-4"
+      style={{ overflow: "hidden" }}
+    >
+      <div className="w-full max-w-2xl space-y-6 flex flex-col">
         {/* Logo */}
         {chatbotConfig.logoUrl ? (
           <div className="flex justify-center">
@@ -90,15 +91,11 @@ export default function PublicChatbot() {
         )}
 
         {/* Business Name */}
-        <h1 className="text-3xl font-bold text-white text-center">
-          {chatbotConfig.name}
-        </h1>
+        <h1 className="text-3xl font-bold text-white text-center">{chatbotConfig.name}</h1>
 
         {/* Business Description */}
         {chatbotConfig.businessDescription && (
-          <p className="text-white/80 text-center">
-            {chatbotConfig.businessDescription}
-          </p>
+          <p className="text-white/80 text-center">{chatbotConfig.businessDescription}</p>
         )}
 
         {/* Website Link */}
@@ -170,7 +167,7 @@ export default function PublicChatbot() {
         )}
 
         {/* Live Chatbot Preview */}
-        <div className="bg-white/10 rounded-2xl shadow-xl p-4">
+        <div className="bg-white/10 rounded-2xl shadow-xl p-4 flex-1 min-h-[400px]">
           <ChatbotPreview chatbotConfig={chatbotConfig} isPublic />
         </div>
       </div>
