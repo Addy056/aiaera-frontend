@@ -12,7 +12,7 @@ export default function PublicChatbot() {
     const fetchChatbot = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/chatbot/public/${id}`);
+        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/chatbot/public/${id}`);
         const data = await res.json();
 
         if (data.success && data.data) {
@@ -22,17 +22,27 @@ export default function PublicChatbot() {
           const normalizedConfig = {
             id: chatbot.id,
             name: chatbot.name || "AI Chatbot",
-            businessDescription: chatbot.businessDescription || "",
+            businessDescription: chatbot.business_info || "",
             websiteUrl: chatbot.websiteUrl || "",
-            files: Array.isArray(chatbot.files) ? chatbot.files : [],
-            logoUrl: chatbot.logoUrl || null,
+            files: Array.isArray(chatbot.config?.files) ? chatbot.config.files : [],
+            logoUrl: chatbot.config?.logo_url || null,
             businessAddress: chatbot.businessAddress || null,
             calendlyLink: chatbot.calendlyLink || null,
             // ✅ Location (lat/lng + Google Maps link)
             location: {
-              lat: chatbot.location?.latitude || null,
-              lng: chatbot.location?.longitude || null,
-              googleMapsLink: chatbot.location?.googleMapsLink || null,
+              lat: chatbot.config?.location?.lat || null,
+              lng: chatbot.config?.location?.lng || null,
+              googleMapsLink:
+                chatbot.config?.location?.googleMapsLink ||
+                (chatbot.config?.location?.lat && chatbot.config?.location?.lng
+                  ? `https://www.google.com/maps/search/?api=1&query=${chatbot.config.location.lat},${chatbot.config.location.lng}`
+                  : null),
+            },
+            themeColors: chatbot.config?.themeColors || {
+              background: "#1a1a2e",
+              userBubble: "#7f5af0",
+              botBubble: "#6b21a8",
+              text: "#ffffff",
             },
           };
 
@@ -51,23 +61,20 @@ export default function PublicChatbot() {
   }, [id]);
 
   if (loading)
-    return <div className="text-white text-center mt-8">Loading chatbot...</div>;
+    return (
+      <div className="text-white text-center mt-8">Loading chatbot...</div>
+    );
   if (!chatbotConfig)
-    return <div className="text-red-400 text-center mt-8">Chatbot not found.</div>;
-
-  // 🔹 Generate Google Maps link if location exists
-  const mapsLink =
-    chatbotConfig.location?.googleMapsLink ||
-    (chatbotConfig.location?.lat && chatbotConfig.location?.lng
-      ? `https://www.google.com/maps/search/?api=1&query=${chatbotConfig.location.lat},${chatbotConfig.location.lng}`
-      : null);
+    return (
+      <div className="text-red-400 text-center mt-8">Chatbot not found.</div>
+    );
 
   return (
-    <div className="p-4 min-h-screen bg-gradient-to-br from-[#0f0f17] via-[#1a1a2e] to-[#0f0f17]">
-      <div className="max-w-2xl mx-auto space-y-4">
+    <div className="p-4 min-h-screen bg-gradient-to-br from-[#0f0f17] via-[#1a1a2e] to-[#0f0f17] flex justify-center">
+      <div className="w-full max-w-2xl space-y-6">
         {/* Logo */}
         {chatbotConfig.logoUrl ? (
-          <div className="flex justify-center mb-4">
+          <div className="flex justify-center">
             <img
               src={chatbotConfig.logoUrl}
               alt="Logo"
@@ -75,7 +82,7 @@ export default function PublicChatbot() {
             />
           </div>
         ) : (
-          <div className="flex justify-center mb-4">
+          <div className="flex justify-center">
             <div className="h-20 w-20 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
               {chatbotConfig.name?.[0] || "A"}
             </div>
@@ -96,7 +103,7 @@ export default function PublicChatbot() {
 
         {/* Website Link */}
         {chatbotConfig.websiteUrl && (
-          <div className="text-center mt-2">
+          <div className="text-center">
             <a
               href={chatbotConfig.websiteUrl}
               target="_blank"
@@ -110,11 +117,11 @@ export default function PublicChatbot() {
 
         {/* Business Address */}
         {chatbotConfig.businessAddress && (
-          <div className="text-center mt-2 text-white/80">
+          <div className="text-center text-white/80">
             <span className="font-semibold">Address: </span>
-            {mapsLink ? (
+            {chatbotConfig.location?.googleMapsLink ? (
               <a
-                href={mapsLink}
+                href={chatbotConfig.location.googleMapsLink}
                 target="_blank"
                 rel="noreferrer"
                 className="text-purple-400 underline"
@@ -129,7 +136,7 @@ export default function PublicChatbot() {
 
         {/* Calendly Button */}
         {chatbotConfig.calendlyLink && (
-          <div className="text-center mt-2">
+          <div className="text-center">
             <a
               href={chatbotConfig.calendlyLink}
               target="_blank"
@@ -163,7 +170,9 @@ export default function PublicChatbot() {
         )}
 
         {/* Live Chatbot Preview */}
-        <ChatbotPreview chatbotConfig={chatbotConfig} />
+        <div className="bg-white/10 rounded-2xl shadow-xl p-4">
+          <ChatbotPreview chatbotConfig={chatbotConfig} isPublic />
+        </div>
       </div>
     </div>
   );

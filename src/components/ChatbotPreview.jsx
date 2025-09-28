@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import { supabase } from "../supabaseClient";
 
-export default function ChatbotPreview({ chatbotConfig, user }) {
+export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
   const [messages, setMessages] = useState([
     {
       role: "assistant",
@@ -14,7 +14,6 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
-  // Use colors passed from Builder
   const themeColors = chatbotConfig?.themeColors || {
     background: "#1a1a2e",
     userBubble: "#7f5af0",
@@ -33,9 +32,9 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
     scrollToBottom();
   }, [messages]);
 
-  // Send message to backend
+  // Send message
   const sendMessage = async () => {
-    if (!input.trim() || !user) return;
+    if (!input.trim()) return;
 
     const newMessages = [...messages, { role: "user", content: input }];
     setMessages(newMessages);
@@ -43,22 +42,17 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
     setLoading(true);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("No active Supabase session found");
+      let headers = { "Content-Type": "application/json" };
+      if (!isPublic && user) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) throw new Error("No active Supabase session found");
+        headers.Authorization = `Bearer ${session.access_token}`;
+      }
 
       const res = await axios.post(
         `${API_BASE}/api/chatbot/preview`,
-        {
-          messages: newMessages,
-          chatbotConfig,
-          userId: user.id,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-            "Content-Type": "application/json",
-          },
-        }
+        { messages: newMessages, chatbotConfig, userId: user?.id || null },
+        { headers }
       );
 
       const reply = res.data?.reply || "🤖 (No reply received)";
@@ -111,13 +105,18 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
         <div
           style={{
             ...styles.header,
-            background: `linear-gradient(135deg, ${themeColors.userBubble}, ${darkenColor(themeColors.userBubble, 20)})`,
+            background: `linear-gradient(135deg, ${themeColors.userBubble}, ${darkenColor(
+              themeColors.userBubble,
+              20
+            )})`,
           }}
         >
           {chatbotConfig?.logoUrl && (
             <img src={chatbotConfig.logoUrl} alt="Logo" style={styles.logo} />
           )}
-          {/* Removed business name */}
+          <span style={{ color: "white", fontWeight: "bold", fontSize: "16px" }}>
+            {chatbotConfig?.name || "AI Chatbot"}
+          </span>
         </div>
 
         {/* Business Info */}
@@ -186,7 +185,8 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
               <div
                 style={{
                   ...styles.bubble,
-                  backgroundColor: msg.role === "user" ? themeColors.userBubble : themeColors.botBubble,
+                  backgroundColor:
+                    msg.role === "user" ? themeColors.userBubble : themeColors.botBubble,
                   color: themeColors.text,
                 }}
               >
@@ -196,41 +196,50 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
           ))}
           {loading && (
             <div style={{ ...styles.message, ...styles.assistantMsg }}>
-              <div style={{ ...styles.bubble, backgroundColor: themeColors.botBubble }}>...</div>
+              <div style={{ ...styles.bubble, backgroundColor: themeColors.botBubble }}>
+                ...
+              </div>
             </div>
           )}
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input Area */}
-        <div style={styles.inputArea}>
-          <textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Type a message..."
-            style={{ ...styles.textarea, color: themeColors.text }}
-          />
-          <button
-            onClick={sendMessage}
-            disabled={loading}
-            style={{ ...styles.button, background: themeColors.userBubble }}
-          >
-            Send
-          </button>
-        </div>
+        {/* Input Area (hidden for public mode) */}
+        {!isPublic && (
+          <div style={styles.inputArea}>
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Type a message..."
+              style={{ ...styles.textarea, color: themeColors.text }}
+            />
+            <button
+              onClick={sendMessage}
+              disabled={loading}
+              style={{ ...styles.button, background: themeColors.userBubble }}
+            >
+              Send
+            </button>
+          </div>
+        )}
 
         {/* Embed Code */}
-        <div style={styles.embedSection}>
-          <label style={{ marginBottom: "6px", color: "white", fontWeight: "bold" }}>
-            Embed this chatbot on your website:
-          </label>
-          <textarea
-            readOnly
-            value={`<div id="aiaera-chatbot"></div>\n<script src="${API_BASE.replace(/\/$/, "")}/api/embed/${chatbotConfig?.id || "demo"}.js" async></script>`}
-            style={styles.embedTextarea}
-          />
-        </div>
+        {!isPublic && (
+          <div style={styles.embedSection}>
+            <label style={{ marginBottom: "6px", color: "white", fontWeight: "bold" }}>
+              Embed this chatbot on your website:
+            </label>
+            <textarea
+              readOnly
+              value={`<div id="aiaera-chatbot"></div>\n<script src="${API_BASE.replace(
+                /\/$/,
+                ""
+              )}/api/embed/${chatbotConfig?.id || "demo"}.js" async></script>`}
+              style={styles.embedTextarea}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -259,6 +268,7 @@ const styles = {
     flexDirection: "column",
     gap: "16px",
     height: "100%",
+    width: "100%",
   },
   chatbotPreview: {
     display: "flex",
@@ -270,6 +280,7 @@ const styles = {
     border: "1px solid rgba(255, 255, 255, 0.15)",
     boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
     fontFamily: "sans-serif",
+    padding: "12px",
   },
   header: {
     display: "flex",
@@ -286,10 +297,10 @@ const styles = {
   businessInfo: { color: "white", textAlign: "center", padding: "6px 12px" },
   websiteLink: { textDecoration: "underline", textAlign: "center", display: "block", marginBottom: "6px" },
   address: { color: "white", textAlign: "center", padding: "4px 12px", fontStyle: "italic" },
-  filesContainer: { background: "rgba(255,255,255,0.1)", padding: "8px", borderRadius: "12px", margin: "8px 12px" },
+  filesContainer: { background: "rgba(255,255,255,0.1)", padding: "8px", borderRadius: "12px", margin: "8px 0" },
   fileList: { listStyleType: "disc", paddingLeft: "16px", color: "white" },
   fileLink: { textDecoration: "underline" },
-  messages: { flex: 1, overflowY: "auto", padding: "12px", display: "flex", flexDirection: "column", gap: "8px" },
+  messages: { flex: 1, overflowY: "auto", padding: "12px", display: "flex", flexDirection: "column", gap: "8px", maxHeight: "400px" },
   message: { display: "flex", maxWidth: "80%" },
   userMsg: { alignSelf: "flex-end", justifyContent: "flex-end" },
   assistantMsg: { alignSelf: "flex-start", justifyContent: "flex-start" },
@@ -297,6 +308,6 @@ const styles = {
   inputArea: { display: "flex", gap: "8px", padding: "12px", borderTop: "1px solid rgba(255,255,255,0.1)" },
   textarea: { flex: 1, resize: "none", padding: "10px", borderRadius: "12px", border: "none", outline: "none", fontSize: "14px", background: "rgba(255,255,255,0.1)" },
   button: { color: "white", border: "none", padding: "0 18px", borderRadius: "12px", cursor: "pointer", fontWeight: "bold", transition: "0.2s" },
-  embedSection: { margin: "12px", display: "flex", flexDirection: "column" },
+  embedSection: { margin: "12px 0", display: "flex", flexDirection: "column" },
   embedTextarea: { width: "100%", height: "80px", borderRadius: "12px", border: "none", padding: "10px", resize: "none", background: "rgba(255,255,255,0.1)", color: "white", fontFamily: "monospace", fontSize: "12px" },
 };

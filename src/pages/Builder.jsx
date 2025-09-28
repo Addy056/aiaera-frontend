@@ -236,6 +236,34 @@ export default function Builder() {
             {/* Files, Logo, Website, Map remain unchanged */}
           </Tabs>
         </Card>
+
+        {/* Embed Code Panel */}
+        <Card className="backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl rounded-2xl p-4 mt-4">
+          <h3 className="text-white font-bold text-lg mb-2">📄 Embed Your Chatbot</h3>
+          {chatbotId ? (
+            <>
+              <p className="text-gray-300 text-sm mb-2">
+                Copy the following iframe and paste it into your website:
+              </p>
+              <textarea
+                readOnly
+                className="w-full h-24 bg-black/30 text-white p-2 rounded-lg font-mono text-sm"
+                value={`<iframe src="${API_BASE}/public-chatbot/${chatbotId}" width="400" height="500" style="border:none; border-radius:16px;"></iframe>`}
+              />
+              <Button
+                className="mt-2 w-full bg-purple-600 hover:bg-purple-500"
+                onClick={() => {
+                  navigator.clipboard.writeText(`<iframe src="${API_BASE}/public-chatbot/${chatbotId}" width="400" height="500" style="border:none; border-radius:16px;"></iframe>`);
+                  alert("✅ Embed code copied to clipboard!");
+                }}
+              >
+                Copy Embed Code
+              </Button>
+            </>
+          ) : (
+            <p className="text-gray-400">Save your chatbot configuration to generate embed code.</p>
+          )}
+        </Card>
       </motion.div>
 
       {/* Right Panel: Chat Preview + Premium Color Picker */}
