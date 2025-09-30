@@ -87,7 +87,7 @@ export default function PublicChatbot() {
       style={{ overflow: "hidden" }}
     >
       <div className="w-full max-w-2xl space-y-6 flex flex-col">
-        {/* Logo */}
+        {/* Logo only (no business name text) */}
         {chatbotConfig.logoUrl ? (
           <div className="flex justify-center">
             <img
@@ -103,11 +103,6 @@ export default function PublicChatbot() {
             </div>
           </div>
         )}
-
-        {/* Business Name */}
-        <h1 className="text-3xl font-bold text-white text-center">
-          {chatbotConfig.name}
-        </h1>
 
         {/* Business Description */}
         {chatbotConfig.businessDescription && (
