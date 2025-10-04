@@ -10,17 +10,24 @@ export default function PublicChatbot() {
   useEffect(() => {
     if (!id) return;
 
+    // Create the embed script
     const script = document.createElement("script");
     script.src = `${import.meta.env.VITE_BACKEND_URL}/api/embed/${id}.js`;
     script.async = true;
+
+    // Error handling
     script.onerror = () => {
       setError("Failed to load chatbot embed.");
       setLoading(false);
     };
+
+    // On successful load
     script.onload = () => setLoading(false);
 
+    // Append to body
     document.body.appendChild(script);
 
+    // Cleanup on unmount
     return () => {
       document.body.removeChild(script);
     };
@@ -44,7 +51,7 @@ export default function PublicChatbot() {
 
   return (
     <div className="w-full min-h-screen bg-[#0f0f17]">
-      {/* The iframe/chatbot will be injected dynamically by the embed script */}
+      {/* Chatbot iframe is dynamically injected by the embed script */}
     </div>
   );
 }
