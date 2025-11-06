@@ -50,7 +50,8 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
       }
 
       const res = await axios.post(
-        `${API_BASE}/api/chatbot/preview`,
+  `${API_BASE}/api/chatbot-preview`,
+
         { messages: newMessages, chatbotConfig, userId: user?.id || null },
         { headers }
       );
