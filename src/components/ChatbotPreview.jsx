@@ -52,7 +52,8 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
       }
 
       // ✅ Log request info for debugging
-      const requestUrl = `${API_BASE}/api/chatbot-preview`;
+      const requestUrl = `${API_BASE.replace(/\/$/, "")}/api/chatbot-preview`
+;
       console.log("📡 Sending POST request to:", requestUrl);
 
       const res = await axios.post(
