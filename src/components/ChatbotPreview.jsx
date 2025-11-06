@@ -1,4 +1,3 @@
-// src/components/ChatbotPreview.jsx
 import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import { supabase } from "../supabaseClient";
@@ -21,9 +20,10 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
     text: "#ffffff",
   };
 
-  const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+  // ✅ Explicitly log API base for debugging
+  const API_BASE = import.meta.env.VITE_BACKEND_URL?.trim() || "http://localhost:5000";
+  console.log("🚀 ChatbotPreview loaded with API_BASE =", API_BASE);
 
-  // Scroll to bottom
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -51,21 +51,25 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
         headers.Authorization = `Bearer ${session.access_token}`;
       }
 
-      // ✅ Correct API endpoint (with dash)
+      // ✅ Log request info for debugging
+      const requestUrl = `${API_BASE}/api/chatbot-preview`;
+      console.log("📡 Sending POST request to:", requestUrl);
+
       const res = await axios.post(
-        `${API_BASE}/api/chatbot-preview`,
+        requestUrl,
         { messages: newMessages, chatbotConfig, userId: user?.id || null },
         { headers }
       );
 
       const reply = res.data?.reply || "🤖 (No reply received)";
       setMessages([...newMessages, { role: "assistant", content: reply }]);
+      console.log("✅ Chatbot reply received:", reply);
     } catch (error) {
-      console.error("Chatbot preview error:", error?.message || error);
+      console.error("❌ Chatbot preview error:", error);
       const errorMsg =
         error?.response?.status === 404
-          ? "⚠️ Server route not found (check /api/chatbot-preview)."
-          : "⚠️ Error: Failed to fetch reply.";
+          ? `⚠️ Server route not found (tried: ${API_BASE}/api/chatbot-preview)`
+          : `⚠️ Error: ${error?.message || "Failed to fetch reply."}`;
       setMessages([
         ...newMessages,
         { role: "assistant", content: errorMsg },
@@ -75,7 +79,6 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
     }
   };
 
-  // Handle Enter key
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -83,7 +86,6 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
     }
   };
 
-  // Format message text (hyperlink detection)
   const formatText = (text) => {
     if (!text) return "";
     const urlRegex = /(https?:\/\/[^\s]+)/g;
@@ -131,8 +133,6 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
           </span>
         </div>
 
-        {/* ❌ Business Info Removed (per your request) */}
-
         {/* Files Section */}
         {chatbotConfig?.files?.length > 0 && (
           <div style={styles.filesContainer}>
@@ -164,9 +164,7 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
               key={i}
               style={{
                 ...styles.message,
-                ...(msg.role === "user"
-                  ? styles.userMsg
-                  : styles.assistantMsg),
+                ...(msg.role === "user" ? styles.userMsg : styles.assistantMsg),
               }}
             >
               <div
@@ -198,7 +196,7 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input Area (hidden for public mode) */}
+        {/* Input Area */}
         {!isPublic && (
           <div style={styles.inputArea}>
             <textarea
