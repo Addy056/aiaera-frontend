@@ -20,10 +20,11 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
     text: "#ffffff",
   };
 
-  // ✅ Explicitly log API base for debugging
-  const API_BASE = import.meta.env.VITE_BACKEND_URL?.trim() || "http://localhost:5000";
+  // ✅ Define API base safely (no trailing slash)
+  const API_BASE = (import.meta.env.VITE_BACKEND_URL || "http://localhost:5000").replace(/\/$/, "");
   console.log("🚀 ChatbotPreview loaded with API_BASE =", API_BASE);
 
+  // --- Scroll to bottom whenever messages update ---
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -46,14 +47,14 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
 
       // Auth header only for logged-in users
       if (!isPublic && user) {
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         if (!session) throw new Error("No active Supabase session found");
         headers.Authorization = `Bearer ${session.access_token}`;
       }
 
-      // ✅ Log request info for debugging
-      const requestUrl = `${API_BASE.replace(/\/$/, "")}/api/chatbot-preview`
-;
+      const requestUrl = `${API_BASE}/api/chatbot-preview`;
       console.log("📡 Sending POST request to:", requestUrl);
 
       const res = await axios.post(
@@ -66,15 +67,26 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
       setMessages([...newMessages, { role: "assistant", content: reply }]);
       console.log("✅ Chatbot reply received:", reply);
     } catch (error) {
-      console.error("❌ Chatbot preview error:", error);
-      const errorMsg =
-        error?.response?.status === 404
-          ? `⚠️ Server route not found (tried: ${API_BASE}/api/chatbot-preview)`
-          : `⚠️ Error: ${error?.message || "Failed to fetch reply."}`;
-      setMessages([
-        ...newMessages,
-        { role: "assistant", content: errorMsg },
-      ]);
+      console.group("❌ Chatbot preview error (detailed)");
+      console.error("📍 Error message:", error?.message);
+      console.error("📡 Response data:", error?.response?.data);
+      console.error("⚙️ Full error object:", error);
+      console.groupEnd();
+
+      const status = error?.response?.status;
+      const backendError = error?.response?.data?.error;
+      const backendMessage = error?.response?.data?.message;
+
+      let errorMsg;
+      if (status === 404) {
+        errorMsg = `⚠️ Server route not found (tried: ${API_BASE}/api/chatbot-preview)`;
+      } else if (backendError || backendMessage) {
+        errorMsg = `⚠️ Backend Error: ${backendError || backendMessage}`;
+      } else {
+        errorMsg = `⚠️ ${error?.message || "Unknown network or backend error."}`;
+      }
+
+      setMessages([...newMessages, { role: "assistant", content: errorMsg }]);
     } finally {
       setLoading(false);
     }
@@ -87,6 +99,7 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
     }
   };
 
+  // --- Format message text with clickable links ---
   const formatText = (text) => {
     if (!text) return "";
     const urlRegex = /(https?:\/\/[^\s]+)/g;
@@ -123,13 +136,7 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
           {chatbotConfig?.logoUrl && (
             <img src={chatbotConfig.logoUrl} alt="Logo" style={styles.logo} />
           )}
-          <span
-            style={{
-              color: "white",
-              fontWeight: "bold",
-              fontSize: "16px",
-            }}
-          >
+          <span style={{ color: "white", fontWeight: "bold", fontSize: "16px" }}>
             {chatbotConfig?.name || "AI Chatbot"}
           </span>
         </div>
