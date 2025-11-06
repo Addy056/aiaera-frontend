@@ -140,7 +140,7 @@ export default function Builder() {
     setMessages((prev) => [...prev, { id: uuidv4(), sender, text }]);
   };
 
-  // --- Unified config save ---
+  // --- Save Config and Generate Embed ---
   const saveConfigToSupabase = async (extra = {}) => {
     if (!user) return;
     setSavingConfig(true);
@@ -204,11 +204,11 @@ export default function Builder() {
         setChatbotId(data.id); // ✅ Auto-generate chatbotId instantly
       }
 
-      pushMessage("bot", "✅ Configuration saved.");
+      pushMessage("bot", "✅ Chatbot saved successfully!");
       setIsConfigSaved(true);
     } catch (err) {
       console.error("Save config error:", err);
-      pushMessage("bot", "❌ Failed to save configuration.");
+      pushMessage("bot", "❌ Failed to save chatbot.");
     } finally {
       setSavingConfig(false);
     }
@@ -260,44 +260,36 @@ export default function Builder() {
                 </Button>
               </div>
             </TabsContent>
-
-            {/* Files, Logo, Website, Map tabs unchanged */}
           </Tabs>
         </Card>
 
-        {/* ✅ Single Embed Code Panel */}
-        <Card className="backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl rounded-2xl p-4 mt-4">
-          <h3 className="text-white font-bold text-lg mb-2">
-            📄 Embed Your Chatbot
-          </h3>
-          {chatbotId ? (
-            <>
-              <p className="text-gray-300 text-sm mb-2">
-                Copy and paste this iframe into your website:
-              </p>
-              <textarea
-                readOnly
-                className="w-full h-24 bg-black/30 text-white p-2 rounded-lg font-mono text-sm"
-                value={`<iframe src="${API_BASE}/public-chatbot/${chatbotId}" width="400" height="500" style="border:none; border-radius:16px;"></iframe>`}
-              />
-              <Button
-                className="mt-2 w-full bg-purple-600 hover:bg-purple-500"
-                onClick={() => {
-                  navigator.clipboard.writeText(
-                    `<iframe src="${API_BASE}/public-chatbot/${chatbotId}" width="400" height="500" style="border:none; border-radius:16px;"></iframe>`
-                  );
-                  alert("✅ Embed code copied to clipboard!");
-                }}
-              >
-                Copy Embed Code
-              </Button>
-            </>
-          ) : (
-            <p className="text-gray-400">
-              Save your chatbot configuration to generate embed code.
+        {/* ✅ Embed Code section (only after save) */}
+        {isConfigSaved && chatbotId && (
+          <Card className="backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl rounded-2xl p-4 mt-4">
+            <h3 className="text-white font-bold text-lg mb-2">
+              📄 Embed Your Chatbot
+            </h3>
+            <p className="text-gray-300 text-sm mb-2">
+              Copy and paste this iframe into your website:
             </p>
-          )}
-        </Card>
+            <textarea
+              readOnly
+              className="w-full h-24 bg-black/30 text-white p-2 rounded-lg font-mono text-sm"
+              value={`<iframe src="${API_BASE}/public-chatbot/${chatbotId}" width="400" height="500" style="border:none; border-radius:16px;"></iframe>`}
+            />
+            <Button
+              className="mt-2 w-full bg-purple-600 hover:bg-purple-500"
+              onClick={() => {
+                navigator.clipboard.writeText(
+                  `<iframe src="${API_BASE}/public-chatbot/${chatbotId}" width="400" height="500" style="border:none; border-radius:16px;"></iframe>`
+                );
+                alert("✅ Embed code copied to clipboard!");
+              }}
+            >
+              Copy Embed Code
+            </Button>
+          </Card>
+        )}
       </motion.div>
 
       {/* Right Panel */}
@@ -349,13 +341,13 @@ export default function Builder() {
           </div>
         </Card>
 
-        {/* Chatbot Preview */}
+        {/* Chatbot Preview (❌ hides business info) */}
         <Card className="backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl rounded-2xl flex-1 p-4 flex flex-col">
           <ChatbotPreview
             chatbotConfig={{
               id: chatbotId,
               name: businessName,
-              businessDescription,
+              // 👇 removed businessDescription — no sensitive info visible
               files,
               logoUrl,
               location: hasSelectedLocation ? location : null,
