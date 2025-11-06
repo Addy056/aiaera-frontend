@@ -23,7 +23,7 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
 
   const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
-  // Scroll to latest message
+  // Scroll to bottom
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -32,7 +32,7 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
     scrollToBottom();
   }, [messages]);
 
-  // Send message
+  // --- Send message handler ---
   const sendMessage = async () => {
     if (!input.trim()) return;
 
@@ -43,15 +43,17 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
 
     try {
       let headers = { "Content-Type": "application/json" };
+
+      // Auth header only for logged-in users
       if (!isPublic && user) {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) throw new Error("No active Supabase session found");
         headers.Authorization = `Bearer ${session.access_token}`;
       }
 
+      // ✅ Correct API endpoint (with dash)
       const res = await axios.post(
-  `${API_BASE}/api/chatbot-preview`,
-
+        `${API_BASE}/api/chatbot-preview`,
         { messages: newMessages, chatbotConfig, userId: user?.id || null },
         { headers }
       );
@@ -59,16 +61,21 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
       const reply = res.data?.reply || "🤖 (No reply received)";
       setMessages([...newMessages, { role: "assistant", content: reply }]);
     } catch (error) {
-      console.error("Chatbot preview error:", error);
+      console.error("Chatbot preview error:", error?.message || error);
+      const errorMsg =
+        error?.response?.status === 404
+          ? "⚠️ Server route not found (check /api/chatbot-preview)."
+          : "⚠️ Error: Failed to fetch reply.";
       setMessages([
         ...newMessages,
-        { role: "assistant", content: "⚠️ Error: Failed to fetch reply." },
+        { role: "assistant", content: errorMsg },
       ]);
     } finally {
       setLoading(false);
     }
   };
 
+  // Handle Enter key
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -76,6 +83,7 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
     }
   };
 
+  // Format message text (hyperlink detection)
   const formatText = (text) => {
     if (!text) return "";
     const urlRegex = /(https?:\/\/[^\s]+)/g;
@@ -96,9 +104,6 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
     );
   };
 
-  const getGoogleMapsLink = (lat, lng) =>
-    `https://www.google.com/maps?q=${lat},${lng}`;
-
   return (
     <div style={{ ...styles.wrapper, background: themeColors.background }}>
       <div style={styles.chatbotPreview}>
@@ -115,55 +120,34 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
           {chatbotConfig?.logoUrl && (
             <img src={chatbotConfig.logoUrl} alt="Logo" style={styles.logo} />
           )}
-          <span style={{ color: "white", fontWeight: "bold", fontSize: "16px" }}>
+          <span
+            style={{
+              color: "white",
+              fontWeight: "bold",
+              fontSize: "16px",
+            }}
+          >
             {chatbotConfig?.name || "AI Chatbot"}
           </span>
         </div>
 
-        {/* Business Info */}
-        {chatbotConfig?.businessDescription && (
-          <div style={styles.businessInfo}>{chatbotConfig.businessDescription}</div>
-        )}
-        {chatbotConfig?.websiteUrl && (
-          <a
-            href={chatbotConfig.websiteUrl}
-            target="_blank"
-            rel="noreferrer"
-            style={{ ...styles.websiteLink, color: themeColors.userBubble }}
-          >
-            Visit Website
-          </a>
-        )}
-        {chatbotConfig?.businessAddress && (
-          <div style={styles.address}>
-            <strong>Address:</strong>{" "}
-            {chatbotConfig.location?.lat && chatbotConfig.location?.lng ? (
-              <a
-                href={getGoogleMapsLink(chatbotConfig.location.lat, chatbotConfig.location.lng)}
-                target="_blank"
-                rel="noreferrer"
-                style={{ color: themeColors.userBubble, textDecoration: "underline" }}
-              >
-                {chatbotConfig.businessAddress}
-              </a>
-            ) : (
-              chatbotConfig.businessAddress
-            )}
-          </div>
-        )}
+        {/* ❌ Business Info Removed (per your request) */}
 
-        {/* Uploaded Files */}
+        {/* Files Section */}
         {chatbotConfig?.files?.length > 0 && (
           <div style={styles.filesContainer}>
             <strong>Files:</strong>
             <ul style={styles.fileList}>
-              {chatbotConfig.files.map((f) => (
-                <li key={f.publicUrl}>
+              {chatbotConfig.files.map((f, i) => (
+                <li key={i}>
                   <a
                     href={f.publicUrl}
                     target="_blank"
                     rel="noreferrer"
-                    style={{ ...styles.fileLink, color: themeColors.userBubble }}
+                    style={{
+                      ...styles.fileLink,
+                      color: themeColors.userBubble,
+                    }}
                   >
                     {f.name}
                   </a>
@@ -180,14 +164,18 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
               key={i}
               style={{
                 ...styles.message,
-                ...(msg.role === "user" ? styles.userMsg : styles.assistantMsg),
+                ...(msg.role === "user"
+                  ? styles.userMsg
+                  : styles.assistantMsg),
               }}
             >
               <div
                 style={{
                   ...styles.bubble,
                   backgroundColor:
-                    msg.role === "user" ? themeColors.userBubble : themeColors.botBubble,
+                    msg.role === "user"
+                      ? themeColors.userBubble
+                      : themeColors.botBubble,
                   color: themeColors.text,
                 }}
               >
@@ -197,7 +185,12 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
           ))}
           {loading && (
             <div style={{ ...styles.message, ...styles.assistantMsg }}>
-              <div style={{ ...styles.bubble, backgroundColor: themeColors.botBubble }}>
+              <div
+                style={{
+                  ...styles.bubble,
+                  backgroundColor: themeColors.botBubble,
+                }}
+              >
                 ...
               </div>
             </div>
@@ -218,27 +211,13 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
             <button
               onClick={sendMessage}
               disabled={loading}
-              style={{ ...styles.button, background: themeColors.userBubble }}
+              style={{
+                ...styles.button,
+                background: themeColors.userBubble,
+              }}
             >
               Send
             </button>
-          </div>
-        )}
-
-        {/* Embed Code */}
-        {!isPublic && (
-          <div style={styles.embedSection}>
-            <label style={{ marginBottom: "6px", color: "white", fontWeight: "bold" }}>
-              Embed this chatbot on your website:
-            </label>
-            <textarea
-              readOnly
-              value={`<div id="aiaera-chatbot"></div>\n<script src="${API_BASE.replace(
-                /\/$/,
-                ""
-              )}/api/embed/${chatbotConfig?.id || "demo"}.js" async></script>`}
-              style={styles.embedTextarea}
-            />
           </div>
         )}
       </div>
@@ -289,26 +268,66 @@ const styles = {
     gap: "12px",
     padding: "12px",
     fontWeight: "bold",
-    textAlign: "center",
     color: "white",
     borderRadius: "16px 16px 0 0",
     justifyContent: "center",
   },
-  logo: { height: "36px", width: "36px", objectFit: "contain", borderRadius: "6px", boxShadow: "0 2px 10px rgba(0,0,0,0.3)" },
-  businessInfo: { color: "white", textAlign: "center", padding: "6px 12px" },
-  websiteLink: { textDecoration: "underline", textAlign: "center", display: "block", marginBottom: "6px" },
-  address: { color: "white", textAlign: "center", padding: "4px 12px", fontStyle: "italic" },
-  filesContainer: { background: "rgba(255,255,255,0.1)", padding: "8px", borderRadius: "12px", margin: "8px 0" },
+  logo: {
+    height: "36px",
+    width: "36px",
+    objectFit: "contain",
+    borderRadius: "6px",
+    boxShadow: "0 2px 10px rgba(0,0,0,0.3)",
+  },
+  filesContainer: {
+    background: "rgba(255,255,255,0.1)",
+    padding: "8px",
+    borderRadius: "12px",
+    margin: "8px 0",
+  },
   fileList: { listStyleType: "disc", paddingLeft: "16px", color: "white" },
   fileLink: { textDecoration: "underline" },
-  messages: { flex: 1, overflowY: "auto", padding: "12px", display: "flex", flexDirection: "column", gap: "8px", maxHeight: "400px" },
+  messages: {
+    flex: 1,
+    overflowY: "auto",
+    padding: "12px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+    maxHeight: "400px",
+  },
   message: { display: "flex", maxWidth: "80%" },
   userMsg: { alignSelf: "flex-end", justifyContent: "flex-end" },
   assistantMsg: { alignSelf: "flex-start", justifyContent: "flex-start" },
-  bubble: { padding: "10px 14px", borderRadius: "18px", backdropFilter: "blur(10px)", wordBreak: "break-word" },
-  inputArea: { display: "flex", gap: "8px", padding: "12px", borderTop: "1px solid rgba(255,255,255,0.1)" },
-  textarea: { flex: 1, resize: "none", padding: "10px", borderRadius: "12px", border: "none", outline: "none", fontSize: "14px", background: "rgba(255,255,255,0.1)" },
-  button: { color: "white", border: "none", padding: "0 18px", borderRadius: "12px", cursor: "pointer", fontWeight: "bold", transition: "0.2s" },
-  embedSection: { margin: "12px 0", display: "flex", flexDirection: "column" },
-  embedTextarea: { width: "100%", height: "80px", borderRadius: "12px", border: "none", padding: "10px", resize: "none", background: "rgba(255,255,255,0.1)", color: "white", fontFamily: "monospace", fontSize: "12px" },
+  bubble: {
+    padding: "10px 14px",
+    borderRadius: "18px",
+    backdropFilter: "blur(10px)",
+    wordBreak: "break-word",
+  },
+  inputArea: {
+    display: "flex",
+    gap: "8px",
+    padding: "12px",
+    borderTop: "1px solid rgba(255,255,255,0.1)",
+  },
+  textarea: {
+    flex: 1,
+    resize: "none",
+    padding: "10px",
+    borderRadius: "12px",
+    border: "none",
+    outline: "none",
+    fontSize: "14px",
+    background: "rgba(255,255,255,0.1)",
+  },
+  button: {
+    color: "white",
+    border: "none",
+    padding: "0 18px",
+    borderRadius: "12px",
+    cursor: "pointer",
+    fontWeight: "bold",
+    transition: "0.2s",
+  },
 };
