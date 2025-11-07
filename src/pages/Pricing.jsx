@@ -13,7 +13,9 @@ const PLANS = {
 export default function Pricing() {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState({ message: "", type: "" });
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+  let BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+// ✅ Auto-remove trailing slash to avoid double //
+if (BACKEND_URL.endsWith("/")) BACKEND_URL = BACKEND_URL.slice(0, -1);
 
   const plans = [
     {
