@@ -1,11 +1,14 @@
-// src/pages/Integrations.jsx
-import { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
+import { motion } from "framer-motion";
 import { supabase } from "../supabaseClient";
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import FloatingMenu from "../components/FloatingMenu";
+import ProtectedRoute from "../components/ProtectedRoute";
+import { MessageCircle, Facebook, Instagram, Calendar, MapPin, Save, Lock } from "lucide-react";
 
-// Fix Leaflet marker icons
+// Fix leaflet icons
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
@@ -13,6 +16,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
+const FREE_ACCESS_EMAIL = "aiaera056@gmail.com";
 const isExpired = (dateStr) => !dateStr || new Date(dateStr) < new Date();
 
 export default function Integrations() {
@@ -29,17 +33,19 @@ export default function Integrations() {
     business_lat: 19.076,
     business_lng: 72.8777,
   });
+
+  const [userEmail, setUserEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const [subscriptionActive, setSubscriptionActive] = useState(true);
+  const [subscriptionActive, setSubscriptionActive] = useState(false);
+  const [plan, setPlan] = useState("free");
   const [toast, setToast] = useState({ message: "", type: "" });
   const mountedRef = useRef(false);
-
   const API_BASE = import.meta.env.VITE_BACKEND_URL + "/api/integrations";
 
   useEffect(() => {
     mountedRef.current = true;
     init();
-    return () => { mountedRef.current = false; };
+    return () => (mountedRef.current = false);
   }, []);
 
   const init = async () => {
@@ -47,26 +53,28 @@ export default function Integrations() {
     try {
       const { data: { user }, error: userErr } = await supabase.auth.getUser();
       if (userErr || !user) throw new Error("Unable to fetch user session.");
+      setUserEmail(user.email);
 
-      if (user.email === "aiaera056@gmail.com") {
+      if (user.email === FREE_ACCESS_EMAIL) {
         setSubscriptionActive(true);
+        setPlan("pro");
         await fetchIntegrations(user.id);
         return;
       }
 
-      const { data: subscription, error: subErr } = await supabase
+      const { data: sub } = await supabase
         .from("user_subscriptions")
-        .select("*")
+        .select("plan, expires_at")
         .eq("user_id", user.id)
         .single();
 
-      if (subErr && subErr.code !== "PGRST116") throw subErr;
-      if (!subscription || isExpired(subscription.expires_at)) {
+      if (!sub || isExpired(sub.expires_at)) {
         setSubscriptionActive(false);
         return;
       }
 
       setSubscriptionActive(true);
+      setPlan(sub?.plan || "free");
       await fetchIntegrations(user.id);
     } catch (err) {
       showToast(err.message, "error");
@@ -81,28 +89,14 @@ export default function Integrations() {
       if (!res.ok) throw new Error("Backend error fetching integrations");
       const data = await res.json();
       if (mountedRef.current && data?.integrations) {
-        const integ = data.integrations;
-        setForm({
-          whatsapp_number: integ.whatsapp_number || "",
-          whatsapp_token: integ.whatsapp_token || "",
-          fb_page_id: integ.fb_page_id || "",
-          fb_page_token: integ.fb_page_token || "",
-          calendly_link: integ.calendly_link?.replace(/<[^>]*>/g, "").trim() || "",
-          instagram_user_id: integ.instagram_user_id || "",
-          instagram_page_id: integ.instagram_page_id || "",
-          instagram_access_token: integ.instagram_access_token || "",
-          business_address: integ.business_address || "",
-          business_lat: integ.business_lat || 19.076,
-          business_lng: integ.business_lng || 72.8777,
-        });
+        setForm((prev) => ({ ...prev, ...data.integrations }));
       }
     } catch (err) {
       showToast("Error fetching integrations: " + err.message, "error");
     }
   };
 
-  const handleChange = (e) =>
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSave = async () => {
     setLoading(true);
@@ -110,11 +104,12 @@ export default function Integrations() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not logged in.");
 
-      let cleanCalendly = form.calendly_link.replace(/<[^>]*>/g, "").trim();
-      if (cleanCalendly && !/^https?:\/\//i.test(cleanCalendly)) cleanCalendly = "https://" + cleanCalendly;
-
-      const payload = { ...form, calendly_link: cleanCalendly, user_id: user.id };
-      const res = await fetch(API_BASE, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const payload = { ...form, user_id: user.id };
+      const res = await fetch(API_BASE, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
       const result = await res.json();
       if (!res.ok) throw new Error(result?.error || "Failed to save integrations");
       showToast("✅ Integrations saved successfully!", "success");
@@ -127,105 +122,172 @@ export default function Integrations() {
 
   const showToast = (message, type = "success") => {
     setToast({ message, type });
-    setTimeout(() => { if (mountedRef.current) setToast({ message: "", type: "" }); }, 4000);
+    setTimeout(() => {
+      if (mountedRef.current) setToast({ message: "", type: "" });
+    }, 4000);
   };
 
   const LocationSelector = () => {
     useMapEvents({
       click(e) {
-        setForm(prev => ({ ...prev, business_lat: e.latlng.lat, business_lng: e.latlng.lng }));
+        setForm((prev) => ({
+          ...prev,
+          business_lat: e.latlng.lat,
+          business_lng: e.latlng.lng,
+        }));
       },
     });
     return null;
   };
 
+  // ------------------------------ UI ------------------------------
   if (!subscriptionActive) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-[#03040a] via-[#071026] to-[#020205] text-white p-8">
-        <h1 className="text-5xl font-bold mb-4 text-center">Subscription Expired 🚫</h1>
-        <p className="text-lg text-gray-300 mb-6 text-center">Renew to access Integrations.</p>
-        <a href="/pricing" className="px-6 py-3 rounded-2xl bg-gradient-to-r from-[#00eaff]/40 via-[#7afcff]/30 to-[#0077b6]/40 font-semibold hover:scale-105 transition-all">Renew Now</a>
-      </div>
+      <ProtectedRoute>
+        <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[#090a1a] via-[#0f1025] to-[#080816] text-white text-center p-8">
+          <h1 className="text-4xl font-bold mb-3">🚫 Subscription Expired</h1>
+          <p className="text-gray-400 mb-6 text-lg">Renew to access Integrations Dashboard.</p>
+          <a href="/pricing" className="px-6 py-3 rounded-2xl bg-[#7f5af0] hover:bg-[#9d7ff7] transition-all shadow-lg">
+            Renew Now
+          </a>
+        </div>
+      </ProtectedRoute>
     );
   }
 
   return (
-    <div className="relative min-h-screen p-4 sm:p-8 overflow-hidden text-white">
-      {toast.message && (
-        <div className={`fixed top-5 left-1/2 -translate-x-1/2 px-6 py-3 rounded-2xl shadow-lg z-50 ${toast.type === "success" ? "bg-green-600" : "bg-red-600"}`}>
-          {toast.message}
-        </div>
-      )}
+    <ProtectedRoute>
+      <div className="min-h-screen bg-gradient-to-br from-[#0b0b1a] via-[#111129] to-[#090a1a] text-white relative overflow-hidden">
+        <FloatingMenu userEmail={userEmail} />
 
-      {/* Background Glow */}
-      <div className="absolute inset-0 -z-10">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#03040a] via-[#071026] to-[#020205] animate-gradient"></div>
-        <div className="absolute w-[600px] h-[600px] bg-[#7f5af0]/20 rounded-full blur-3xl top-10 left-10 animate-pulse"></div>
-        <div className="absolute w-[500px] h-[500px] bg-[#00eaff]/20 rounded-full blur-3xl bottom-10 right-10 animate-pulse-slow"></div>
+        {/* Background Glow */}
+        <div className="absolute inset-0 -z-10">
+          <div className="absolute top-10 left-10 w-[500px] h-[500px] rounded-full blur-3xl bg-gradient-to-br from-[#bfa7ff]/20 to-[#7f5af0]/10"></div>
+          <div className="absolute bottom-10 right-10 w-[450px] h-[450px] rounded-full blur-3xl bg-gradient-to-tr from-[#7f5af0]/15 to-[#00eaff]/10"></div>
+        </div>
+
+        <div className="relative px-4 sm:px-8 pt-8 pb-16 ml-0 md:ml-28 max-w-6xl mx-auto">
+          {/* Header */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="mb-10 text-center sm:text-left"
+          >
+            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight bg-gradient-to-r from-[#9d8dfd] via-[#bdafff] to-[#d4cfff] bg-clip-text text-transparent drop-shadow-sm">
+              Integrations Dashboard
+            </h1>
+            <p className="text-gray-400 mt-2 text-sm sm:text-base">
+              Manage your AI assistant’s platform connections with style ✨
+            </p>
+          </motion.div>
+
+          {/* Toast */}
+          {toast.message && (
+            <div
+              className={`fixed top-5 left-1/2 -translate-x-1/2 px-6 py-3 rounded-2xl shadow-lg z-50 ${
+                toast.type === "success" ? "bg-green-600" : "bg-red-600"
+              }`}
+            >
+              {toast.message}
+            </div>
+          )}
+
+          {/* Integration Cards */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, delay: 0.1 }}
+            className="grid grid-cols-1 sm:grid-cols-2 gap-6"
+          >
+            <IntegrationCard title="WhatsApp" icon={<MessageCircle />}>
+              <InputField name="whatsapp_number" value={form.whatsapp_number} onChange={handleChange} placeholder="WhatsApp Number" />
+              <InputField name="whatsapp_token" value={form.whatsapp_token} onChange={handleChange} placeholder="WhatsApp API Token" />
+            </IntegrationCard>
+
+            <IntegrationCard title="Facebook Messenger" icon={<Facebook />}>
+              <InputField name="fb_page_id" value={form.fb_page_id} onChange={handleChange} placeholder="FB Page ID" />
+              <InputField name="fb_page_token" value={form.fb_page_token} onChange={handleChange} placeholder="FB Page Token" />
+            </IntegrationCard>
+
+            {/* Instagram — Locked for Basic */}
+            {plan === "pro" || userEmail === FREE_ACCESS_EMAIL ? (
+              <IntegrationCard title="Instagram" icon={<Instagram />}>
+                <InputField name="instagram_user_id" value={form.instagram_user_id} onChange={handleChange} placeholder="Instagram User ID" />
+                <InputField name="instagram_page_id" value={form.instagram_page_id} onChange={handleChange} placeholder="Connected Page ID" />
+                <InputField name="instagram_access_token" value={form.instagram_access_token} onChange={handleChange} placeholder="Instagram Access Token" />
+              </IntegrationCard>
+            ) : (
+              <LockedCard title="Instagram Integration" />
+            )}
+
+            <IntegrationCard title="Calendly" icon={<Calendar />}>
+              <InputField name="calendly_link" value={form.calendly_link} onChange={handleChange} placeholder="Calendly Link" />
+            </IntegrationCard>
+
+            <IntegrationCard title="Business Location" icon={<MapPin />}>
+              <InputField name="business_address" value={form.business_address} onChange={handleChange} placeholder="Business Address" />
+              <MapContainer center={[form.business_lat, form.business_lng]} zoom={12} style={{ height: "250px", width: "100%", borderRadius: "1rem" }}>
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap contributors" />
+                <Marker position={[form.business_lat, form.business_lng]}>
+                  <Popup>{form.business_address || "Business Location"}</Popup>
+                </Marker>
+                <LocationSelector />
+              </MapContainer>
+              <p className="text-sm text-gray-400 mt-2">Click on the map to update location.</p>
+            </IntegrationCard>
+          </motion.div>
+
+          {/* Save Button */}
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.3 }} className="mt-10">
+            <button
+              onClick={handleSave}
+              disabled={loading}
+              className="w-full py-3 rounded-xl flex items-center justify-center gap-2 bg-gradient-to-r from-[#7f5af0] via-[#9e8ffb] to-[#bfa7ff] hover:from-[#9b7ff9] hover:to-[#d6c6ff] transition-all font-semibold shadow-lg hover:shadow-[0_0_30px_rgba(127,90,240,0.3)] disabled:opacity-50"
+            >
+              <Save className="w-5 h-5 text-white" /> {loading ? "Saving..." : "Save Integrations"}
+            </button>
+          </motion.div>
+        </div>
       </div>
-
-      <div className="max-w-5xl mx-auto space-y-6 sm:space-y-8">
-        <div className="p-6 sm:p-8 rounded-3xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-lg hover:shadow-[0_0_60px_rgba(127,90,240,0.35)] transition-all transform hover:scale-[1.01]">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-[#00eaff] via-[#7afcff] to-[#0077b6] bg-clip-text text-transparent drop-shadow-xl">Integrations Dashboard</h1>
-          <p className="mt-2 text-gray-300 text-sm sm:text-base">Connect WhatsApp, Facebook, Instagram, Calendly, and business location ✨</p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-          <IntegrationCard title="WhatsApp">
-            <input type="text" name="whatsapp_number" value={form.whatsapp_number} onChange={handleChange} placeholder="WhatsApp Number" className="input-field"/>
-            <input type="text" name="whatsapp_token" value={form.whatsapp_token} onChange={handleChange} placeholder="WhatsApp API Token" className="input-field"/>
-          </IntegrationCard>
-
-          <IntegrationCard title="Facebook Messenger">
-            <input type="text" name="fb_page_id" value={form.fb_page_id} onChange={handleChange} placeholder="FB Page ID" className="input-field"/>
-            <input type="text" name="fb_page_token" value={form.fb_page_token} onChange={handleChange} placeholder="FB Page Token" className="input-field"/>
-          </IntegrationCard>
-
-          <IntegrationCard title="Instagram">
-            <input type="text" name="instagram_user_id" value={form.instagram_user_id} onChange={handleChange} placeholder="Instagram User ID" className="input-field"/>
-            <input type="text" name="instagram_page_id" value={form.instagram_page_id} onChange={handleChange} placeholder="Connected Page ID" className="input-field"/>
-            <input type="text" name="instagram_access_token" value={form.instagram_access_token} onChange={handleChange} placeholder="Instagram Access Token" className="input-field"/>
-          </IntegrationCard>
-
-          <IntegrationCard title="Calendly">
-            <input type="text" name="calendly_link" value={form.calendly_link} onChange={handleChange} placeholder="Calendly Link" className="input-field"/>
-          </IntegrationCard>
-
-          <IntegrationCard title="Business Location">
-            <input type="text" name="business_address" value={form.business_address} onChange={handleChange} placeholder="Business Address" className="input-field"/>
-            <MapContainer center={[form.business_lat, form.business_lng]} zoom={12} style={{ height: "250px", width: "100%", borderRadius: "1rem" }}>
-              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap contributors"/>
-              <Marker position={[form.business_lat, form.business_lng]}>
-                <Popup>{form.business_address || "Business Location"}</Popup>
-              </Marker>
-              <LocationSelector/>
-            </MapContainer>
-            <p className="text-sm text-gray-300 mt-2">Click on the map to update location.</p>
-          </IntegrationCard>
-        </div>
-
-        <button onClick={handleSave} disabled={loading} className="w-full py-3 rounded-2xl bg-gradient-to-r from-[#00eaff]/40 via-[#7afcff]/30 to-[#0077b6]/40 font-semibold shadow-xl hover:scale-105 hover:shadow-[0_0_40px_rgba(0,245,255,0.5)] transition-all disabled:opacity-50">
-          {loading ? "Saving..." : "Save Integrations"}
-        </button>
-      </div>
-
-      <style>{`
-        .animate-gradient { background-size: 400% 400%; animation: gradientShift 15s ease infinite; }
-        @keyframes gradientShift { 0% { background-position:0% 50%; } 50% { background-position:100% 50%; } 100% { background-position:0% 50%; } }
-        .animate-pulse-slow { animation: pulse 10s infinite ease-in-out; }
-        .input-field { width:100%; margin-bottom:0.75rem; padding:0.85rem 1rem; border-radius:0.75rem; background:rgba(255,255,255,0.2); color:white; outline:none; transition:all 0.2s; font-size:0.875rem; }
-        .input-field::placeholder { color:#d1d5db; }
-        .input-field:focus { background:rgba(255,255,255,0.25); box-shadow:0 0 0 2px #00eaff; }
-      `}</style>
-    </div>
+    </ProtectedRoute>
   );
 }
 
-function IntegrationCard({ title, children }) {
+/* ------------------ Cards & Inputs ------------------ */
+function IntegrationCard({ title, icon, children }) {
   return (
-    <div className="bg-white/10 backdrop-blur-xl rounded-3xl shadow-xl p-4 sm:p-6 border border-white/20 hover:scale-[1.01] transition-all">
-      <h2 className="text-lg sm:text-xl font-semibold text-[#00eaff] mb-3 sm:mb-4">{title}</h2>
+    <motion.div whileHover={{ scale: 1.015 }} className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-5 sm:p-6 shadow-lg hover:bg-white/10 transition-all">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-9 h-9 flex items-center justify-center rounded-xl bg-gradient-to-br from-[#bfa7ff]/30 to-[#7f5af0]/20 shadow-inner">
+          {React.cloneElement(icon, { className: "w-5 h-5 text-[#9d8dfd]" })}
+        </div>
+        <h2 className="text-lg sm:text-xl font-semibold text-white/90">{title}</h2>
+      </div>
       {children}
-    </div>
+    </motion.div>
+  );
+}
+
+function LockedCard({ title }) {
+  return (
+    <motion.div whileHover={{ scale: 1.01 }} className="flex flex-col items-center justify-center bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-10 text-center shadow-lg text-gray-400">
+      <Lock className="w-8 h-8 mb-3 text-[#bfa7ff]" />
+      <p className="text-sm mb-2 font-semibold">{title}</p>
+      <p className="text-xs text-gray-500">🔒 Available only in the Pro plan</p>
+    </motion.div>
+  );
+}
+
+function InputField({ name, value, onChange, placeholder }) {
+  return (
+    <input
+      type="text"
+      name={name}
+      value={value || ""}
+      onChange={onChange}
+      placeholder={placeholder}
+      className="w-full mb-3 px-3 py-2 rounded-lg bg-white/10 text-white placeholder-gray-400 outline-none focus:bg-white/20 focus:ring-2 focus:ring-[#9d8dfd]/50 transition-all"
+    />
   );
 }

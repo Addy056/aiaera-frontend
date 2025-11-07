@@ -1,3 +1,4 @@
+// frontend/components/ChatbotPreview.jsx
 import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import { supabase } from "../supabaseClient";
@@ -13,6 +14,15 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
+  // 🎯 Generate or load persistent session ID (for returning customers)
+  const [sessionId] = useState(() => {
+    const existing = localStorage.getItem("chat_session_id");
+    if (existing) return existing;
+    const newId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    localStorage.setItem("chat_session_id", newId);
+    return newId;
+  });
+
   const themeColors = chatbotConfig?.themeColors || {
     background: "#1a1a2e",
     userBubble: "#7f5af0",
@@ -20,18 +30,12 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
     text: "#ffffff",
   };
 
-  // ✅ Define API base safely (no trailing slash)
   const API_BASE = (import.meta.env.VITE_BACKEND_URL || "http://localhost:5000").replace(/\/$/, "");
-  console.log("🚀 ChatbotPreview loaded with API_BASE =", API_BASE);
+  console.log("🚀 ChatbotPreview loaded with API_BASE =", API_BASE, "Session ID =", sessionId);
 
-  // --- Scroll to bottom whenever messages update ---
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  // --- Scroll to bottom when messages update ---
+  const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  useEffect(() => scrollToBottom(), [messages]);
 
   // --- Send message handler ---
   const sendMessage = async () => {
@@ -45,27 +49,32 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
     try {
       let headers = { "Content-Type": "application/json" };
 
-      // Auth header only for logged-in users
+      // 🪪 Add Authorization header for logged-in users
       if (!isPublic && user) {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
+        const { data: { session } } = await supabase.auth.getSession();
         if (!session) throw new Error("No active Supabase session found");
         headers.Authorization = `Bearer ${session.access_token}`;
       }
 
-      const requestUrl = `${API_BASE}/api/chatbot-preview`;
-      console.log("📡 Sending POST request to:", requestUrl);
-
+      // 🔗 Request to backend
       const res = await axios.post(
-        requestUrl,
-        { messages: newMessages, chatbotConfig, userId: user?.id || null },
+        `${API_BASE}/api/chatbot-preview`,
+        {
+          messages: newMessages,
+          chatbotConfig,
+          userId: user?.id || null,
+          sessionId, // 🧠 send persistent session ID
+        },
         { headers }
       );
 
       const reply = res.data?.reply || "🤖 (No reply received)";
+      const updatedContext = res.data?.context || null;
+
       setMessages([...newMessages, { role: "assistant", content: reply }]);
-      console.log("✅ Chatbot reply received:", reply);
+
+      // 🧩 Log context for debugging
+      if (updatedContext) console.log("🧠 Updated Chat Context:", updatedContext);
     } catch (error) {
       console.group("❌ Chatbot preview error (detailed)");
       console.error("📍 Error message:", error?.message);
@@ -99,7 +108,7 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
     }
   };
 
-  // --- Format message text with clickable links ---
+  // --- Format text with clickable links ---
   const formatText = (text) => {
     if (!text) return "";
     const urlRegex = /(https?:\/\/[^\s]+)/g;
@@ -141,30 +150,6 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
           </span>
         </div>
 
-        {/* Files Section */}
-        {chatbotConfig?.files?.length > 0 && (
-          <div style={styles.filesContainer}>
-            <strong>Files:</strong>
-            <ul style={styles.fileList}>
-              {chatbotConfig.files.map((f, i) => (
-                <li key={i}>
-                  <a
-                    href={f.publicUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{
-                      ...styles.fileLink,
-                      color: themeColors.userBubble,
-                    }}
-                  >
-                    {f.name}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
         {/* Chat Messages */}
         <div style={styles.messages}>
           {messages.map((msg, i) => (
@@ -179,9 +164,7 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
                 style={{
                   ...styles.bubble,
                   backgroundColor:
-                    msg.role === "user"
-                      ? themeColors.userBubble
-                      : themeColors.botBubble,
+                    msg.role === "user" ? themeColors.userBubble : themeColors.botBubble,
                   color: themeColors.text,
                 }}
               >
@@ -191,14 +174,7 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
           ))}
           {loading && (
             <div style={{ ...styles.message, ...styles.assistantMsg }}>
-              <div
-                style={{
-                  ...styles.bubble,
-                  backgroundColor: themeColors.botBubble,
-                }}
-              >
-                ...
-              </div>
+              <div style={{ ...styles.bubble, backgroundColor: themeColors.botBubble }}>...</div>
             </div>
           )}
           <div ref={messagesEndRef} />
@@ -249,13 +225,7 @@ function darkenColor(hex, percent) {
 }
 
 const styles = {
-  wrapper: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "16px",
-    height: "100%",
-    width: "100%",
-  },
+  wrapper: { display: "flex", flexDirection: "column", height: "100%" },
   chatbotPreview: {
     display: "flex",
     flexDirection: "column",
@@ -265,18 +235,17 @@ const styles = {
     borderRadius: "16px",
     border: "1px solid rgba(255, 255, 255, 0.15)",
     boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
-    fontFamily: "sans-serif",
     padding: "12px",
+    fontFamily: "sans-serif",
   },
   header: {
     display: "flex",
     alignItems: "center",
+    justifyContent: "center",
     gap: "12px",
     padding: "12px",
-    fontWeight: "bold",
-    color: "white",
     borderRadius: "16px 16px 0 0",
-    justifyContent: "center",
+    fontWeight: "bold",
   },
   logo: {
     height: "36px",
@@ -285,14 +254,6 @@ const styles = {
     borderRadius: "6px",
     boxShadow: "0 2px 10px rgba(0,0,0,0.3)",
   },
-  filesContainer: {
-    background: "rgba(255,255,255,0.1)",
-    padding: "8px",
-    borderRadius: "12px",
-    margin: "8px 0",
-  },
-  fileList: { listStyleType: "disc", paddingLeft: "16px", color: "white" },
-  fileLink: { textDecoration: "underline" },
   messages: {
     flex: 1,
     overflowY: "auto",
@@ -300,16 +261,15 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     gap: "8px",
-    maxHeight: "400px",
   },
   message: { display: "flex", maxWidth: "80%" },
-  userMsg: { alignSelf: "flex-end", justifyContent: "flex-end" },
-  assistantMsg: { alignSelf: "flex-start", justifyContent: "flex-start" },
+  userMsg: { alignSelf: "flex-end" },
+  assistantMsg: { alignSelf: "flex-start" },
   bubble: {
     padding: "10px 14px",
     borderRadius: "18px",
-    backdropFilter: "blur(10px)",
     wordBreak: "break-word",
+    backdropFilter: "blur(10px)",
   },
   inputArea: {
     display: "flex",

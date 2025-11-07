@@ -1,363 +1,688 @@
-// src/pages/Builder.jsx
 import { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
-import { v4 as uuidv4 } from "uuid";
-import axios from "axios";
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-} from "@/components/ui/tabs";
+import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/textarea";
-import { supabase } from "../supabaseClient.js";
+import { supabase } from "../supabaseClient";
+import ChatbotPreview from "../components/ChatbotPreview";
 import {
-  MapContainer,
-  TileLayer,
-  Marker,
-  Popup,
-  useMapEvents,
-} from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import L from "leaflet";
-import ChatbotPreview from "../components/ChatbotPreview.jsx";
+  Building2,
+  FileText,
+  Globe,
+  Palette,
+  Bot,
+  Upload,
+  Trash2,
+  Wand2,
+  Save,
+  Eye,
+  Code2,
+  Copy,
+  Lock,
+} from "lucide-react";
 
-// Leaflet icon fix
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-  iconUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  shadowUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-});
+/**
+ * AIAERA Builder Studio — v4.0
+ * ✅ Supabase Connected
+ * ✅ Plan Restrictions (Basic vs Pro)
+ * ✅ “Get Embed Code” Button Drawer
+ * ✅ Purple Glow, Glass UI, Static Layout
+ */
 
 export default function Builder() {
-  const [messages, setMessages] = useState([
-    {
-      id: uuidv4(),
-      sender: "bot",
-      text: "👋 Hi! I’m your AIAERA assistant. Let’s start building.",
-    },
-  ]);
-  const [input, setInput] = useState("");
+  const [activeTab, setActiveTab] = useState("business");
+  const [user, setUser] = useState(null);
+  const [subscriptionActive, setSubscriptionActive] = useState(false);
+  const [plan, setPlan] = useState("free");
+  const [chatbotId, setChatbotId] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [loadingInit, setLoadingInit] = useState(true);
+  const [isConfigSaved, setIsConfigSaved] = useState(false);
+  const [freeAccess, setFreeAccess] = useState(false);
+
+  const FREE_ACCESS_EMAIL = "aiaera056@gmail.com";
+
+  // Business info
   const [businessName, setBusinessName] = useState("");
   const [businessDescription, setBusinessDescription] = useState("");
+  const [businessEmail, setBusinessEmail] = useState("");
+  const [businessPhone, setBusinessPhone] = useState("");
+  const [businessWebsite, setBusinessWebsite] = useState("");
+
+  // Files & uploads
   const [files, setFiles] = useState([]);
-  const [logoUrl, setLogoUrl] = useState(null);
-  const [location, setLocation] = useState({ lat: 20.5937, lng: 78.9629 });
-  const [hasSelectedLocation, setHasSelectedLocation] = useState(false);
-
-  const [loadingConfig, setLoadingConfig] = useState(false);
-  const [savingConfig, setSavingConfig] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [loadingReply, setLoadingReply] = useState(false);
+  const fileInputRef = useRef(null);
+  const logoInputRef = useRef(null);
 
-  const [user, setUser] = useState(null);
-  const [chatbotId, setChatbotId] = useState(null);
-  const [authToken, setAuthToken] = useState(null);
-  const [isConfigSaved, setIsConfigSaved] = useState(false);
-
+  // Theme & design
+  const [logoUrl, setLogoUrl] = useState(null);
   const [themeColors, setThemeColors] = useState({
-    background: "#1a1a2e",
+    background: "#0b0b17",
     userBubble: "#7f5af0",
-    botBubble: "#6b21a8",
+    botBubble: "#70e1ff",
     text: "#ffffff",
   });
 
-  const fileInputRef = useRef(null);
-  const logoInputRef = useRef(null);
-  const chatEndRef = useRef(null);
-
-  const API_BASE = import.meta.env.VITE_BACKEND_URL;
+  // Embed drawer
+  const [showEmbed, setShowEmbed] = useState(false);
   const BUCKET = import.meta.env.VITE_SUPABASE_BUCKET || "chatbot-files";
+  const API_BASE = import.meta.env.VITE_BACKEND_URL;
 
-  // Initialize Builder
+  const presetThemes = {
+    aurora: {
+      background: "#0e0b24",
+      userBubble: "#7f5af0",
+      botBubble: "#00eaff",
+      text: "#ffffff",
+    },
+    night: {
+      background: "#0c0f1d",
+      userBubble: "#bba7ff",
+      botBubble: "#6b21a8",
+      text: "#f7f7fb",
+    },
+    glass: {
+      background: "#ffffff20",
+      userBubble: "#7f5af0",
+      botBubble: "#a78bfa",
+      text: "#0b0c11",
+    },
+    ocean: {
+      background: "#081427",
+      userBubble: "#7f5af0",
+      botBubble: "#4ad9ff",
+      text: "#e8f7ff",
+    },
+  };
+
+  const aiSuggestions = [
+    "We build AI chat assistants that qualify leads, answer FAQs, and book meetings 24/7.",
+    "Scale support with multi-channel AI chat — website, WhatsApp, and social, no code needed.",
+    "Boost conversions with a smart chatbot tailored to your business.",
+  ];
+
+  // --------------------------
+  // Init: Get user & plan info
+  // --------------------------
   useEffect(() => {
     let mounted = true;
-    const init = async () => {
-      setLoadingConfig(true);
+    (async () => {
+      setLoadingInit(true);
       try {
-        const {
-          data: { user: currentUser },
-        } = await supabase.auth.getUser();
-        if (!currentUser || !mounted) return;
-        setUser(currentUser);
+        const { data: { user: u } } = await supabase.auth.getUser();
+        if (!u || !mounted) return;
+        setUser(u);
 
-        const { data: sessionData } = await supabase.auth.getSession();
-        setAuthToken(sessionData?.session?.access_token || null);
+        if (u.email === FREE_ACCESS_EMAIL) {
+          setSubscriptionActive(true);
+          setPlan("pro");
+          setFreeAccess(true);
+        } else {
+          const { data: sub } = await supabase
+            .from("user_subscriptions")
+            .select("plan, expires_at")
+            .eq("user_id", u.id)
+            .maybeSingle();
 
-        const { data, error } = await supabase
+          const isActive = sub && new Date(sub.expires_at) > new Date();
+          setSubscriptionActive(isActive);
+          setPlan(sub?.plan || "free");
+        }
+
+        const { data } = await supabase
           .from("chatbots")
           .select("*")
-          .eq("user_id", currentUser.id)
-          .single();
-
-        if (error && error.code !== "PGRST116")
-          console.warn("chatbots fetch error:", error);
+          .eq("user_id", u.id)
+          .maybeSingle();
 
         if (data) {
           setChatbotId(data.id);
           setBusinessName(data.name || "");
           setBusinessDescription(data.business_info || "");
+          setBusinessEmail(data.config?.businessEmail || "");
+          setBusinessPhone(data.config?.businessPhone || "");
+          setBusinessWebsite(data.config?.businessWebsite || "");
+          setFiles(Array.isArray(data.config?.files) ? data.config.files : []);
           setLogoUrl(data.config?.logo_url || null);
-          if (Array.isArray(data.config?.files)) setFiles(data.config.files);
-
-          if (data.config?.location?.lat && data.config?.location?.lng) {
-            setLocation(data.config.location);
-            setHasSelectedLocation(true);
-          } else {
-            setLocation({ lat: 20.5937, lng: 78.9629 });
-            setHasSelectedLocation(false);
-          }
-
           if (data.config?.themeColors) setThemeColors(data.config.themeColors);
-
           setIsConfigSaved(true);
         }
-      } catch (err) {
-        console.error("Init Builder error:", err);
       } finally {
-        if (mounted) setLoadingConfig(false);
+        if (mounted) setLoadingInit(false);
       }
-    };
-    init();
-    return () => {
-      mounted = false;
-    };
+    })();
+    return () => (mounted = false);
   }, []);
 
-  // Scroll chat to bottom
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, loadingReply]);
-
-  const pushMessage = (sender, text) => {
-    setMessages((prev) => [...prev, { id: uuidv4(), sender, text }]);
+  // --------------------------
+  // Supabase Uploads
+  // --------------------------
+  const uploadFileToStorage = async (file) => {
+    if (!user) throw new Error("No user");
+    const path = `${user.id}/${Date.now()}-${file.name}`;
+    const { error } = await supabase.storage.from(BUCKET).upload(path, file);
+    if (error) throw error;
+    const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(path);
+    return { name: file.name, url: pub.publicUrl, size: file.size };
   };
 
-  // --- Save Config and Generate Embed ---
-  const saveConfigToSupabase = async (extra = {}) => {
-    if (!user) return;
-    setSavingConfig(true);
+  const handleFilesUpload = async (e) => {
+    if (plan !== "pro" && !freeAccess) {
+      alert("⚠️ File uploads are only available in the Pro plan.");
+      return;
+    }
+    const selected = Array.from(e.target.files || []);
+    if (!selected.length) return;
+    setUploading(true);
     try {
+      const uploaded = [];
+      for (const f of selected) uploaded.push(await uploadFileToStorage(f));
+      setFiles((prev) => [...uploaded, ...prev]);
+    } catch {
+      alert("❌ File upload failed.");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleSuggest = () => {
+    const s = aiSuggestions[Math.floor(Math.random() * aiSuggestions.length)];
+    setBusinessDescription((prev) => (prev ? `${prev}\n\n${s}` : s));
+  };
+
+  // --------------------------
+  // Save chatbot config
+  // --------------------------
+  const saveConfigToSupabase = async () => {
+    if (!user) return;
+    setSaving(true);
+    try {
+      if (!freeAccess) {
+        const { data: sub } = await supabase
+          .from("user_subscriptions")
+          .select("expires_at")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (!sub || new Date(sub.expires_at) < new Date()) {
+          alert("⚠️ Your subscription is inactive. Please renew to save chatbot.");
+          setSaving(false);
+          return;
+        }
+      }
+
       const config = {
-        files: files || [],
-        logo_url: logoUrl || null,
-        location: hasSelectedLocation ? location : null,
+        files,
+        logo_url: logoUrl,
         themeColors,
-        ...extra,
+        businessEmail,
+        businessPhone,
+        businessWebsite,
       };
 
       if (chatbotId) {
-        // ✅ Update existing chatbot
         await supabase
           .from("chatbots")
           .update({
             name: businessName,
             business_info: businessDescription,
             config,
-            updated_at: new Date().toISOString(),
           })
           .eq("id", chatbotId)
           .eq("user_id", user.id);
       } else {
-        // ✅ Create a new chatbot entry
-        const { data: subscription } = await supabase
-          .from("user_subscriptions")
-          .select("expires_at")
-          .eq("user_id", user.id)
-          .maybeSingle();
-
-        const expired =
-          !subscription ||
-          !subscription.expires_at ||
-          new Date(subscription.expires_at) < new Date();
-
-        if (expired) {
-          pushMessage(
-            "bot",
-            "⚠️ Your subscription is inactive. Please renew to create your chatbot. Go to Pricing."
-          );
-          setSavingConfig(false);
-          return;
-        }
-
         const { data, error } = await supabase
           .from("chatbots")
-          .insert([
-            {
-              user_id: user.id,
-              name: businessName,
-              business_info: businessDescription,
-              config,
-            },
-          ])
+          .insert([{ user_id: user.id, name: businessName, business_info: businessDescription, config }])
           .select()
           .single();
-
         if (error) throw error;
-        setChatbotId(data.id); // ✅ Auto-generate chatbotId instantly
+        setChatbotId(data.id);
       }
 
-      pushMessage("bot", "✅ Chatbot saved successfully!");
       setIsConfigSaved(true);
-    } catch (err) {
-      console.error("Save config error:", err);
-      pushMessage("bot", "❌ Failed to save chatbot.");
+      alert("✅ Chatbot saved successfully!");
+    } catch {
+      alert("❌ Failed to save chatbot.");
     } finally {
-      setSavingConfig(false);
+      setSaving(false);
     }
   };
 
+  if (loadingInit)
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0b0b17] text-white">
+        Initializing Builder…
+      </div>
+    );
+
+  if (!subscriptionActive && !freeAccess)
+    return (
+      <div className="min-h-screen flex items-center justify-center text-center text-white bg-[#0b0b17]">
+        ⚠️ Your subscription has expired. Please renew to continue using the Builder Studio.
+      </div>
+    );
+
+  // --------------------------
+  // UI
+  // --------------------------
   return (
-    <div className="flex flex-col lg:flex-row gap-6 p-4 sm:p-6 h-full bg-gradient-to-br from-[#0f0f17] via-[#1a1a2e] to-[#0f0f17] min-h-screen">
-      {/* Left Panel */}
-      <motion.div
-        initial={{ x: -40, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.6 }}
-        className="lg:w-1/2 w-full"
-      >
-        <Card className="backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl rounded-2xl p-4 sm:p-6">
-          <h2 className="text-xl sm:text-2xl font-bold text-white mb-4">
-            ⚡ Build Your Chatbot
-          </h2>
-          <Tabs defaultValue="business">
-            <TabsList className="grid grid-cols-2 sm:grid-cols-5 bg-black/30 rounded-xl p-1 mb-6 gap-2">
-              <TabsTrigger value="business">Business</TabsTrigger>
-              <TabsTrigger value="files">Files</TabsTrigger>
-              <TabsTrigger value="scraping">Website</TabsTrigger>
-              <TabsTrigger value="logo">Logo</TabsTrigger>
-              <TabsTrigger value="map">Location</TabsTrigger>
-            </TabsList>
+    <div className="relative min-h-screen bg-[#0a0b14] text-white overflow-x-hidden">
+      <AuroraLayer />
 
-            {/* Business */}
-            <TabsContent value="business">
-              <div className="space-y-4">
-                <Input
-                  placeholder="Business Name"
-                  value={businessName}
-                  onChange={(e) => setBusinessName(e.target.value)}
-                  className="bg-black/30 border-0 text-white w-full"
-                />
-                <Textarea
-                  placeholder="Business Description"
-                  value={businessDescription}
-                  onChange={(e) => setBusinessDescription(e.target.value)}
-                  className="bg-black/30 border-0 text-white w-full"
-                />
-                <Button
-                  onClick={() => saveConfigToSupabase()}
-                  disabled={savingConfig}
-                  className="w-full bg-purple-600 hover:bg-purple-500 mt-2"
-                >
-                  {savingConfig ? "Saving..." : "💾 Save Chatbot"}
-                </Button>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </Card>
-
-        {/* ✅ Embed Code section (only after save) */}
-        {isConfigSaved && chatbotId && (
-          <Card className="backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl rounded-2xl p-4 mt-4">
-            <h3 className="text-white font-bold text-lg mb-2">
-              📄 Embed Your Chatbot
-            </h3>
-            <p className="text-gray-300 text-sm mb-2">
-              Copy and paste this iframe into your website:
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-8 py-10">
+        <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
+          <div>
+            <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-[#cbb8ff] via-[#9b8cff] to-[#5be7ff] bg-clip-text text-transparent">
+              AIAERA Builder Studio
+            </h1>
+            <p className="text-gray-300 mt-2">
+              Design, train, and embed your AI assistant — in one place.
             </p>
-            <textarea
-              readOnly
-              className="w-full h-24 bg-black/30 text-white p-2 rounded-lg font-mono text-sm"
-              value={`<iframe src="${API_BASE}/public-chatbot/${chatbotId}" width="400" height="500" style="border:none; border-radius:16px;"></iframe>`}
-            />
-            <Button
-              className="mt-2 w-full bg-purple-600 hover:bg-purple-500"
-              onClick={() => {
-                navigator.clipboard.writeText(
-                  `<iframe src="${API_BASE}/public-chatbot/${chatbotId}" width="400" height="500" style="border:none; border-radius:16px;"></iframe>`
-                );
-                alert("✅ Embed code copied to clipboard!");
-              }}
-            >
-              Copy Embed Code
-            </Button>
-          </Card>
-        )}
-      </motion.div>
+          </div>
+          <Button
+            onClick={saveConfigToSupabase}
+            disabled={saving}
+            className="bg-gradient-to-r from-[#7f5af0] via-[#9b8cff] to-[#5be7ff] hover:shadow-[0_0_28px_rgba(127,90,240,0.45)] px-6 py-3"
+          >
+            <Save className="w-4 h-4 mr-2" />
+            {saving ? "Saving..." : "Save"}
+          </Button>
+        </div>
 
-      {/* Right Panel */}
-      <motion.div
-        initial={{ x: 40, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.6 }}
-        className="lg:w-1/2 w-full flex flex-col h-full"
-      >
-        {/* Color Picker */}
-        <Card className="backdrop-blur-2xl bg-white/5 border border-white/20 shadow-2xl rounded-2xl p-4 mb-4 flex flex-col gap-4">
-          <h3 className="text-white font-bold text-lg mb-2">
-            🎨 Customize Chatbot Colors
-          </h3>
-          <div className="flex gap-4 flex-wrap">
+        <div className="grid grid-cols-12 gap-6">
+          <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+
+          <div className="col-span-12 lg:col-span-9">
+            <motion.div key={activeTab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
+              <Card className="bg-white/5 border border-white/10 backdrop-blur-2xl rounded-3xl p-6 shadow-[0_0_60px_rgba(155,140,255,0.2)]">
+                {activeTab === "business" && (
+                  <BusinessTab {...{ businessName, setBusinessName, businessDescription, setBusinessDescription, businessEmail, setBusinessEmail, businessPhone, setBusinessPhone, businessWebsite, setBusinessWebsite, handleSuggest }} />
+                )}
+
+                {activeTab === "files" && plan !== "pro" && !freeAccess ? (
+                  <LockedSection message="File uploads and chatbot training are available only in the Pro plan." />
+                ) : (
+                  activeTab === "files" && <FilesTab {...{ files, setFiles, fileInputRef, uploading, handleFilesUpload }} />
+                )}
+
+                {activeTab === "website" && (
+                  <WebsiteTab {...{ businessWebsite, setBusinessWebsite }} />
+                )}
+
+                {activeTab === "studio" && (
+                  <StudioTab {...{ presetThemes, themeColors, setThemeColors, logoUrl, setLogoUrl, logoInputRef, uploadFileToStorage, chatbotId, businessName, files, user, isConfigSaved, API_BASE, showEmbed, setShowEmbed }} />
+                )}
+              </Card>
+            </motion.div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Subcomponents ---------- */
+function LockedSection({ message }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-24 text-gray-400">
+      <Lock className="w-8 h-8 mb-3 text-[#bfa7ff]" />
+      <p>{message}</p>
+    </div>
+  );
+}
+function Sidebar({ activeTab, setActiveTab }) {
+  return (
+    <div className="col-span-12 lg:col-span-3">
+      {[
+        { id: "business", icon: <Building2 />, label: "Business" },
+        { id: "files", icon: <FileText />, label: "Files" },
+        { id: "website", icon: <Globe />, label: "Website" },
+        { id: "studio", icon: <Palette />, label: "Studio" },
+      ].map((t) => (
+        <button
+          key={t.id}
+          onClick={() => setActiveTab(t.id)}
+          className={`w-full flex items-center gap-3 px-4 py-3 mb-3 rounded-2xl transition-all border ${
+            activeTab === t.id
+              ? "bg-white/[0.14] border-white/20 text-[#e6deff] shadow-[0_8px_30px_rgba(127,90,240,0.25)]"
+              : "bg-white/[0.08] border-white/10 text-gray-300 hover:bg-white/[0.12]"
+          }`}
+        >
+          <span className="text-[#bfa7ff]">{t.icon}</span>
+          <span className="font-medium">{t.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ---------- BUSINESS TAB ---------- */
+function BusinessTab({
+  businessName,
+  setBusinessName,
+  businessDescription,
+  setBusinessDescription,
+  businessEmail,
+  setBusinessEmail,
+  businessPhone,
+  setBusinessPhone,
+  businessWebsite,
+  setBusinessWebsite,
+  handleSuggest,
+}) {
+  return (
+    <div className="space-y-5">
+      <h2 className="text-2xl font-bold tracking-tight">Business Information</h2>
+      <Input
+        placeholder="Business Name"
+        value={businessName}
+        onChange={(e) => setBusinessName(e.target.value)}
+        className="bg-black/30 border-0 text-white"
+      />
+      <Textarea
+        placeholder="Describe your business"
+        value={businessDescription}
+        onChange={(e) => setBusinessDescription(e.target.value)}
+        className="bg-black/30 border-0 text-white min-h-[120px]"
+      />
+      <Button onClick={handleSuggest} className="bg-white/10 hover:bg-white/20">
+        <Wand2 className="w-4 h-4 mr-2" /> Suggest Better Copy
+      </Button>
+      <Input
+        placeholder="Business Email"
+        value={businessEmail}
+        onChange={(e) => setBusinessEmail(e.target.value)}
+        className="bg-black/30 border-0 text-white"
+      />
+      <Input
+        placeholder="Phone"
+        value={businessPhone}
+        onChange={(e) => setBusinessPhone(e.target.value)}
+        className="bg-black/30 border-0 text-white"
+      />
+      <Input
+        placeholder="Website URL"
+        value={businessWebsite}
+        onChange={(e) => setBusinessWebsite(e.target.value)}
+        className="bg-black/30 border-0 text-white"
+      />
+    </div>
+  );
+}
+
+/* ---------- FILES TAB ---------- */
+function FilesTab({ files, setFiles, fileInputRef, uploading, handleFilesUpload }) {
+  return (
+    <div className="space-y-5">
+      <h2 className="text-2xl font-bold tracking-tight">Files</h2>
+      <div className="flex items-center gap-3">
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept=".pdf,.csv,.txt,.md"
+          onChange={handleFilesUpload}
+          className="hidden"
+        />
+        <Button onClick={() => fileInputRef.current?.click()}>
+          <Upload className="w-4 h-4 mr-2" />
+          {uploading ? "Uploading..." : "Upload Files"}
+        </Button>
+      </div>
+      <div className="grid sm:grid-cols-2 gap-3">
+        {files.map((f) => (
+          <div
+            key={f.url}
+            className="flex items-center justify-between bg-white/5 border border-white/10 rounded-2xl px-3 py-2"
+          >
+            <div className="truncate text-sm">{f.name}</div>
+            <Button
+              variant="ghost"
+              className="text-red-300 hover:text-red-200"
+              onClick={() => setFiles((prev) => prev.filter((x) => x.url !== f.url))}
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
+        ))}
+        {!files.length && <p className="text-gray-400 text-sm">No files uploaded.</p>}
+      </div>
+    </div>
+  );
+}
+
+/* ---------- WEBSITE TAB ---------- */
+function WebsiteTab({ businessWebsite, setBusinessWebsite }) {
+  return (
+    <div className="space-y-5">
+      <h2 className="text-2xl font-bold tracking-tight">Website Integration</h2>
+      <Input
+        placeholder="https://your-website.com"
+        value={businessWebsite}
+        onChange={(e) => setBusinessWebsite(e.target.value)}
+        className="bg-black/30 border-0 text-white"
+      />
+      <p className="text-xs text-gray-400">
+        Website integration allows your chatbot to capture leads and chat directly on your site.
+      </p>
+    </div>
+  );
+}
+
+/* ---------- STUDIO TAB ---------- */
+function StudioTab({
+  presetThemes,
+  themeColors,
+  setThemeColors,
+  logoUrl,
+  setLogoUrl,
+  logoInputRef,
+  uploadFileToStorage,
+  chatbotId,
+  businessName,
+  files,
+  user,
+  isConfigSaved,
+  API_BASE,
+  showEmbed,
+  setShowEmbed,
+}) {
+  return (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+        <Palette className="w-5 h-5 text-[#cbb8ff]" /> Studio — Design & Live Preview
+      </h2>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* 🎨 Design Section */}
+        <Card className="bg-white/5 border border-white/10 rounded-3xl p-5 backdrop-blur-2xl shadow-[0_0_40px_rgba(127,90,240,0.25)]">
+          <div className="flex flex-wrap gap-3 mb-4">
+            {Object.entries(presetThemes).map(([k, v]) => (
+              <Button
+                key={k}
+                onClick={() => setThemeColors(v)}
+                className="bg-white/10 hover:bg-white/20 capitalize"
+              >
+                {k}
+              </Button>
+            ))}
+          </div>
+
+          {/* Color Pickers */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {[
               { label: "Background", field: "background" },
-              { label: "User Bubble", field: "userBubble" },
-              { label: "Bot Bubble", field: "botBubble" },
-              { label: "Text Color", field: "text" },
-            ].map((item) => (
-              <div key={item.field} className="flex flex-col items-center">
-                <span className="text-sm text-gray-300 mb-1">
-                  {item.label}
-                </span>
-                <div
-                  onClick={() =>
-                    document
-                      .getElementById(`color-input-${item.field}`)
-                      .click()
-                  }
-                  style={{ backgroundColor: themeColors[item.field] }}
-                  className="w-10 h-10 rounded-full shadow-lg cursor-pointer transition-transform hover:scale-110 border-2 border-white/20"
-                />
-                <input
-                  type="color"
-                  id={`color-input-${item.field}`}
-                  value={themeColors[item.field]}
-                  onChange={(e) =>
-                    setThemeColors((prev) => ({
-                      ...prev,
-                      [item.field]: e.target.value,
-                    }))
-                  }
-                  className="hidden"
-                />
-              </div>
+              { label: "User", field: "userBubble" },
+              { label: "Bot", field: "botBubble" },
+              { label: "Text", field: "text" },
+            ].map(({ label, field }) => (
+              <ColorSwatch
+                key={field}
+                label={label}
+                value={themeColors[field]}
+                onChange={(v) => setThemeColors((p) => ({ ...p, [field]: v }))}
+              />
             ))}
+          </div>
+
+          {/* Logo Upload */}
+          <div className="flex items-center gap-3 mt-5">
+            <input
+              ref={logoInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={async (e) => {
+                const f = e.target.files?.[0];
+                if (!f) return;
+                try {
+                  const { url } = await uploadFileToStorage(f);
+                  setLogoUrl(url);
+                } catch {
+                  alert("Logo upload failed.");
+                } finally {
+                  if (logoInputRef.current) logoInputRef.current.value = "";
+                }
+              }}
+            />
+            <Button onClick={() => logoInputRef.current?.click()}>Upload Logo</Button>
+            {logoUrl && (
+              <img
+                src={logoUrl}
+                alt="logo"
+                className="w-10 h-10 rounded-lg border border-white/10"
+              />
+            )}
           </div>
         </Card>
 
-        {/* Chatbot Preview (❌ hides business info) */}
-        <Card className="backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl rounded-2xl flex-1 p-4 flex flex-col">
-          <ChatbotPreview
-            chatbotConfig={{
-              id: chatbotId,
-              name: businessName,
-              // 👇 removed businessDescription — no sensitive info visible
-              files,
-              logoUrl,
-              location: hasSelectedLocation ? location : null,
-              themeColors,
-            }}
-            user={user}
-          />
-          <div ref={chatEndRef} />
+        {/* 🤖 Live Preview */}
+        <Card className="bg-white/10 border border-white/10 rounded-3xl p-5 backdrop-blur-2xl">
+          <h3 className="font-semibold mb-3 text-white flex items-center gap-2">
+            <Bot className="w-5 h-5" /> Live Chatbot Preview
+          </h3>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-inner">
+            <ChatbotPreview
+              chatbotConfig={{
+                id: chatbotId,
+                name: businessName,
+                files,
+                logoUrl,
+                themeColors,
+              }}
+              user={user}
+            />
+          </div>
+
+          {/* Get Embed Code Button */}
+          {isConfigSaved && chatbotId && (
+            <div className="mt-4">
+              <Button
+                onClick={() => setShowEmbed((s) => !s)}
+                className="w-full justify-center bg-gradient-to-r from-[#7f5af0] via-[#9b8cff] to-[#5be7ff] hover:shadow-[0_0_30px_rgba(127,90,240,0.5)]"
+              >
+                {showEmbed ? "Hide Embed Code" : "Get Embed Code"}
+              </Button>
+            </div>
+          )}
         </Card>
-      </motion.div>
+      </div>
+
+      {/* 💾 Embed Drawer */}
+      <AnimatePresence>
+        {showEmbed && isConfigSaved && chatbotId && (
+          <motion.div
+            key="embed-drawer"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            transition={{ duration: 0.35 }}
+          >
+            <Card className="bg-white/6 border border-white/10 rounded-3xl p-5 backdrop-blur-2xl">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-semibold text-white flex items-center gap-2">
+                  <Code2 className="w-4 h-4" /> Embed Code
+                </h4>
+                <a
+                  href={`${API_BASE}/public-chatbot/${chatbotId}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-sm text-[#bfa7ff] hover:underline flex items-center gap-1"
+                >
+                  <Eye className="w-4 h-4" /> Preview
+                </a>
+              </div>
+
+              <textarea
+                readOnly
+                className="w-full h-28 bg-black/30 text-white/90 p-3 rounded-xl font-mono text-sm border border-white/10"
+                value={`<iframe src="${API_BASE}/public-chatbot/${chatbotId}" width="400" height="500" style="border:none; border-radius:16px;"></iframe>`}
+              />
+
+              <div className="flex justify-between items-center mt-3 flex-wrap gap-3">
+                <Button
+                  onClick={() => {
+                    navigator.clipboard.writeText(
+                      `<iframe src="${API_BASE}/public-chatbot/${chatbotId}" width="400" height="500" style="border:none; border-radius:16px;"></iframe>`
+                    );
+                    alert("✅ Embed code copied!");
+                  }}
+                  className="flex items-center gap-2 bg-gradient-to-r from-[#9b8cff] to-[#bfa7ff]"
+                >
+                  <Copy className="w-4 h-4" /> Copy
+                </Button>
+                <Button
+                  onClick={() => setShowEmbed(false)}
+                  variant="ghost"
+                  className="bg-white/10 hover:bg-white/20"
+                >
+                  Close
+                </Button>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
+  );
+}
+
+/* ---------- Utility Components ---------- */
+function ColorSwatch({ label, value, onChange }) {
+  const inputRef = useRef(null);
+  return (
+    <div className="flex flex-col items-center">
+      <span className="text-xs text-gray-400 mb-1">{label}</span>
+      <div
+        onClick={() => inputRef.current?.click()}
+        style={{ backgroundColor: value }}
+        className="w-[25px] h-[25px] rounded-md border border-white/20 cursor-pointer shadow-md"
+      />
+      <input
+        ref={inputRef}
+        type="color"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="hidden"
+      />
+    </div>
+  );
+}
+
+function AuroraLayer() {
+  return (
+    <motion.div
+      animate={{ opacity: [0.35, 0.6, 0.35], scale: [1, 1.06, 1] }}
+      transition={{ repeat: Infinity, duration: 16 }}
+      className="pointer-events-none absolute -top-52 -left-48 w-[620px] h-[620px] rounded-full blur-[140px]"
+      style={{
+        background:
+          "radial-gradient(circle at 30% 30%, rgba(191,167,255,0.25), rgba(127,90,240,0.18), rgba(0,234,255,0.14))",
+      }}
+    />
   );
 }

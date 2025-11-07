@@ -12,6 +12,8 @@ body,
 body {
   font-family: "Inter", sans-serif;
   font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #eef2f7;
@@ -24,9 +26,9 @@ body {
 
 /* === Animations === */
 @keyframes gradientShift {
-  0% { background-position:0% 50%; }
-  50% { background-position:100% 50%; }
-  100% { background-position:0% 50%; }
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 .animate-pulse-slow {
@@ -36,10 +38,10 @@ body {
 /* === Glass & Cards === */
 .glass {
   @apply bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl transition-all duration-500 ease-in-out;
-  box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
 }
 .glass-hover {
-  box-shadow: 0 16px 60px rgba(0,0,0,0.45);
+  box-shadow: 0 16px 60px rgba(0, 0, 0, 0.45);
   transform: translateY(-0.25rem) scale(1.02);
   transition: all 0.5s ease-in-out;
 }
@@ -47,15 +49,16 @@ body {
 /* === Buttons === */
 .btn {
   @apply inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-sm font-semibold transition-all duration-300 cursor-pointer;
+  font-family: "Inter", sans-serif;
 }
 .btn-primary {
   @apply text-white;
   background: linear-gradient(90deg, rgba(147,51,234,0.6), rgba(79,208,255,0.5));
-  box-shadow: 0 6px 18px rgba(127,90,240,0.4);
+  box-shadow: 0 6px 18px rgba(127, 90, 240, 0.4);
 }
 .btn-secondary {
   @apply border text-gray-300 shadow-inner;
-  background-color: rgba(255,255,255,0.05);
+  background-color: rgba(255, 255, 255, 0.05);
 }
 .btn-ghost {
   @apply border-transparent text-gray-400;
@@ -64,8 +67,9 @@ body {
 /* === Inputs === */
 .input {
   @apply w-full rounded-2xl px-4 py-3 text-sm text-white outline-none;
-  background-color: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-family: "Inter", sans-serif;
 }
 
 /* === Sidebar === */
@@ -77,17 +81,23 @@ body {
 }
 .sidebar-link {
   @apply px-4 py-3 rounded-xl transition-all duration-300 text-gray-400;
+  font-family: "Inter", sans-serif;
 }
 .sidebar-active {
   @apply text-cyan-300 shadow;
-  background-color: rgba(255,255,255,0.05);
-  border: 1px solid rgba(0,245,255,0.3);
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(0, 245, 255, 0.3);
 }
 
 /* === Typography === */
 h1, h2, h3, h4 {
   @apply font-bold text-white;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  font-family: "Inter", sans-serif;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  letter-spacing: -0.02em;
+}
+p, span, li, label, input, textarea {
+  font-family: "Inter", sans-serif;
 }
 
 /* === Modals === */
@@ -96,11 +106,11 @@ h1, h2, h3, h4 {
 }
 .modal-content {
   @apply p-10 rounded-3xl relative;
-  background: rgba(255,255,255,0.05);
+  background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(30px);
   transform: scale(0.98);
   transition: all 0.3s ease-in-out;
-  box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
 }
 .modal-close {
   @apply absolute top-5 right-5 text-white/60 cursor-pointer;
@@ -109,11 +119,11 @@ h1, h2, h3, h4 {
 /* === Cards & Sections === */
 .card {
   @apply p-6 rounded-3xl transition-all duration-500;
-  background: rgba(255,255,255,0.05);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
 }
 .card-hover {
-  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
   transform: translateY(-0.25rem);
 }
 
@@ -122,23 +132,23 @@ h1, h2, h3, h4 {
   width: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(0,0,0,0.2);
+  background: rgba(0, 0, 0, 0.2);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(147,51,234,0.5);
+  background: rgba(147, 51, 234, 0.5);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(147,51,234,0.7);
+  background: rgba(147, 51, 234, 0.7);
 }
 
 /* === Utility Enhancements === */
 .text-glow {
   @apply text-white/90;
-  text-shadow: 0 0 12px rgba(127,90,240,0.7);
+  text-shadow: 0 0 12px rgba(127, 90, 240, 0.7);
 }
 .shadow-soft {
-  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
 }
 
 /* === Floating Gradient Circles for Pages === */
@@ -148,7 +158,7 @@ h1, h2, h3, h4 {
   height: 600px;
   top: 20%;
   left: 5%;
-  background: rgba(147,51,234,0.3);
+  background: rgba(147, 51, 234, 0.3);
   border-radius: 50%;
   filter: blur(100px);
   animation: pulse 12s infinite ease-in-out;
@@ -159,7 +169,7 @@ h1, h2, h3, h4 {
   height: 500px;
   bottom: 5%;
   right: 5%;
-  background: rgba(248,131,172,0.2);
+  background: rgba(248, 131, 172, 0.2);
   border-radius: 50%;
   filter: blur(120px);
   animation: pulse 15s infinite ease-in-out;
