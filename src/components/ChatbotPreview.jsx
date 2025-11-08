@@ -30,12 +30,12 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
   const API_BASE = (import.meta.env.VITE_BACKEND_URL || "http://localhost:5000").replace(/\/$/, "");
 
   // ✅ Extract integrations
-  const calendlyLink = chatbotConfig?.calendlyLink || "";
+  const calendlyLink = chatbotConfig?.calendly_link || "";
   const whatsappNumber = chatbotConfig?.whatsapp_number || "";
   const fbPageId = chatbotConfig?.fb_page_id || "";
   const instagramPageId = chatbotConfig?.instagram_page_id || "";
 
-  // Scroll to bottom
+  // Scroll to bottom when new message added
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -105,9 +105,27 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
         if (session) headers.Authorization = `Bearer ${session.access_token}`;
       }
 
+      // ✅ Clean config for backend
+      const cleanConfig = {
+        id: chatbotConfig?.id || null,
+        name: chatbotConfig?.name || "Unnamed Business",
+        business_info:
+          chatbotConfig?.business_info ||
+          chatbotConfig?.config?.businessDescription ||
+          chatbotConfig?.description ||
+          "This business provides helpful services and products to its customers.",
+        themeColors: chatbotConfig?.themeColors || {},
+        integrations: {
+          calendly: chatbotConfig?.calendly_link || "",
+          whatsapp: chatbotConfig?.whatsapp_number || "",
+          facebook: chatbotConfig?.fb_page_id || "",
+          instagram: chatbotConfig?.instagram_page_id || "",
+        },
+      };
+
       const res = await axios.post(
         `${API_BASE}/api/chatbot-preview`,
-        { messages: newMessages, chatbotConfig, userId: user?.id || null, sessionId },
+        { messages: newMessages, chatbotConfig: cleanConfig, userId: user?.id || null, sessionId },
         { headers }
       );
 
