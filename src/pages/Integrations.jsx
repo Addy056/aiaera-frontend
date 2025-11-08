@@ -42,7 +42,7 @@ export default function Integrations() {
   const mountedRef = useRef(false);
 
   // ✅ Use correct env var name for backend base
-  const API_BASE = import.meta.env.VITE_API_URL + "/api/integrations";
+const API_BASE = `${import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "")}/api/integrations`;
 
   useEffect(() => {
     mountedRef.current = true;
