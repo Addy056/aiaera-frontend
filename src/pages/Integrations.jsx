@@ -30,7 +30,7 @@ export default function Integrations() {
     instagram_page_id: "",
     instagram_access_token: "",
     business_address: "",
-    business_lat: 19.076, // Default: Mumbai
+    business_lat: 19.076,
     business_lng: 72.8777,
   });
 
@@ -46,17 +46,16 @@ export default function Integrations() {
   useEffect(() => {
     mountedRef.current = true;
     init();
-    detectLocation(); // Try auto-location once
+    detectLocation();
     return () => (mountedRef.current = false);
   }, []);
 
-  // ✅ Detect user location
+  // ✅ Detect user’s location (optional)
   const detectLocation = () => {
     if (!navigator.geolocation) {
       showToast("Geolocation not supported on this device", "error");
       return;
     }
-
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { latitude, longitude } = pos.coords;
@@ -75,6 +74,7 @@ export default function Integrations() {
     );
   };
 
+  // ✅ Initialization
   const init = async () => {
     setLoading(true);
     try {
@@ -82,6 +82,7 @@ export default function Integrations() {
       if (userErr || !user) throw new Error("Unable to fetch user session.");
       setUserEmail(user.email);
 
+      // ✅ Free Access Mode
       if (user.email === FREE_ACCESS_EMAIL) {
         setSubscriptionActive(true);
         setPlan("pro");
@@ -89,6 +90,7 @@ export default function Integrations() {
         return;
       }
 
+      // ✅ Subscription check
       const { data: sub } = await supabase
         .from("user_subscriptions")
         .select("plan, expires_at")
@@ -110,30 +112,30 @@ export default function Integrations() {
     }
   };
 
+  // ✅ Fetch user integrations (partial-safe)
   const fetchIntegrations = async (userId) => {
     try {
       const res = await fetch(`${API_BASE}?user_id=${userId}`);
       const json = await res.json();
 
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || "Backend error fetching integrations");
-      }
+      if (!res.ok || !json.success) throw new Error(json.error || "Backend error fetching integrations");
 
-      if (mountedRef.current && json.data) {
-        setForm((prev) => ({
-          ...prev,
-          ...json.data,
-          business_lat: json.data.business_lat || 19.076,
-          business_lng: json.data.business_lng || 72.8777,
-        }));
-      }
+      const safeData = json.data || {};
+      setForm((prev) => ({
+        ...prev,
+        ...safeData,
+        business_lat: safeData.business_lat || prev.business_lat,
+        business_lng: safeData.business_lng || prev.business_lng,
+      }));
     } catch (err) {
       showToast("Error fetching integrations: " + err.message, "error");
     }
   };
 
+  // ✅ Handle input
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
+  // ✅ Save integrations (ignore missing fields)
   const handleSave = async () => {
     setLoading(true);
     try {
@@ -146,11 +148,9 @@ export default function Integrations() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const result = await res.json();
 
-      if (!res.ok || !result.success) {
-        throw new Error(result?.error || "Failed to save integrations");
-      }
+      const result = await res.json();
+      if (!res.ok || !result.success) throw new Error(result?.error || "Failed to save integrations");
 
       showToast("✅ Integrations saved successfully!", "success");
     } catch (err) {
@@ -160,6 +160,7 @@ export default function Integrations() {
     }
   };
 
+  // ✅ Toast handler
   const showToast = (message, type = "success") => {
     setToast({ message, type });
     setTimeout(() => {
@@ -167,6 +168,7 @@ export default function Integrations() {
     }, 4000);
   };
 
+  // ✅ Map click handler
   const LocationSelector = () => {
     useMapEvents({
       click(e) {
@@ -180,7 +182,7 @@ export default function Integrations() {
     return null;
   };
 
-  // ------------------------------ UI ------------------------------
+  // ❌ Blocked if subscription expired
   if (!subscriptionActive) {
     return (
       <ProtectedRoute>
@@ -200,7 +202,7 @@ export default function Integrations() {
       <div className="min-h-screen bg-gradient-to-br from-[#0b0b1a] via-[#111129] to-[#090a1a] text-white relative overflow-hidden">
         <FloatingMenu userEmail={userEmail} />
 
-        {/* Background Glow */}
+        {/* Glowing Background */}
         <div className="absolute inset-0 -z-10">
           <div className="absolute top-10 left-10 w-[500px] h-[500px] rounded-full blur-3xl bg-gradient-to-br from-[#bfa7ff]/20 to-[#7f5af0]/10"></div>
           <div className="absolute bottom-10 right-10 w-[450px] h-[450px] rounded-full blur-3xl bg-gradient-to-tr from-[#7f5af0]/15 to-[#00eaff]/10"></div>
@@ -218,7 +220,7 @@ export default function Integrations() {
               Integrations Dashboard
             </h1>
             <p className="text-gray-400 mt-2 text-sm sm:text-base">
-              Manage your AI assistant’s platform connections with style ✨
+              Manage your AI assistant’s connections with ease ✨
             </p>
           </motion.div>
 
@@ -250,7 +252,6 @@ export default function Integrations() {
               <InputField name="fb_page_token" value={form.fb_page_token} onChange={handleChange} placeholder="FB Page Token" />
             </IntegrationCard>
 
-            {/* Instagram — Locked for Basic */}
             {plan === "pro" || userEmail === FREE_ACCESS_EMAIL ? (
               <IntegrationCard title="Instagram" icon={<Instagram />}>
                 <InputField name="instagram_user_id" value={form.instagram_user_id} onChange={handleChange} placeholder="Instagram User ID" />
@@ -265,7 +266,6 @@ export default function Integrations() {
               <InputField name="calendly_link" value={form.calendly_link} onChange={handleChange} placeholder="Calendly Link" />
             </IntegrationCard>
 
-            {/* ✅ Business Location */}
             <IntegrationCard title="Business Location" icon={<MapPin />}>
               <InputField name="business_address" value={form.business_address} onChange={handleChange} placeholder="Business Address" />
               <MapContainer
@@ -308,7 +308,7 @@ export default function Integrations() {
   );
 }
 
-/* ------------------ Cards & Inputs ------------------ */
+/* ------------------ Helper Components ------------------ */
 function IntegrationCard({ title, icon, children }) {
   return (
     <motion.div whileHover={{ scale: 1.015 }} className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-5 sm:p-6 shadow-lg hover:bg-white/10 transition-all">
