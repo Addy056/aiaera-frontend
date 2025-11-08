@@ -1,20 +1,17 @@
-// frontend/components/ChatbotPreview.jsx
 import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import { supabase } from "../supabaseClient";
 
 export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
   const [messages, setMessages] = useState([
-    {
-      role: "assistant",
-      content: `Hi 👋 I'm your AI assistant. How can I help you today?`,
-    },
+    { role: "assistant", content: `Hi 👋 I'm your AI assistant. How can I help you today?` },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showCalendly, setShowCalendly] = useState(false);
   const messagesEndRef = useRef(null);
 
-  // 🎯 Generate or load persistent session ID (for returning customers)
+  // Persistent chat session
   const [sessionId] = useState(() => {
     const existing = localStorage.getItem("chat_session_id");
     if (existing) return existing;
@@ -31,71 +28,99 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
   };
 
   const API_BASE = (import.meta.env.VITE_BACKEND_URL || "http://localhost:5000").replace(/\/$/, "");
-  console.log("🚀 ChatbotPreview loaded with API_BASE =", API_BASE, "Session ID =", sessionId);
 
-  // --- Scroll to bottom when messages update ---
-  const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  useEffect(() => scrollToBottom(), [messages]);
+  // ✅ Extract integrations
+  const calendlyLink = chatbotConfig?.calendlyLink || "";
+  const whatsappNumber = chatbotConfig?.whatsapp_number || "";
+  const fbPageId = chatbotConfig?.fb_page_id || "";
+  const instagramPageId = chatbotConfig?.instagram_page_id || "";
 
-  // --- Send message handler ---
+  // Scroll to bottom
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
   const sendMessage = async () => {
     if (!input.trim()) return;
-
+    const msgText = input.trim().toLowerCase();
     const newMessages = [...messages, { role: "user", content: input }];
     setMessages(newMessages);
     setInput("");
     setLoading(true);
 
+    // 🧠 Integration keyword detection
+    const intentMap = [
+      {
+        keywords: ["book", "meeting", "schedule", "appointment", "demo", "call"],
+        type: "calendly",
+        condition: !!calendlyLink,
+        buttonLabel: "📅 Book a Meeting",
+        action: () => setShowCalendly(true),
+      },
+      {
+        keywords: ["whatsapp", "chat", "message on whatsapp"],
+        type: "whatsapp",
+        condition: !!whatsappNumber,
+        buttonLabel: "💬 Chat on WhatsApp",
+        action: () =>
+          window.open(`https://wa.me/${whatsappNumber.replace(/\D/g, "")}`, "_blank"),
+      },
+      {
+        keywords: ["facebook", "messenger", "fb"],
+        type: "facebook",
+        condition: !!fbPageId,
+        buttonLabel: "📘 Message on Facebook",
+        action: () =>
+          window.open(`https://facebook.com/${fbPageId}`, "_blank"),
+      },
+      {
+        keywords: ["instagram", "insta", "dm"],
+        type: "instagram",
+        condition: !!instagramPageId,
+        buttonLabel: "📸 View Instagram Page",
+        action: () =>
+          window.open(`https://instagram.com/${instagramPageId}`, "_blank"),
+      },
+    ];
+
+    const match = intentMap.find((intent) =>
+      intent.keywords.some((k) => msgText.includes(k))
+    );
+
+    if (match && match.condition) {
+      const intentMsg = {
+        role: "assistant",
+        content: `Sure! You can ${match.type === "calendly" ? "book a meeting" : "connect"} below 👇`,
+      };
+      setMessages([...newMessages, intentMsg, { role: "assistant", content: `[intent_button_${match.type}]` }]);
+      setLoading(false);
+      return;
+    }
+
+    // 🔗 Otherwise — normal AI reply
     try {
       let headers = { "Content-Type": "application/json" };
-
-      // 🪪 Add Authorization header for logged-in users
       if (!isPublic && user) {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session) throw new Error("No active Supabase session found");
-        headers.Authorization = `Bearer ${session.access_token}`;
+        if (session) headers.Authorization = `Bearer ${session.access_token}`;
       }
 
-      // 🔗 Request to backend
       const res = await axios.post(
         `${API_BASE}/api/chatbot-preview`,
-        {
-          messages: newMessages,
-          chatbotConfig,
-          userId: user?.id || null,
-          sessionId, // 🧠 send persistent session ID
-        },
+        { messages: newMessages, chatbotConfig, userId: user?.id || null, sessionId },
         { headers }
       );
 
       const reply = res.data?.reply || "🤖 (No reply received)";
-      const updatedContext = res.data?.context || null;
-
       setMessages([...newMessages, { role: "assistant", content: reply }]);
-
-      // 🧩 Log context for debugging
-      if (updatedContext) console.log("🧠 Updated Chat Context:", updatedContext);
     } catch (error) {
-      console.group("❌ Chatbot preview error (detailed)");
-      console.error("📍 Error message:", error?.message);
-      console.error("📡 Response data:", error?.response?.data);
-      console.error("⚙️ Full error object:", error);
-      console.groupEnd();
-
-      const status = error?.response?.status;
-      const backendError = error?.response?.data?.error;
-      const backendMessage = error?.response?.data?.message;
-
-      let errorMsg;
-      if (status === 404) {
-        errorMsg = `⚠️ Server route not found (tried: ${API_BASE}/api/chatbot-preview)`;
-      } else if (backendError || backendMessage) {
-        errorMsg = `⚠️ Backend Error: ${backendError || backendMessage}`;
-      } else {
-        errorMsg = `⚠️ ${error?.message || "Unknown network or backend error."}`;
-      }
-
-      setMessages([...newMessages, { role: "assistant", content: errorMsg }]);
+      console.error("❌ Chatbot preview error:", error);
+      const msg =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "⚠️ Unknown error.";
+      setMessages([...newMessages, { role: "assistant", content: msg }]);
     } finally {
       setLoading(false);
     }
@@ -108,7 +133,7 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
     }
   };
 
-  // --- Format text with clickable links ---
+  // Convert links into clickable text
   const formatText = (text) => {
     if (!text) return "";
     const urlRegex = /(https?:\/\/[^\s]+)/g;
@@ -127,6 +152,59 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
         <span key={idx}>{part}</span>
       )
     );
+  };
+
+  // Renders integration button dynamically
+  const renderIntegrationButton = (type) => {
+    const baseStyle = {
+      border: "none",
+      color: "white",
+      fontWeight: "600",
+      padding: "8px 14px",
+      borderRadius: "10px",
+      cursor: "pointer",
+      boxShadow: "0 2px 12px rgba(127,90,240,0.4)",
+      background: `linear-gradient(135deg, ${themeColors.userBubble}, ${darkenColor(
+        themeColors.userBubble,
+        25
+      )})`,
+    };
+
+    const buttons = {
+      calendly: (
+        <button key="calendly" style={baseStyle} onClick={() => setShowCalendly(true)}>
+          📅 Book a Meeting
+        </button>
+      ),
+      whatsapp: (
+        <button
+          key="whatsapp"
+          style={baseStyle}
+          onClick={() => window.open(`https://wa.me/${whatsappNumber.replace(/\D/g, "")}`, "_blank")}
+        >
+          💬 Chat on WhatsApp
+        </button>
+      ),
+      facebook: (
+        <button
+          key="facebook"
+          style={baseStyle}
+          onClick={() => window.open(`https://facebook.com/${fbPageId}`, "_blank")}
+        >
+          📘 Message on Facebook
+        </button>
+      ),
+      instagram: (
+        <button
+          key="instagram"
+          style={baseStyle}
+          onClick={() => window.open(`https://instagram.com/${instagramPageId}`, "_blank")}
+        >
+          📸 View Instagram Page
+        </button>
+      ),
+    };
+    return buttons[type];
   };
 
   return (
@@ -150,28 +228,42 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
           </span>
         </div>
 
-        {/* Chat Messages */}
+        {/* Messages */}
         <div style={styles.messages}>
-          {messages.map((msg, i) => (
-            <div
-              key={i}
-              style={{
-                ...styles.message,
-                ...(msg.role === "user" ? styles.userMsg : styles.assistantMsg),
-              }}
-            >
+          {messages.map((msg, i) => {
+            const match = msg.content.match(/\[intent_button_(\w+)\]/);
+            if (match) {
+              const type = match[1];
+              return (
+                <div key={i} style={{ ...styles.message, ...styles.assistantMsg }}>
+                  <div style={{ ...styles.bubble, backgroundColor: themeColors.botBubble }}>
+                    {renderIntegrationButton(type)}
+                  </div>
+                </div>
+              );
+            }
+
+            return (
               <div
+                key={i}
                 style={{
-                  ...styles.bubble,
-                  backgroundColor:
-                    msg.role === "user" ? themeColors.userBubble : themeColors.botBubble,
-                  color: themeColors.text,
+                  ...styles.message,
+                  ...(msg.role === "user" ? styles.userMsg : styles.assistantMsg),
                 }}
               >
-                {formatText(msg.content)}
+                <div
+                  style={{
+                    ...styles.bubble,
+                    backgroundColor:
+                      msg.role === "user" ? themeColors.userBubble : themeColors.botBubble,
+                    color: themeColors.text,
+                  }}
+                >
+                  {formatText(msg.content)}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           {loading && (
             <div style={{ ...styles.message, ...styles.assistantMsg }}>
               <div style={{ ...styles.bubble, backgroundColor: themeColors.botBubble }}>...</div>
@@ -180,7 +272,7 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input Area */}
+        {/* Input */}
         {!isPublic && (
           <div style={styles.inputArea}>
             <textarea
@@ -193,21 +285,37 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
             <button
               onClick={sendMessage}
               disabled={loading}
-              style={{
-                ...styles.button,
-                background: themeColors.userBubble,
-              }}
+              style={{ ...styles.button, background: themeColors.userBubble }}
             >
               Send
             </button>
           </div>
         )}
       </div>
+
+      {/* Calendly Popup */}
+      {showCalendly && (
+        <div style={styles.modalOverlay} onClick={() => setShowCalendly(false)}>
+          <div style={styles.modalContainer} onClick={(e) => e.stopPropagation()}>
+            <iframe
+              src={calendlyLink}
+              width="100%"
+              height="100%"
+              frameBorder="0"
+              title="Calendly"
+              style={{ borderRadius: "12px" }}
+            ></iframe>
+            <button onClick={() => setShowCalendly(false)} style={styles.closeButton}>
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-// --- Helper to darken color ---
+// Helper: darken color
 function darkenColor(hex, percent) {
   const num = parseInt(hex.replace("#", ""), 16);
   const amt = Math.round(2.55 * percent);
@@ -224,16 +332,17 @@ function darkenColor(hex, percent) {
     .slice(1)}`;
 }
 
+// Styles
 const styles = {
   wrapper: { display: "flex", flexDirection: "column", height: "100%" },
   chatbotPreview: {
     display: "flex",
     flexDirection: "column",
     height: "100%",
-    background: "rgba(255, 255, 255, 0.08)",
+    background: "rgba(255,255,255,0.08)",
     backdropFilter: "blur(16px)",
     borderRadius: "16px",
-    border: "1px solid rgba(255, 255, 255, 0.15)",
+    border: "1px solid rgba(255,255,255,0.15)",
     boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
     padding: "12px",
     fontFamily: "sans-serif",
@@ -295,5 +404,41 @@ const styles = {
     cursor: "pointer",
     fontWeight: "bold",
     transition: "0.2s",
+  },
+  modalOverlay: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    width: "100vw",
+    height: "100vh",
+    background: "rgba(0,0,0,0.6)",
+    backdropFilter: "blur(4px)",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 9999,
+  },
+  modalContainer: {
+    position: "relative",
+    width: "90%",
+    maxWidth: "600px",
+    height: "80vh",
+    background: "rgba(255,255,255,0.05)",
+    borderRadius: "16px",
+    overflow: "hidden",
+    boxShadow: "0 0 40px rgba(127,90,240,0.3)",
+  },
+  closeButton: {
+    position: "absolute",
+    top: "10px",
+    right: "12px",
+    background: "rgba(255,255,255,0.15)",
+    border: "none",
+    borderRadius: "50%",
+    color: "#fff",
+    fontSize: "16px",
+    width: "32px",
+    height: "32px",
+    cursor: "pointer",
   },
 };

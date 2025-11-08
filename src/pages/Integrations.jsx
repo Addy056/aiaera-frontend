@@ -40,7 +40,9 @@ export default function Integrations() {
   const [plan, setPlan] = useState("free");
   const [toast, setToast] = useState({ message: "", type: "" });
   const mountedRef = useRef(false);
-  const API_BASE = import.meta.env.VITE_BACKEND_URL + "/api/integrations";
+
+  // ✅ Use correct env var name for backend base
+  const API_BASE = import.meta.env.VITE_API_URL + "/api/integrations";
 
   useEffect(() => {
     mountedRef.current = true;
@@ -83,13 +85,18 @@ export default function Integrations() {
     }
   };
 
+  // ✅ FIXED: Fetching logic matches backend’s { success, data } response
   const fetchIntegrations = async (userId) => {
     try {
       const res = await fetch(`${API_BASE}?user_id=${userId}`);
-      if (!res.ok) throw new Error("Backend error fetching integrations");
-      const data = await res.json();
-      if (mountedRef.current && data?.integrations) {
-        setForm((prev) => ({ ...prev, ...data.integrations }));
+      const json = await res.json();
+
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || "Backend error fetching integrations");
+      }
+
+      if (mountedRef.current && json.data) {
+        setForm((prev) => ({ ...prev, ...json.data }));
       }
     } catch (err) {
       showToast("Error fetching integrations: " + err.message, "error");
@@ -98,6 +105,7 @@ export default function Integrations() {
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
+  // ✅ FIXED: Handle backend’s { success, data } response
   const handleSave = async () => {
     setLoading(true);
     try {
@@ -111,7 +119,11 @@ export default function Integrations() {
         body: JSON.stringify(payload),
       });
       const result = await res.json();
-      if (!res.ok) throw new Error(result?.error || "Failed to save integrations");
+
+      if (!res.ok || !result.success) {
+        throw new Error(result?.error || "Failed to save integrations");
+      }
+
       showToast("✅ Integrations saved successfully!", "success");
     } catch (err) {
       showToast("Failed to save integrations: " + err.message, "error");

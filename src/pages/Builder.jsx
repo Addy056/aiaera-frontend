@@ -20,13 +20,16 @@ import {
   Code2,
   Copy,
   Lock,
+  Calendar,
 } from "lucide-react";
 
 /**
- * AIAERA Builder Studio — v4.0
+ * AIAERA Builder Studio — v5.0
  * ✅ Supabase Connected
  * ✅ Plan Restrictions (Basic vs Pro)
- * ✅ “Get Embed Code” Button Drawer
+ * ✅ Calendly Integration (auto-fetch)
+ * ✅ “Book a Meeting” Button
+ * ✅ Embed Calendly Widget (optional)
  * ✅ Purple Glow, Glass UI, Static Layout
  */
 
@@ -40,8 +43,12 @@ export default function Builder() {
   const [loadingInit, setLoadingInit] = useState(true);
   const [isConfigSaved, setIsConfigSaved] = useState(false);
   const [freeAccess, setFreeAccess] = useState(false);
+  const [calendlyLink, setCalendlyLink] = useState("");
 
   const FREE_ACCESS_EMAIL = "aiaera056@gmail.com";
+  const BUCKET = import.meta.env.VITE_SUPABASE_BUCKET || "chatbot-files";
+  const API_BASE = import.meta.env.VITE_API_URL;
+  const INTEGRATIONS_API = `${API_BASE}/api/integrations`;
 
   // Business info
   const [businessName, setBusinessName] = useState("");
@@ -67,8 +74,6 @@ export default function Builder() {
 
   // Embed drawer
   const [showEmbed, setShowEmbed] = useState(false);
-  const BUCKET = import.meta.env.VITE_SUPABASE_BUCKET || "chatbot-files";
-  const API_BASE = import.meta.env.VITE_BACKEND_URL;
 
   const presetThemes = {
     aurora: {
@@ -104,7 +109,7 @@ export default function Builder() {
   ];
 
   // --------------------------
-  // Init: Get user & plan info
+  // Init: Get user, plan, and integrations
   // --------------------------
   useEffect(() => {
     let mounted = true;
@@ -115,6 +120,7 @@ export default function Builder() {
         if (!u || !mounted) return;
         setUser(u);
 
+        // Free access override
         if (u.email === FREE_ACCESS_EMAIL) {
           setSubscriptionActive(true);
           setPlan("pro");
@@ -131,6 +137,7 @@ export default function Builder() {
           setPlan(sub?.plan || "free");
         }
 
+        // Load chatbot data
         const { data } = await supabase
           .from("chatbots")
           .select("*")
@@ -148,6 +155,17 @@ export default function Builder() {
           setLogoUrl(data.config?.logo_url || null);
           if (data.config?.themeColors) setThemeColors(data.config.themeColors);
           setIsConfigSaved(true);
+        }
+
+        // ✅ Fetch Calendly link from backend integrations
+        try {
+          const res = await fetch(`${INTEGRATIONS_API}?user_id=${u.id}`);
+          const json = await res.json();
+          if (json?.success && json?.data?.calendly_link) {
+            setCalendlyLink(json.data.calendly_link);
+          }
+        } catch (err) {
+          console.warn("Failed to fetch Calendly link:", err.message);
         }
       } finally {
         if (mounted) setLoadingInit(false);
@@ -314,7 +332,7 @@ export default function Builder() {
                 )}
 
                 {activeTab === "studio" && (
-                  <StudioTab {...{ presetThemes, themeColors, setThemeColors, logoUrl, setLogoUrl, logoInputRef, uploadFileToStorage, chatbotId, businessName, files, user, isConfigSaved, API_BASE, showEmbed, setShowEmbed }} />
+                  <StudioTab {...{ presetThemes, themeColors, setThemeColors, logoUrl, setLogoUrl, logoInputRef, uploadFileToStorage, chatbotId, businessName, files, user, isConfigSaved, API_BASE, showEmbed, setShowEmbed, calendlyLink }} />
                 )}
               </Card>
             </motion.div>
@@ -325,7 +343,7 @@ export default function Builder() {
   );
 }
 
-/* ---------- Subcomponents ---------- */
+/* ---------- Supporting Components ---------- */
 function LockedSection({ message }) {
   return (
     <div className="flex flex-col items-center justify-center py-24 text-gray-400">
@@ -334,6 +352,7 @@ function LockedSection({ message }) {
     </div>
   );
 }
+
 function Sidebar({ activeTab, setActiveTab }) {
   return (
     <div className="col-span-12 lg:col-span-3">
@@ -435,10 +454,7 @@ function FilesTab({ files, setFiles, fileInputRef, uploading, handleFilesUpload 
       </div>
       <div className="grid sm:grid-cols-2 gap-3">
         {files.map((f) => (
-          <div
-            key={f.url}
-            className="flex items-center justify-between bg-white/5 border border-white/10 rounded-2xl px-3 py-2"
-          >
+          <div key={f.url} className="flex items-center justify-between bg-white/5 border border-white/10 rounded-2xl px-3 py-2">
             <div className="truncate text-sm">{f.name}</div>
             <Button
               variant="ghost"
@@ -490,6 +506,7 @@ function StudioTab({
   API_BASE,
   showEmbed,
   setShowEmbed,
+  calendlyLink,
 }) {
   return (
     <div className="space-y-6">
@@ -502,11 +519,7 @@ function StudioTab({
         <Card className="bg-white/5 border border-white/10 rounded-3xl p-5 backdrop-blur-2xl shadow-[0_0_40px_rgba(127,90,240,0.25)]">
           <div className="flex flex-wrap gap-3 mb-4">
             {Object.entries(presetThemes).map(([k, v]) => (
-              <Button
-                key={k}
-                onClick={() => setThemeColors(v)}
-                className="bg-white/10 hover:bg-white/20 capitalize"
-              >
+              <Button key={k} onClick={() => setThemeColors(v)} className="bg-white/10 hover:bg-white/20 capitalize">
                 {k}
               </Button>
             ))}
@@ -520,12 +533,7 @@ function StudioTab({
               { label: "Bot", field: "botBubble" },
               { label: "Text", field: "text" },
             ].map(({ label, field }) => (
-              <ColorSwatch
-                key={field}
-                label={label}
-                value={themeColors[field]}
-                onChange={(v) => setThemeColors((p) => ({ ...p, [field]: v }))}
-              />
+              <ColorSwatch key={field} label={label} value={themeColors[field]} onChange={(v) => setThemeColors((p) => ({ ...p, [field]: v }))} />
             ))}
           </div>
 
@@ -550,13 +558,7 @@ function StudioTab({
               }}
             />
             <Button onClick={() => logoInputRef.current?.click()}>Upload Logo</Button>
-            {logoUrl && (
-              <img
-                src={logoUrl}
-                alt="logo"
-                className="w-10 h-10 rounded-lg border border-white/10"
-              />
-            )}
+            {logoUrl && <img src={logoUrl} alt="logo" className="w-10 h-10 rounded-lg border border-white/10" />}
           </div>
         </Card>
 
@@ -566,27 +568,28 @@ function StudioTab({
             <Bot className="w-5 h-5" /> Live Chatbot Preview
           </h3>
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-inner">
-            <ChatbotPreview
-              chatbotConfig={{
-                id: chatbotId,
-                name: businessName,
-                files,
-                logoUrl,
-                themeColors,
-              }}
-              user={user}
-            />
+            <ChatbotPreview chatbotConfig={{ id: chatbotId, name: businessName, files, logoUrl, themeColors, calendlyLink }} user={user} />
           </div>
 
           {/* Get Embed Code Button */}
           {isConfigSaved && chatbotId && (
-            <div className="mt-4">
+            <div className="mt-4 space-y-3">
               <Button
                 onClick={() => setShowEmbed((s) => !s)}
                 className="w-full justify-center bg-gradient-to-r from-[#7f5af0] via-[#9b8cff] to-[#5be7ff] hover:shadow-[0_0_30px_rgba(127,90,240,0.5)]"
               >
                 {showEmbed ? "Hide Embed Code" : "Get Embed Code"}
               </Button>
+
+              {/* Calendly Book Button */}
+              {calendlyLink && (
+                <Button
+                  onClick={() => window.open(calendlyLink, "_blank")}
+                  className="w-full justify-center bg-gradient-to-r from-[#00eaff] via-[#7f5af0] to-[#bfa7ff] hover:shadow-[0_0_25px_rgba(0,234,255,0.4)]"
+                >
+                  <Calendar className="w-4 h-4 mr-2" /> Book a Meeting
+                </Button>
+              )}
             </div>
           )}
         </Card>
@@ -595,24 +598,13 @@ function StudioTab({
       {/* 💾 Embed Drawer */}
       <AnimatePresence>
         {showEmbed && isConfigSaved && chatbotId && (
-          <motion.div
-            key="embed-drawer"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 12 }}
-            transition={{ duration: 0.35 }}
-          >
+          <motion.div key="embed-drawer" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }} transition={{ duration: 0.35 }}>
             <Card className="bg-white/6 border border-white/10 rounded-3xl p-5 backdrop-blur-2xl">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="font-semibold text-white flex items-center gap-2">
                   <Code2 className="w-4 h-4" /> Embed Code
                 </h4>
-                <a
-                  href={`${API_BASE}/public-chatbot/${chatbotId}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-sm text-[#bfa7ff] hover:underline flex items-center gap-1"
-                >
+                <a href={`${API_BASE}/public-chatbot/${chatbotId}`} target="_blank" rel="noreferrer" className="text-sm text-[#bfa7ff] hover:underline flex items-center gap-1">
                   <Eye className="w-4 h-4" /> Preview
                 </a>
               </div>
@@ -635,11 +627,7 @@ function StudioTab({
                 >
                   <Copy className="w-4 h-4" /> Copy
                 </Button>
-                <Button
-                  onClick={() => setShowEmbed(false)}
-                  variant="ghost"
-                  className="bg-white/10 hover:bg-white/20"
-                >
+                <Button onClick={() => setShowEmbed(false)} variant="ghost" className="bg-white/10 hover:bg-white/20">
                   Close
                 </Button>
               </div>
@@ -651,24 +639,13 @@ function StudioTab({
   );
 }
 
-/* ---------- Utility Components ---------- */
 function ColorSwatch({ label, value, onChange }) {
   const inputRef = useRef(null);
   return (
     <div className="flex flex-col items-center">
       <span className="text-xs text-gray-400 mb-1">{label}</span>
-      <div
-        onClick={() => inputRef.current?.click()}
-        style={{ backgroundColor: value }}
-        className="w-[25px] h-[25px] rounded-md border border-white/20 cursor-pointer shadow-md"
-      />
-      <input
-        ref={inputRef}
-        type="color"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="hidden"
-      />
+      <div onClick={() => inputRef.current?.click()} style={{ backgroundColor: value }} className="w-[25px] h-[25px] rounded-md border border-white/20 cursor-pointer shadow-md" />
+      <input ref={inputRef} type="color" value={value} onChange={(e) => onChange(e.target.value)} className="hidden" />
     </div>
   );
 }
