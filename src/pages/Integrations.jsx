@@ -322,7 +322,6 @@ function IntegrationCard({ title, icon, children }) {
     </motion.div>
   );
 }
-
 function LockedCard({ title }) {
   return (
     <motion.div whileHover={{ scale: 1.01 }} className="flex flex-col items-center justify-center bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-10 text-center shadow-lg text-gray-400">
