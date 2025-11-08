@@ -6,7 +6,7 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import FloatingMenu from "../components/FloatingMenu";
 import ProtectedRoute from "../components/ProtectedRoute";
-import { MessageCircle, Facebook, Instagram, Calendar, MapPin, Save, Lock } from "lucide-react";
+import { MessageCircle, Facebook, Instagram, Calendar, MapPin, Save, Lock, Crosshair } from "lucide-react";
 
 // Fix leaflet icons
 delete L.Icon.Default.prototype._getIconUrl;
@@ -30,7 +30,7 @@ export default function Integrations() {
     instagram_page_id: "",
     instagram_access_token: "",
     business_address: "",
-    business_lat: 19.076,
+    business_lat: 19.076, // Default: Mumbai
     business_lng: 72.8777,
   });
 
@@ -41,14 +41,39 @@ export default function Integrations() {
   const [toast, setToast] = useState({ message: "", type: "" });
   const mountedRef = useRef(false);
 
-  // ✅ Use correct env var name for backend base
-const API_BASE = `${import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "")}/api/integrations`;
+  const API_BASE = `${import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, "")}/api/integrations`;
 
   useEffect(() => {
     mountedRef.current = true;
     init();
+    detectLocation(); // Try auto-location once
     return () => (mountedRef.current = false);
   }, []);
+
+  // ✅ Detect user location
+  const detectLocation = () => {
+    if (!navigator.geolocation) {
+      showToast("Geolocation not supported on this device", "error");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        setForm((prev) => ({
+          ...prev,
+          business_lat: latitude,
+          business_lng: longitude,
+        }));
+        showToast("📍 Location updated successfully!", "success");
+      },
+      (err) => {
+        console.warn("⚠️ Location access denied:", err.message);
+        showToast("Unable to access location. Please enable GPS.", "error");
+      },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+    );
+  };
 
   const init = async () => {
     setLoading(true);
@@ -85,7 +110,6 @@ const API_BASE = `${import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "")}/api/int
     }
   };
 
-  // ✅ FIXED: Fetching logic matches backend’s { success, data } response
   const fetchIntegrations = async (userId) => {
     try {
       const res = await fetch(`${API_BASE}?user_id=${userId}`);
@@ -96,7 +120,12 @@ const API_BASE = `${import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "")}/api/int
       }
 
       if (mountedRef.current && json.data) {
-        setForm((prev) => ({ ...prev, ...json.data }));
+        setForm((prev) => ({
+          ...prev,
+          ...json.data,
+          business_lat: json.data.business_lat || 19.076,
+          business_lng: json.data.business_lng || 72.8777,
+        }));
       }
     } catch (err) {
       showToast("Error fetching integrations: " + err.message, "error");
@@ -105,7 +134,6 @@ const API_BASE = `${import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "")}/api/int
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-  // ✅ FIXED: Handle backend’s { success, data } response
   const handleSave = async () => {
     setLoading(true);
     try {
@@ -237,16 +265,30 @@ const API_BASE = `${import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "")}/api/int
               <InputField name="calendly_link" value={form.calendly_link} onChange={handleChange} placeholder="Calendly Link" />
             </IntegrationCard>
 
+            {/* ✅ Business Location */}
             <IntegrationCard title="Business Location" icon={<MapPin />}>
               <InputField name="business_address" value={form.business_address} onChange={handleChange} placeholder="Business Address" />
-              <MapContainer center={[form.business_lat, form.business_lng]} zoom={12} style={{ height: "250px", width: "100%", borderRadius: "1rem" }}>
+              <MapContainer
+                center={[form.business_lat || 19.076, form.business_lng || 72.8777]}
+                zoom={12}
+                style={{ height: "250px", width: "100%", borderRadius: "1rem" }}
+              >
                 <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap contributors" />
-                <Marker position={[form.business_lat, form.business_lng]}>
+                <Marker position={[form.business_lat || 19.076, form.business_lng || 72.8777]}>
                   <Popup>{form.business_address || "Business Location"}</Popup>
                 </Marker>
                 <LocationSelector />
               </MapContainer>
-              <p className="text-sm text-gray-400 mt-2">Click on the map to update location.</p>
+
+              <div className="flex items-center justify-between mt-3">
+                <p className="text-sm text-gray-400">Click the map or use your GPS to set location.</p>
+                <button
+                  onClick={detectLocation}
+                  className="flex items-center gap-2 px-4 py-2 bg-[#7f5af0]/80 hover:bg-[#9d8dfd] text-white rounded-xl text-sm transition-all"
+                >
+                  <Crosshair className="w-4 h-4" /> Use My Location
+                </button>
+              </div>
             </IntegrationCard>
           </motion.div>
 
