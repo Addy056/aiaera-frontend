@@ -137,15 +137,15 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
       };
 
       const res = await axios.post(
-        `${API_BASE}/api/chatbot/preview`,
-        {
-          messages: newMessages,
-          chatbotConfig: cleanConfig,
-          userId: user?.id || null,
-          sessionId,
-        },
-        { headers }
-      );
+  `${API_BASE}/api/chatbot/preview`,
+  {
+    messages: newMessages,
+    chatbotConfig: cleanConfig,
+    userId: user?.id || null,
+    sessionId,
+  },
+  { headers }
+);
 
       const reply = res.data?.reply?.trim() || "We're here to help with your questions!";
       setMessages([...newMessages, { role: "assistant", content: reply }]);
