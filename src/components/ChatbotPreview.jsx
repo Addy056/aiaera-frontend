@@ -4,14 +4,14 @@ import { supabase } from "../supabaseClient";
 
 export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
   const [messages, setMessages] = useState([
-    { role: "assistant", content: `Hi 👋 I'm your AI assistant. How can I help you today?` },
+    { role: "assistant", content: `Hi 👋 We're here to help! What would you like to know?` },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [showCalendly, setShowCalendly] = useState(false);
   const messagesEndRef = useRef(null);
 
-  // Persistent chat session
+  // Persistent session
   const [sessionId] = useState(() => {
     const existing = localStorage.getItem("chat_session_id");
     if (existing) return existing;
@@ -33,83 +33,71 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
     import.meta.env.VITE_BACKEND_URL || "http://localhost:5000"
   ).replace(/\/$/, "");
 
-  // ✅ Extract integrations
   const calendlyLink = chatbotConfig?.calendly_link || "";
   const whatsappNumber = chatbotConfig?.whatsapp_number || "";
   const fbPageId = chatbotConfig?.fb_page_id || "";
   const instagramPageId = chatbotConfig?.instagram_page_id || "";
 
-  // Scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   const sendMessage = async () => {
     if (!input.trim()) return;
-    const msgText = input.trim().toLowerCase();
+
     const newMessages = [...messages, { role: "user", content: input }];
     setMessages(newMessages);
     setInput("");
     setLoading(true);
 
-    // 🧠 Detect integration intent
+    const msgText = input.trim().toLowerCase();
+
+    // 🧠 Integration shortcuts
     const intentMap = [
       {
-        keywords: ["book", "meeting", "schedule", "appointment", "demo", "call"],
+        keywords: ["book", "meeting", "schedule", "appointment", "demo"],
         type: "calendly",
         condition: !!calendlyLink,
-        buttonLabel: "📅 Book a Meeting",
         action: () => setShowCalendly(true),
+        label: "📅 Book a Meeting",
       },
       {
-        keywords: ["whatsapp", "chat", "message on whatsapp"],
+        keywords: ["whatsapp"],
         type: "whatsapp",
         condition: !!whatsappNumber,
-        buttonLabel: "💬 Chat on WhatsApp",
         action: () =>
-          window.open(
-            `https://wa.me/${whatsappNumber.replace(/\D/g, "")}`,
-            "_blank"
-          ),
+          window.open(`https://wa.me/${whatsappNumber.replace(/\D/g, "")}`),
+        label: "💬 Chat on WhatsApp",
       },
       {
-        keywords: ["facebook", "messenger", "fb"],
+        keywords: ["facebook", "messenger"],
         type: "facebook",
         condition: !!fbPageId,
-        buttonLabel: "📘 Message on Facebook",
-        action: () => window.open(`https://facebook.com/${fbPageId}`, "_blank"),
+        action: () => window.open(`https://facebook.com/${fbPageId}`),
+        label: "📘 Message on Facebook",
       },
       {
-        keywords: ["instagram", "insta", "dm"],
+        keywords: ["instagram", "insta"],
         type: "instagram",
         condition: !!instagramPageId,
-        buttonLabel: "📸 View Instagram Page",
-        action: () =>
-          window.open(`https://instagram.com/${instagramPageId}`, "_blank"),
+        action: () => window.open(`https://instagram.com/${instagramPageId}`),
+        label: "📸 View Instagram",
       },
     ];
 
     const match = intentMap.find((intent) =>
       intent.keywords.some((k) => msgText.includes(k))
     );
-
     if (match && match.condition) {
-      const intentMsg = {
-        role: "assistant",
-        content: `Sure! You can ${
-          match.type === "calendly" ? "book a meeting" : "connect"
-        } below 👇`,
-      };
       setMessages([
         ...newMessages,
-        intentMsg,
+        { role: "assistant", content: `Sure! You can ${match.type === "calendly" ? "book a meeting" : "connect"} below 👇` },
         { role: "assistant", content: `[intent_button_${match.type}]` },
       ]);
       setLoading(false);
       return;
     }
 
-    // 🔗 Otherwise — normal AI reply
     try {
       let headers = { "Content-Type": "application/json" };
       if (!isPublic && user) {
@@ -119,10 +107,9 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
         if (session) headers.Authorization = `Bearer ${session.access_token}`;
       }
 
-      // ✅ Always include latest business info
+      // ✅ Always fetch latest business info from Supabase
       let latestBusinessInfo = chatbotConfig?.business_info;
-
-      if (!latestBusinessInfo && chatbotConfig?.id && user?.id) {
+      if ((!latestBusinessInfo || latestBusinessInfo === "") && chatbotConfig?.id && user?.id) {
         const { data: dbChatbot } = await supabase
           .from("chatbots")
           .select("business_info")
@@ -132,6 +119,7 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
         latestBusinessInfo = dbChatbot?.business_info || "";
       }
 
+      // 🧠 Clean config for backend
       const cleanConfig = {
         id: chatbotConfig?.id || null,
         name: chatbotConfig?.name || "Unnamed Business",
@@ -149,7 +137,7 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
       };
 
       const res = await axios.post(
-        `${API_BASE}/api/chatbot-preview`,
+        `${API_BASE}/api/chatbot/preview`,
         {
           messages: newMessages,
           chatbotConfig: cleanConfig,
@@ -159,16 +147,19 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
         { headers }
       );
 
-      const reply = res.data?.reply || "🤖 (No reply received)";
+      const reply = res.data?.reply?.trim() || "We're here to help with your questions!";
       setMessages([...newMessages, { role: "assistant", content: reply }]);
-    } catch (error) {
-      console.error("❌ Chatbot preview error:", error);
-      const msg =
-        error?.response?.data?.message ||
-        error?.response?.data?.error ||
-        error?.message ||
-        "⚠️ Unknown error.";
-      setMessages([...newMessages, { role: "assistant", content: msg }]);
+    } catch (err) {
+      console.error("❌ Chatbot preview error:", err);
+      setMessages([
+        ...newMessages,
+        {
+          role: "assistant",
+          content:
+            err?.response?.data?.error ||
+            "⚠️ Something went wrong. Please try again.",
+        },
+      ]);
     } finally {
       setLoading(false);
     }
@@ -185,10 +176,10 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
   const formatText = (text) => {
     if (!text) return "";
     const urlRegex = /(https?:\/\/[^\s]+)/g;
-    return text.split(urlRegex).map((part, idx) =>
+    return text.split(urlRegex).map((part, i) =>
       urlRegex.test(part) ? (
         <a
-          key={idx}
+          key={i}
           href={part}
           target="_blank"
           rel="noopener noreferrer"
@@ -197,7 +188,7 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
           {part}
         </a>
       ) : (
-        <span key={idx}>{part}</span>
+        <span key={i}>{part}</span>
       )
     );
   };
@@ -217,54 +208,26 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
       )})`,
     };
 
-    const buttons = {
-      calendly: (
-        <button
-          key="calendly"
-          style={baseStyle}
-          onClick={() => setShowCalendly(true)}
-        >
-          📅 Book a Meeting
-        </button>
-      ),
-      whatsapp: (
-        <button
-          key="whatsapp"
-          style={baseStyle}
-          onClick={() =>
-            window.open(
-              `https://wa.me/${whatsappNumber.replace(/\D/g, "")}`,
-              "_blank"
-            )
-          }
-        >
-          💬 Chat on WhatsApp
-        </button>
-      ),
-      facebook: (
-        <button
-          key="facebook"
-          style={baseStyle}
-          onClick={() =>
-            window.open(`https://facebook.com/${fbPageId}`, "_blank")
-          }
-        >
-          📘 Message on Facebook
-        </button>
-      ),
-      instagram: (
-        <button
-          key="instagram"
-          style={baseStyle}
-          onClick={() =>
-            window.open(`https://instagram.com/${instagramPageId}`, "_blank")
-          }
-        >
-          📸 View Instagram Page
-        </button>
-      ),
+    const map = {
+      calendly: () => setShowCalendly(true),
+      whatsapp: () =>
+        window.open(`https://wa.me/${whatsappNumber.replace(/\D/g, "")}`),
+      facebook: () => window.open(`https://facebook.com/${fbPageId}`),
+      instagram: () => window.open(`https://instagram.com/${instagramPageId}`),
     };
-    return buttons[type];
+
+    const labels = {
+      calendly: "📅 Book a Meeting",
+      whatsapp: "💬 Chat on WhatsApp",
+      facebook: "📘 Message on Facebook",
+      instagram: "📸 View Instagram",
+    };
+
+    return (
+      <button key={type} style={baseStyle} onClick={map[type]}>
+        {labels[type]}
+      </button>
+    );
   };
 
   return (
@@ -283,14 +246,8 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
           {chatbotConfig?.logoUrl && (
             <img src={chatbotConfig.logoUrl} alt="Logo" style={styles.logo} />
           )}
-          <span
-            style={{
-              color: "white",
-              fontWeight: "bold",
-              fontSize: "16px",
-            }}
-          >
-            {chatbotConfig?.name || "AI Chatbot"}
+          <span style={{ color: "white", fontWeight: "bold", fontSize: "16px" }}>
+            {chatbotConfig?.name || "Business Assistant"}
           </span>
         </div>
 
@@ -299,19 +256,10 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
           {messages.map((msg, i) => {
             const match = msg.content.match(/\[intent_button_(\w+)\]/);
             if (match) {
-              const type = match[1];
               return (
-                <div
-                  key={i}
-                  style={{ ...styles.message, ...styles.assistantMsg }}
-                >
-                  <div
-                    style={{
-                      ...styles.bubble,
-                      backgroundColor: themeColors.botBubble,
-                    }}
-                  >
-                    {renderIntegrationButton(type)}
+                <div key={i} style={{ ...styles.message, ...styles.assistantMsg }}>
+                  <div style={{ ...styles.bubble, backgroundColor: themeColors.botBubble }}>
+                    {renderIntegrationButton(match[1])}
                   </div>
                 </div>
               );
@@ -322,18 +270,14 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
                 key={i}
                 style={{
                   ...styles.message,
-                  ...(msg.role === "user"
-                    ? styles.userMsg
-                    : styles.assistantMsg),
+                  ...(msg.role === "user" ? styles.userMsg : styles.assistantMsg),
                 }}
               >
                 <div
                   style={{
                     ...styles.bubble,
                     backgroundColor:
-                      msg.role === "user"
-                        ? themeColors.userBubble
-                        : themeColors.botBubble,
+                      msg.role === "user" ? themeColors.userBubble : themeColors.botBubble,
                     color: themeColors.text,
                   }}
                 >
@@ -354,23 +298,19 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input */}
         {!isPublic && (
           <div style={styles.inputArea}>
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Type a message..."
+              placeholder="Ask about the business..."
               style={{ ...styles.textarea, color: themeColors.text }}
             />
             <button
               onClick={sendMessage}
               disabled={loading}
-              style={{
-                ...styles.button,
-                background: themeColors.userBubble,
-              }}
+              style={{ ...styles.button, background: themeColors.userBubble }}
             >
               Send
             </button>
@@ -378,16 +318,9 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
         )}
       </div>
 
-      {/* Calendly Popup */}
       {showCalendly && (
-        <div
-          style={styles.modalOverlay}
-          onClick={() => setShowCalendly(false)}
-        >
-          <div
-            style={styles.modalContainer}
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div style={styles.modalOverlay} onClick={() => setShowCalendly(false)}>
+          <div style={styles.modalContainer} onClick={(e) => e.stopPropagation()}>
             <iframe
               src={calendlyLink}
               width="100%"
@@ -395,7 +328,7 @@ export default function ChatbotPreview({ chatbotConfig, user, isPublic }) {
               frameBorder="0"
               title="Calendly"
               style={{ borderRadius: "12px" }}
-            ></iframe>
+            />
             <button onClick={() => setShowCalendly(false)} style={styles.closeButton}>
               ✕
             </button>
