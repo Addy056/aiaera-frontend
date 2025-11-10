@@ -21,7 +21,7 @@ const isExpired = (dateStr) => !dateStr || new Date(dateStr) < new Date();
 
 export default function Integrations() {
   const [form, setForm] = useState({
-    whatsapp_number: "",
+    whatsapp_number_id: "",
     whatsapp_token: "",
     fb_page_id: "",
     fb_page_token: "",
@@ -242,14 +242,17 @@ export default function Integrations() {
             transition={{ duration: 0.55, delay: 0.1 }}
             className="grid grid-cols-1 sm:grid-cols-2 gap-6"
           >
-            <IntegrationCard title="WhatsApp" icon={<MessageCircle />}>
-              <InputField name="whatsapp_number" value={form.whatsapp_number} onChange={handleChange} placeholder="WhatsApp Number" />
-              <InputField name="whatsapp_token" value={form.whatsapp_token} onChange={handleChange} placeholder="WhatsApp API Token" />
+            <IntegrationCard title="WhatsApp (Meta Cloud API)" icon={<MessageCircle />}>
+              <InputField name="whatsapp_number_id" value={form.whatsapp_number_id} onChange={handleChange} placeholder="WhatsApp Business Number ID" />
+              <InputField name="whatsapp_token" value={form.whatsapp_token} onChange={handleChange} placeholder="WhatsApp Cloud API Token" />
+              <p className="text-xs text-gray-400 mt-1">
+                Add your WhatsApp Cloud API credentials from your Meta Developer Dashboard.
+              </p>
             </IntegrationCard>
 
             <IntegrationCard title="Facebook Messenger" icon={<Facebook />}>
-              <InputField name="fb_page_id" value={form.fb_page_id} onChange={handleChange} placeholder="FB Page ID" />
-              <InputField name="fb_page_token" value={form.fb_page_token} onChange={handleChange} placeholder="FB Page Token" />
+              <InputField name="fb_page_id" value={form.fb_page_id} onChange={handleChange} placeholder="Facebook Page ID" />
+              <InputField name="fb_page_token" value={form.fb_page_token} onChange={handleChange} placeholder="Facebook Page Token" />
             </IntegrationCard>
 
             {plan === "pro" || userEmail === FREE_ACCESS_EMAIL ? (
@@ -275,7 +278,11 @@ export default function Integrations() {
               >
                 <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap contributors" />
                 <Marker position={[form.business_lat || 19.076, form.business_lng || 72.8777]}>
-                  <Popup>{form.business_address || "Business Location"}</Popup>
+                  <Popup>
+                    {form.business_address
+                      ? `${form.business_address}`
+                      : `📍 View on Map`}
+                  </Popup>
                 </Marker>
                 <LocationSelector />
               </MapContainer>
