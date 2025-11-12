@@ -16,6 +16,9 @@ import Integrations from "./pages/Integrations.jsx";
 import Pricing from "./pages/Pricing.jsx";
 import Settings from "./pages/Settings.jsx";
 
+// ✅ Import the public chatbot page
+import PublicChatbot from "./pages/public-chatbot/[id].jsx";
+
 // Components
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import MainLayout from "./components/MainLayout.jsx";
@@ -39,6 +42,9 @@ export default function AppRoutes() {
       <Route path="/signup" element={<Signup />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/update-password" element={<UpdatePassword />} />
+
+      {/* ✅ Public chatbot route (no auth required) */}
+      <Route path="/public-chatbot/:id" element={<PublicChatbot />} />
 
       {/* Protected App Routes */}
       <Route
