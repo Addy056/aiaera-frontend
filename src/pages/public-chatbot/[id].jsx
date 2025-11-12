@@ -10,28 +10,37 @@ export default function PublicChatbot() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // ✅ Helper: sanitize backend URL (remove trailing slashes/spaces)
+  const backendBase = import.meta.env.VITE_BACKEND_URL
+    ? import.meta.env.VITE_BACKEND_URL.replace(/\/+$/, "")
+    : "";
+
+  /* ------------------------------
+     Fetch chatbot configuration
+  ------------------------------ */
   useEffect(() => {
     if (!id) return;
 
-    // Fetch chatbot details
     const fetchChatbot = async () => {
       try {
-        const res = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/api/chatbot/config/${id}`
-        );
+        const res = await fetch(`${backendBase}/api/chatbot/config/${id}`);
         if (!res.ok) throw new Error("Chatbot not found");
         const data = await res.json();
         setChatbot(data);
       } catch (err) {
-        setError(err.message);
+        console.error("❌ Chatbot fetch error:", err);
+        setError(err.message || "Failed to load chatbot.");
       } finally {
         setLoading(false);
       }
     };
 
     fetchChatbot();
-  }, [id]);
+  }, [id, backendBase]);
 
+  /* ------------------------------
+     Send message to public API
+  ------------------------------ */
   const sendMessage = async () => {
     if (!input.trim()) return;
     const newMessages = [...messages, { sender: "user", text: input }];
@@ -39,18 +48,16 @@ export default function PublicChatbot() {
     setInput("");
 
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/chatbot/public/${id}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            messages: [{ role: "user", content: input }],
-          }),
-        }
-      );
+      const res = await fetch(`${backendBase}/api/chatbot/public/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [{ role: "user", content: input }],
+        }),
+      });
 
       const data = await res.json();
+
       if (data.reply) {
         setMessages([...newMessages, { sender: "bot", text: data.reply }]);
       } else {
@@ -60,6 +67,7 @@ export default function PublicChatbot() {
         ]);
       }
     } catch (err) {
+      console.error("⚠️ Chatbot message error:", err);
       setMessages([
         ...newMessages,
         { sender: "bot", text: "⚠️ Error connecting to bot." },
@@ -67,22 +75,30 @@ export default function PublicChatbot() {
     }
   };
 
-  if (loading)
+  /* ------------------------------
+     Render states
+  ------------------------------ */
+  if (loading) {
     return (
       <div className="w-full h-screen flex justify-center items-center bg-[#0f0f17] text-white">
         Loading chatbot...
       </div>
     );
+  }
 
-  if (error)
+  if (error) {
     return (
       <div className="w-full h-screen flex justify-center items-center bg-[#0f0f17] text-red-400">
         {error}
       </div>
     );
+  }
 
   const theme = chatbot?.themeColors?.userBubble || "#7f5af0";
 
+  /* ------------------------------
+     UI Rendering
+  ------------------------------ */
   return (
     <div className="flex flex-col h-screen bg-[#0f0f17] text-white font-inter">
       {/* Header */}
@@ -108,8 +124,11 @@ export default function PublicChatbot() {
             className={`max-w-[75%] p-2 rounded-2xl ${
               m.sender === "bot"
                 ? "bg-[#1f1f2e] self-start"
-                : "bg-[${theme}] self-end ml-auto"
+                : "self-end ml-auto"
             }`}
+            style={{
+              backgroundColor: m.sender === "user" ? theme : "#1f1f2e",
+            }}
           >
             {m.text}
           </div>
