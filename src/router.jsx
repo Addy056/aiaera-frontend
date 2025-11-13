@@ -16,8 +16,8 @@ import Integrations from "./pages/Integrations.jsx";
 import Pricing from "./pages/Pricing.jsx";
 import Settings from "./pages/Settings.jsx";
 
-// ✅ Import the public chatbot page
-import PublicChatbot from "./pages/public-chatbot/[id].jsx";
+// ✅ Correct import: DO NOT use bracket folder name
+import PublicChatbot from "./pages/public-chatbot/PublicChatbot.jsx";
 
 // Components
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
@@ -37,16 +37,23 @@ function NotFound() {
 export default function AppRoutes() {
   return (
     <Routes>
-      {/* Public Auth Routes */}
+      {/* ----------------------------- */}
+      {/* PUBLIC AUTH ROUTES           */}
+      {/* ----------------------------- */}
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/update-password" element={<UpdatePassword />} />
 
-      {/* ✅ Public chatbot route (no auth required) */}
+      {/* ----------------------------- */}
+      {/* PUBLIC CHATBOT ROUTE          */}
+      {/* MUST BE PUBLIC & OUTSIDE PROTECTED ROUTES */}
+      {/* ----------------------------- */}
       <Route path="/public-chatbot/:id" element={<PublicChatbot />} />
 
-      {/* Protected App Routes */}
+      {/* ----------------------------- */}
+      {/* PROTECTED APP ROUTES          */}
+      {/* ----------------------------- */}
       <Route
         path="/"
         element={
@@ -57,6 +64,7 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
+
       <Route
         path="/builder"
         element={
@@ -67,6 +75,7 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
+
       <Route
         path="/leads"
         element={
@@ -77,6 +86,7 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
+
       <Route
         path="/appointments"
         element={
@@ -87,6 +97,7 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
+
       <Route
         path="/integrations"
         element={
@@ -97,6 +108,7 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       />
+
       <Route
         path="/settings"
         element={
@@ -111,7 +123,9 @@ export default function AppRoutes() {
       {/* Public Pricing Page */}
       <Route path="/pricing" element={<Pricing />} />
 
-      {/* Catch-all → 404 Not Found */}
+      {/* ----------------------------- */}
+      {/* CATCH-ALL → 404               */}
+      {/* ----------------------------- */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

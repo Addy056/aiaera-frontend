@@ -1,5 +1,5 @@
-// src/pages/public-chatbot/[id].jsx
-import { useState, useEffect } from "react";
+// src/pages/public-chatbot/PublicChatbot.jsx
+import { useState, useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
 
 export default function PublicChatbot() {
@@ -10,23 +10,46 @@ export default function PublicChatbot() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // ✅ Helper: sanitize backend URL (remove trailing slashes/spaces)
-  const backendBase = import.meta.env.VITE_BACKEND_URL
-    ? import.meta.env.VITE_BACKEND_URL.replace(/\/+$/, "")
-    : "";
+  // ----------------------------------
+  // ALWAYS USE FULL BACKEND URL
+  // (Prevents iframe loading wrong site)
+  // ----------------------------------
+  const backendBase = useMemo(() => {
+    const url = import.meta.env.VITE_BACKEND_URL || "";
+    return url.replace(/\/+$/, ""); // remove trailing slash
+  }, []);
 
   /* ------------------------------
-     Fetch chatbot configuration
+      Fetch chatbot configuration
   ------------------------------ */
   useEffect(() => {
     if (!id) return;
 
     const fetchChatbot = async () => {
       try {
-        const res = await fetch(`${backendBase}/api/chatbot/config/${id}`);
+        const res = await fetch(`${backendBase}/api/chatbot/config/${id}`, {
+          headers: { "X-Requested-With": "XMLHttpRequest" },
+        });
+
+        // If server returns HTML → iframe fallback detected
+        const contentType = res.headers.get("content-type") || "";
+        if (!contentType.includes("application/json")) {
+          throw new Error("Invalid chatbot URL or server returned HTML");
+        }
+
         if (!res.ok) throw new Error("Chatbot not found");
+
         const data = await res.json();
         setChatbot(data);
+
+        setMessages([
+          {
+            sender: "bot",
+            text:
+              data.welcome_message ||
+              "Hello! How can I assist you today?",
+          },
+        ]);
       } catch (err) {
         console.error("❌ Chatbot fetch error:", err);
         setError(err.message || "Failed to load chatbot.");
@@ -39,10 +62,11 @@ export default function PublicChatbot() {
   }, [id, backendBase]);
 
   /* ------------------------------
-     Send message to public API
+      Send message to chatbot API
   ------------------------------ */
   const sendMessage = async () => {
     if (!input.trim()) return;
+
     const newMessages = [...messages, { sender: "user", text: input }];
     setMessages(newMessages);
     setInput("");
@@ -56,16 +80,17 @@ export default function PublicChatbot() {
         }),
       });
 
-      const data = await res.json();
+      if (!res.ok) throw new Error("Chatbot API error");
 
-      if (data.reply) {
-        setMessages([...newMessages, { sender: "bot", text: data.reply }]);
-      } else {
-        setMessages([
-          ...newMessages,
-          { sender: "bot", text: "⚠️ No reply from bot." },
-        ]);
+      const contentType = res.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) {
+        throw new Error("Bot API returned invalid format");
       }
+
+      const data = await res.json();
+      const reply = data.reply || "⚠️ Bot did not send any reply.";
+
+      setMessages([...newMessages, { sender: "bot", text: reply }]);
     } catch (err) {
       console.error("⚠️ Chatbot message error:", err);
       setMessages([
@@ -75,8 +100,15 @@ export default function PublicChatbot() {
     }
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
   /* ------------------------------
-     Render states
+      UI States
   ------------------------------ */
   if (loading) {
     return (
@@ -97,10 +129,11 @@ export default function PublicChatbot() {
   const theme = chatbot?.themeColors?.userBubble || "#7f5af0";
 
   /* ------------------------------
-     UI Rendering
+      Chat UI
   ------------------------------ */
   return (
     <div className="flex flex-col h-screen bg-[#0f0f17] text-white font-inter">
+
       {/* Header */}
       <div className="p-3 text-center border-b border-gray-800">
         {chatbot?.logo_url && (
@@ -110,7 +143,10 @@ export default function PublicChatbot() {
             className="h-10 mx-auto mb-2 rounded-lg"
           />
         )}
-        <h2 className="text-lg font-semibold">{chatbot?.name || "AI Chatbot"}</h2>
+        <h2 className="text-lg font-semibold">
+          {chatbot?.name || "AI Chatbot"}
+        </h2>
+
         {chatbot?.business_info && (
           <p className="text-sm text-gray-400">{chatbot.business_info}</p>
         )}
@@ -135,11 +171,12 @@ export default function PublicChatbot() {
         ))}
       </div>
 
-      {/* Input box */}
+      {/* Input */}
       <div className="p-3 border-t border-gray-800 flex gap-2">
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
           placeholder="Type a message..."
           rows={1}
           className="flex-1 resize-none bg-[#1a1a24] p-2 rounded-lg outline-none text-white text-sm"
