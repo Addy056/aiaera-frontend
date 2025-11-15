@@ -16,5 +16,13 @@ export default defineConfig({
   build: {
     outDir: "dist",
   },
-  base: "/", // ✅ ensures correct routing on Vercel
+  base: "/", // ensures correct routing on Vercel
+
+  // ⭐ Required so chatbot iframe works in local dev
+  server: {
+    headers: {
+      "X-Frame-Options": "ALLOWALL",
+      "Content-Security-Policy": "frame-ancestors *"
+    }
+  }
 });
