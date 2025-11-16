@@ -11,12 +11,12 @@ export default function PublicChatbot() {
   const [error, setError] = useState(null);
 
   // ----------------------------------
-  // ALWAYS USE FULL BACKEND URL
-  // (Prevents iframe loading wrong site)
+  // ALWAYS USE CLEAN BACKEND URL
+  // (Matches the new VITE_API_URL used everywhere)
   // ----------------------------------
   const backendBase = useMemo(() => {
-    const url = import.meta.env.VITE_BACKEND_URL || "";
-    return url.replace(/\/+$/, ""); // remove trailing slash
+    const url = import.meta.env.VITE_API_URL || "";   // FIXED!!
+    return url.replace(/\/+$/, ""); // remove trailing slashes
   }, []);
 
   /* ------------------------------
@@ -31,7 +31,7 @@ export default function PublicChatbot() {
           headers: { "X-Requested-With": "XMLHttpRequest" },
         });
 
-        // If server returns HTML → iframe fallback detected
+        // If server returns HTML → wrong URL / invalid embed domain
         const contentType = res.headers.get("content-type") || "";
         if (!contentType.includes("application/json")) {
           throw new Error("Invalid chatbot URL or server returned HTML");
@@ -47,7 +47,7 @@ export default function PublicChatbot() {
             sender: "bot",
             text:
               data.welcome_message ||
-              "Hello! How can I assist you today?",
+              "Hi! I'm your AI assistant. How can I help you today?",
           },
         ]);
       } catch (err) {
@@ -88,14 +88,14 @@ export default function PublicChatbot() {
       }
 
       const data = await res.json();
-      const reply = data.reply || "⚠️ Bot did not send any reply.";
+      const reply = data.reply || "⚠️ I couldn't generate a response.";
 
       setMessages([...newMessages, { sender: "bot", text: reply }]);
     } catch (err) {
       console.error("⚠️ Chatbot message error:", err);
       setMessages([
         ...newMessages,
-        { sender: "bot", text: "⚠️ Error connecting to bot." },
+        { sender: "bot", text: "⚠️ Error contacting the bot." },
       ]);
     }
   };
@@ -108,7 +108,7 @@ export default function PublicChatbot() {
   };
 
   /* ------------------------------
-      UI States
+      Loading + Error UI
   ------------------------------ */
   if (loading) {
     return (
@@ -120,12 +120,15 @@ export default function PublicChatbot() {
 
   if (error) {
     return (
-      <div className="w-full h-screen flex justify-center items-center bg-[#0f0f17] text-red-400">
+      <div className="w-full h-screen flex justify-center items-center bg-[#0f0f17] text-red-400 text-center px-6">
         {error}
       </div>
     );
   }
 
+  /* ------------------------------
+      Theming
+  ------------------------------ */
   const theme = chatbot?.themeColors?.userBubble || "#7f5af0";
 
   /* ------------------------------
@@ -140,15 +143,18 @@ export default function PublicChatbot() {
           <img
             src={chatbot.logo_url}
             alt="logo"
-            className="h-10 mx-auto mb-2 rounded-lg"
+            className="h-10 mx-auto mb-2 rounded-lg object-cover"
           />
         )}
+
         <h2 className="text-lg font-semibold">
           {chatbot?.name || "AI Chatbot"}
         </h2>
 
         {chatbot?.business_info && (
-          <p className="text-sm text-gray-400">{chatbot.business_info}</p>
+          <p className="text-sm text-gray-400 px-4">
+            {chatbot.business_info}
+          </p>
         )}
       </div>
 

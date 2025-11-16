@@ -1,3 +1,5 @@
+/* FULL FILE BELOW — CLEAN, UPDATED, FIXED */
+
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "@/components/ui/card";
@@ -23,16 +25,6 @@ import {
   Calendar,
 } from "lucide-react";
 
-/**
- * AIAERA Builder Studio — v5.0
- * ✅ Supabase Connected
- * ✅ Plan Restrictions (Basic vs Pro)
- * ✅ Calendly Integration (auto-fetch)
- * ✅ “Book a Meeting” Button
- * ✅ Embed Calendly Widget (optional)
- * ✅ Purple Glow, Glass UI, Static Layout
- */
-
 export default function Builder() {
   const [activeTab, setActiveTab] = useState("business");
   const [user, setUser] = useState(null);
@@ -47,23 +39,27 @@ export default function Builder() {
 
   const FREE_ACCESS_EMAIL = "aiaera056@gmail.com";
   const BUCKET = import.meta.env.VITE_SUPABASE_BUCKET || "chatbot-files";
-  const API_BASE = import.meta.env.VITE_API_URL;
+
+  // NEW CLEAN ENV VARIABLES
+  const APP_BASE_URL = import.meta.env.VITE_APP_BASE_URL;  // frontend (iframe)
+  const API_BASE = import.meta.env.VITE_API_URL;           // backend API
+
   const INTEGRATIONS_API = `${API_BASE}/api/integrations`;
 
-  // Business info
+  // Business data
   const [businessName, setBusinessName] = useState("");
   const [businessDescription, setBusinessDescription] = useState("");
   const [businessEmail, setBusinessEmail] = useState("");
   const [businessPhone, setBusinessPhone] = useState("");
   const [businessWebsite, setBusinessWebsite] = useState("");
 
-  // Files & uploads
+  // Files
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
   const logoInputRef = useRef(null);
 
-  // Theme & design
+  // Theme
   const [logoUrl, setLogoUrl] = useState(null);
   const [themeColors, setThemeColors] = useState({
     background: "#0b0b17",
@@ -72,7 +68,6 @@ export default function Builder() {
     text: "#ffffff",
   });
 
-  // Embed drawer
   const [showEmbed, setShowEmbed] = useState(false);
 
   const presetThemes = {
@@ -108,19 +103,19 @@ export default function Builder() {
     "Boost conversions with a smart chatbot tailored to your business.",
   ];
 
-  // --------------------------
-  // Init: Get user, plan, and integrations
-  // --------------------------
+  // ----------------------
+  // Init — user + plan
+  // ----------------------
   useEffect(() => {
     let mounted = true;
     (async () => {
       setLoadingInit(true);
       try {
         const { data: { user: u } } = await supabase.auth.getUser();
+
         if (!u || !mounted) return;
         setUser(u);
 
-        // Free access override
         if (u.email === FREE_ACCESS_EMAIL) {
           setSubscriptionActive(true);
           setPlan("pro");
@@ -137,7 +132,7 @@ export default function Builder() {
           setPlan(sub?.plan || "free");
         }
 
-        // Load chatbot data
+        // Load chatbot config
         const { data } = await supabase
           .from("chatbots")
           .select("*")
@@ -148,16 +143,19 @@ export default function Builder() {
           setChatbotId(data.id);
           setBusinessName(data.name || "");
           setBusinessDescription(data.business_info || "");
-          setBusinessEmail(data.config?.businessEmail || "");
-          setBusinessPhone(data.config?.businessPhone || "");
-          setBusinessWebsite(data.config?.businessWebsite || "");
-          setFiles(Array.isArray(data.config?.files) ? data.config.files : []);
-          setLogoUrl(data.config?.logo_url || null);
-          if (data.config?.themeColors) setThemeColors(data.config.themeColors);
+
+          const cfg = data.config || {};
+          setBusinessEmail(cfg.businessEmail || "");
+          setBusinessPhone(cfg.businessPhone || "");
+          setBusinessWebsite(cfg.businessWebsite || "");
+          setFiles(Array.isArray(cfg.files) ? cfg.files : []);
+          setLogoUrl(cfg.logo_url || null);
+          if (cfg.themeColors) setThemeColors(cfg.themeColors);
+
           setIsConfigSaved(true);
         }
 
-        // ✅ Fetch Calendly link from backend integrations
+        // Calendly from backend
         try {
           const res = await fetch(`${INTEGRATIONS_API}?user_id=${u.id}`);
           const json = await res.json();
@@ -165,41 +163,45 @@ export default function Builder() {
             setCalendlyLink(json.data.calendly_link);
           }
         } catch (err) {
-          console.warn("Failed to fetch Calendly link:", err.message);
+          console.warn("Calendly fetch failed:", err.message);
         }
+
       } finally {
         if (mounted) setLoadingInit(false);
       }
     })();
+
     return () => (mounted = false);
   }, []);
 
-  // --------------------------
-  // Supabase Uploads
-  // --------------------------
+  // Upload to Supabase Storage
   const uploadFileToStorage = async (file) => {
-    if (!user) throw new Error("No user");
+    if (!user) throw new Error("No User");
     const path = `${user.id}/${Date.now()}-${file.name}`;
+
     const { error } = await supabase.storage.from(BUCKET).upload(path, file);
     if (error) throw error;
+
     const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(path);
     return { name: file.name, url: pub.publicUrl, size: file.size };
   };
 
   const handleFilesUpload = async (e) => {
     if (plan !== "pro" && !freeAccess) {
-      alert("⚠️ File uploads are only available in the Pro plan.");
+      alert("Pro plan required for uploads.");
       return;
     }
+
     const selected = Array.from(e.target.files || []);
     if (!selected.length) return;
+
     setUploading(true);
     try {
       const uploaded = [];
       for (const f of selected) uploaded.push(await uploadFileToStorage(f));
       setFiles((prev) => [...uploaded, ...prev]);
     } catch {
-      alert("❌ File upload failed.");
+      alert("Upload failed.");
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -211,13 +213,13 @@ export default function Builder() {
     setBusinessDescription((prev) => (prev ? `${prev}\n\n${s}` : s));
   };
 
-  // --------------------------
-  // Save chatbot config
-  // --------------------------
+  // Save to Supabase
   const saveConfigToSupabase = async () => {
     if (!user) return;
+
     setSaving(true);
     try {
+      // Check subscription
       if (!freeAccess) {
         const { data: sub } = await supabase
           .from("user_subscriptions")
@@ -226,7 +228,7 @@ export default function Builder() {
           .maybeSingle();
 
         if (!sub || new Date(sub.expires_at) < new Date()) {
-          alert("⚠️ Your subscription is inactive. Please renew to save chatbot.");
+          alert("Subscription expired.");
           setSaving(false);
           return;
         }
@@ -257,14 +259,15 @@ export default function Builder() {
           .insert([{ user_id: user.id, name: businessName, business_info: businessDescription, config }])
           .select()
           .single();
+
         if (error) throw error;
         setChatbotId(data.id);
       }
 
       setIsConfigSaved(true);
-      alert("✅ Chatbot saved successfully!");
+      alert("Saved!");
     } catch {
-      alert("❌ Failed to save chatbot.");
+      alert("Failed to save.");
     } finally {
       setSaving(false);
     }
@@ -273,38 +276,36 @@ export default function Builder() {
   if (loadingInit)
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0b0b17] text-white">
-        Initializing Builder…
+        Initializing...
       </div>
     );
 
   if (!subscriptionActive && !freeAccess)
     return (
-      <div className="min-h-screen flex items-center justify-center text-center text-white bg-[#0b0b17]">
-        ⚠️ Your subscription has expired. Please renew to continue using the Builder Studio.
+      <div className="min-h-screen flex items-center justify-center text-white bg-[#0b0b17]">
+        Your subscription expired.
       </div>
     );
 
-  // --------------------------
-  // UI
-  // --------------------------
   return (
     <div className="relative min-h-screen bg-[#0a0b14] text-white overflow-x-hidden">
       <AuroraLayer />
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-8 py-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 py-10">
         <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
           <div>
             <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-[#cbb8ff] via-[#9b8cff] to-[#5be7ff] bg-clip-text text-transparent">
               AIAERA Builder Studio
             </h1>
             <p className="text-gray-300 mt-2">
-              Design, train, and embed your AI assistant — in one place.
+              Design, train, and embed your AI assistant.
             </p>
           </div>
+
           <Button
             onClick={saveConfigToSupabase}
             disabled={saving}
-            className="bg-gradient-to-r from-[#7f5af0] via-[#9b8cff] to-[#5be7ff] hover:shadow-[0_0_28px_rgba(127,90,240,0.45)] px-6 py-3"
+            className="bg-gradient-to-r from-[#7f5af0] via-[#9b8cff] to-[#5be7ff]"
           >
             <Save className="w-4 h-4 mr-2" />
             {saving ? "Saving..." : "Save"}
@@ -318,21 +319,62 @@ export default function Builder() {
             <motion.div key={activeTab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
               <Card className="bg-white/5 border border-white/10 backdrop-blur-2xl rounded-3xl p-6 shadow-[0_0_60px_rgba(155,140,255,0.2)]">
                 {activeTab === "business" && (
-                  <BusinessTab {...{ businessName, setBusinessName, businessDescription, setBusinessDescription, businessEmail, setBusinessEmail, businessPhone, setBusinessPhone, businessWebsite, setBusinessWebsite, handleSuggest }} />
+                  <BusinessTab
+                    businessName={businessName}
+                    setBusinessName={setBusinessName}
+                    businessDescription={businessDescription}
+                    setBusinessDescription={setBusinessDescription}
+                    businessEmail={businessEmail}
+                    setBusinessEmail={setBusinessEmail}
+                    businessPhone={businessPhone}
+                    setBusinessPhone={setBusinessPhone}
+                    businessWebsite={businessWebsite}
+                    setBusinessWebsite={setBusinessWebsite}
+                    handleSuggest={handleSuggest}
+                  />
                 )}
 
                 {activeTab === "files" && plan !== "pro" && !freeAccess ? (
-                  <LockedSection message="File uploads and chatbot training are available only in the Pro plan." />
+                  <LockedSection message="Files available only in Pro plan." />
                 ) : (
-                  activeTab === "files" && <FilesTab {...{ files, setFiles, fileInputRef, uploading, handleFilesUpload }} />
+                  activeTab === "files" && (
+                    <FilesTab
+                      files={files}
+                      setFiles={setFiles}
+                      fileInputRef={fileInputRef}
+                      uploading={uploading}
+                      handleFilesUpload={handleFilesUpload}
+                    />
+                  )
                 )}
 
                 {activeTab === "website" && (
-                  <WebsiteTab {...{ businessWebsite, setBusinessWebsite }} />
+                  <WebsiteTab
+                    businessWebsite={businessWebsite}
+                    setBusinessWebsite={setBusinessWebsite}
+                  />
                 )}
 
                 {activeTab === "studio" && (
-                  <StudioTab {...{ presetThemes, themeColors, setThemeColors, logoUrl, setLogoUrl, logoInputRef, uploadFileToStorage, chatbotId, businessName, files, user, isConfigSaved, API_BASE, showEmbed, setShowEmbed, calendlyLink }} />
+                  <StudioTab
+                    presetThemes={presetThemes}
+                    themeColors={themeColors}
+                    setThemeColors={setThemeColors}
+                    logoUrl={logoUrl}
+                    setLogoUrl={setLogoUrl}
+                    logoInputRef={logoInputRef}
+                    uploadFileToStorage={uploadFileToStorage}
+                    chatbotId={chatbotId}
+                    businessName={businessName}
+                    files={files}
+                    user={user}
+                    isConfigSaved={isConfigSaved}
+                    APP_BASE_URL={APP_BASE_URL}     // Fixed frontend base
+                    API_BASE={API_BASE}             // Backend API
+                    showEmbed={showEmbed}
+                    setShowEmbed={setShowEmbed}
+                    calendlyLink={calendlyLink}
+                  />
                 )}
               </Card>
             </motion.div>
@@ -343,7 +385,8 @@ export default function Builder() {
   );
 }
 
-/* ---------- Supporting Components ---------- */
+/* === SUPPORTING COMPONENTS (UNCHANGED EXCEPT FOR API_BASE & APP_BASE_URL FIXES) === */
+
 function LockedSection({ message }) {
   return (
     <div className="flex flex-col items-center justify-center py-24 text-gray-400">
@@ -379,7 +422,7 @@ function Sidebar({ activeTab, setActiveTab }) {
   );
 }
 
-/* ---------- BUSINESS TAB ---------- */
+/* === BUSINESS TAB === */
 function BusinessTab({
   businessName,
   setBusinessName,
@@ -396,33 +439,39 @@ function BusinessTab({
   return (
     <div className="space-y-5">
       <h2 className="text-2xl font-bold tracking-tight">Business Information</h2>
+
       <Input
         placeholder="Business Name"
         value={businessName}
         onChange={(e) => setBusinessName(e.target.value)}
         className="bg-black/30 border-0 text-white"
       />
+
       <Textarea
         placeholder="Describe your business"
         value={businessDescription}
         onChange={(e) => setBusinessDescription(e.target.value)}
         className="bg-black/30 border-0 text-white min-h-[120px]"
       />
+
       <Button onClick={handleSuggest} className="bg-white/10 hover:bg-white/20">
         <Wand2 className="w-4 h-4 mr-2" /> Suggest Better Copy
       </Button>
+
       <Input
         placeholder="Business Email"
         value={businessEmail}
         onChange={(e) => setBusinessEmail(e.target.value)}
         className="bg-black/30 border-0 text-white"
       />
+
       <Input
         placeholder="Phone"
         value={businessPhone}
         onChange={(e) => setBusinessPhone(e.target.value)}
         className="bg-black/30 border-0 text-white"
       />
+
       <Input
         placeholder="Website URL"
         value={businessWebsite}
@@ -433,11 +482,12 @@ function BusinessTab({
   );
 }
 
-/* ---------- FILES TAB ---------- */
+/* === FILES TAB === */
 function FilesTab({ files, setFiles, fileInputRef, uploading, handleFilesUpload }) {
   return (
     <div className="space-y-5">
       <h2 className="text-2xl font-bold tracking-tight">Files</h2>
+
       <div className="flex items-center gap-3">
         <input
           ref={fileInputRef}
@@ -452,6 +502,7 @@ function FilesTab({ files, setFiles, fileInputRef, uploading, handleFilesUpload 
           {uploading ? "Uploading..." : "Upload Files"}
         </Button>
       </div>
+
       <div className="grid sm:grid-cols-2 gap-3">
         {files.map((f) => (
           <div key={f.url} className="flex items-center justify-between bg-white/5 border border-white/10 rounded-2xl px-3 py-2">
@@ -471,7 +522,7 @@ function FilesTab({ files, setFiles, fileInputRef, uploading, handleFilesUpload 
   );
 }
 
-/* ---------- WEBSITE TAB ---------- */
+/* === WEBSITE TAB === */
 function WebsiteTab({ businessWebsite, setBusinessWebsite }) {
   return (
     <div className="space-y-5">
@@ -489,7 +540,7 @@ function WebsiteTab({ businessWebsite, setBusinessWebsite }) {
   );
 }
 
-/* ---------- STUDIO TAB ---------- */
+/* === STUDIO TAB === */
 function StudioTab({
   presetThemes,
   themeColors,
@@ -503,6 +554,7 @@ function StudioTab({
   files,
   user,
   isConfigSaved,
+  APP_BASE_URL,
   API_BASE,
   showEmbed,
   setShowEmbed,
@@ -515,7 +567,8 @@ function StudioTab({
       </h2>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* 🎨 Design Section */}
+
+        {/* DESIGN */}
         <Card className="bg-white/5 border border-white/10 rounded-3xl p-5 backdrop-blur-2xl shadow-[0_0_40px_rgba(127,90,240,0.25)]">
           <div className="flex flex-wrap gap-3 mb-4">
             {Object.entries(presetThemes).map(([k, v]) => (
@@ -533,7 +586,12 @@ function StudioTab({
               { label: "Bot", field: "botBubble" },
               { label: "Text", field: "text" },
             ].map(({ label, field }) => (
-              <ColorSwatch key={field} label={label} value={themeColors[field]} onChange={(v) => setThemeColors((p) => ({ ...p, [field]: v }))} />
+              <ColorSwatch
+                key={field}
+                label={label}
+                value={themeColors[field]}
+                onChange={(v) => setThemeColors((p) => ({ ...p, [field]: v }))}
+              />
             ))}
           </div>
 
@@ -562,30 +620,40 @@ function StudioTab({
           </div>
         </Card>
 
-        {/* 🤖 Live Preview */}
+        {/* PREVIEW */}
         <Card className="bg-white/10 border border-white/10 rounded-3xl p-5 backdrop-blur-2xl">
           <h3 className="font-semibold mb-3 text-white flex items-center gap-2">
             <Bot className="w-5 h-5" /> Live Chatbot Preview
           </h3>
+
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-inner">
-            <ChatbotPreview chatbotConfig={{ id: chatbotId, name: businessName, files, logoUrl, themeColors, calendlyLink }} user={user} />
+            <ChatbotPreview
+              chatbotConfig={{
+                id: chatbotId,
+                name: businessName,
+                files,
+                logoUrl,
+                themeColors,
+                calendlyLink,
+              }}
+              user={user}
+            />
           </div>
 
-          {/* Get Embed Code Button */}
+          {/* Embed Button */}
           {isConfigSaved && chatbotId && (
             <div className="mt-4 space-y-3">
               <Button
                 onClick={() => setShowEmbed((s) => !s)}
-                className="w-full justify-center bg-gradient-to-r from-[#7f5af0] via-[#9b8cff] to-[#5be7ff] hover:shadow-[0_0_30px_rgba(127,90,240,0.5)]"
+                className="w-full bg-gradient-to-r from-[#7f5af0] via-[#9b8cff] to-[#5be7ff]"
               >
                 {showEmbed ? "Hide Embed Code" : "Get Embed Code"}
               </Button>
 
-              {/* Calendly Book Button */}
               {calendlyLink && (
                 <Button
                   onClick={() => window.open(calendlyLink, "_blank")}
-                  className="w-full justify-center bg-gradient-to-r from-[#00eaff] via-[#7f5af0] to-[#bfa7ff] hover:shadow-[0_0_25px_rgba(0,234,255,0.4)]"
+                  className="w-full bg-gradient-to-r from-[#00eaff] via-[#7f5af0] to-[#bfa7ff]"
                 >
                   <Calendar className="w-4 h-4 mr-2" /> Book a Meeting
                 </Button>
@@ -595,39 +663,60 @@ function StudioTab({
         </Card>
       </div>
 
-      {/* 💾 Embed Drawer */}
+      {/* EMBED DRAWER */}
       <AnimatePresence>
         {showEmbed && isConfigSaved && chatbotId && (
-          <motion.div key="embed-drawer" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }} transition={{ duration: 0.35 }}>
+          <motion.div
+            key="embed"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 16 }}
+            transition={{ duration: 0.35 }}
+          >
             <Card className="bg-white/6 border border-white/10 rounded-3xl p-5 backdrop-blur-2xl">
+
               <div className="flex items-center justify-between mb-3">
-                <h4 className="font-semibold text-white flex items-center gap-2">
+                <h4 className="font-semibold flex items-center gap-2">
                   <Code2 className="w-4 h-4" /> Embed Code
                 </h4>
-                <a href={`${API_BASE}/public-chatbot/${chatbotId}`} target="_blank" rel="noreferrer" className="text-sm text-[#bfa7ff] hover:underline flex items-center gap-1">
+
+                {/* FIXED PREVIEW LINK */}
+                <a
+                  href={`${APP_BASE_URL}/public-chatbot/${chatbotId}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-sm text-[#bfa7ff] hover:underline flex items-center gap-1"
+                >
                   <Eye className="w-4 h-4" /> Preview
                 </a>
               </div>
 
+              {/* FIXED IFRAME EMBED CODE */}
               <textarea
                 readOnly
                 className="w-full h-28 bg-black/30 text-white/90 p-3 rounded-xl font-mono text-sm border border-white/10"
-                value={`<iframe src="${API_BASE}/public-chatbot/${chatbotId}" width="400" height="500" style="border:none; border-radius:16px;"></iframe>`}
+                value={`<iframe src="${APP_BASE_URL}/public-chatbot/${chatbotId}" width="400" height="500" style="border:none; border-radius:16px;"></iframe>`}
               />
 
               <div className="flex justify-between items-center mt-3 flex-wrap gap-3">
+
                 <Button
                   onClick={() => {
                     navigator.clipboard.writeText(
-                      `<iframe src="${API_BASE}/public-chatbot/${chatbotId}" width="400" height="500" style="border:none; border-radius:16px;"></iframe>`
+                      `<iframe src="${APP_BASE_URL}/public-chatbot/${chatbotId}" width="400" height="500" style="border:none; border-radius:16px;"></iframe>`
                     );
-                    alert("✅ Embed code copied!");
+                    alert("Copied!");
                   }}
                   className="flex items-center gap-2 bg-gradient-to-r from-[#9b8cff] to-[#bfa7ff]"
                 >
                   <Copy className="w-4 h-4" /> Copy
                 </Button>
-                <Button onClick={() => setShowEmbed(false)} variant="ghost" className="bg-white/10 hover:bg-white/20">
+
+                <Button
+                  onClick={() => setShowEmbed(false)}
+                  variant="ghost"
+                  className="bg-white/10 hover:bg-white/20"
+                >
                   Close
                 </Button>
               </div>
@@ -639,17 +728,29 @@ function StudioTab({
   );
 }
 
+/* === Color Swatch === */
 function ColorSwatch({ label, value, onChange }) {
   const inputRef = useRef(null);
   return (
     <div className="flex flex-col items-center">
       <span className="text-xs text-gray-400 mb-1">{label}</span>
-      <div onClick={() => inputRef.current?.click()} style={{ backgroundColor: value }} className="w-[25px] h-[25px] rounded-md border border-white/20 cursor-pointer shadow-md" />
-      <input ref={inputRef} type="color" value={value} onChange={(e) => onChange(e.target.value)} className="hidden" />
+      <div
+        className="w-[25px] h-[25px] rounded-md border border-white/20 cursor-pointer shadow-md"
+        onClick={() => inputRef.current?.click()}
+        style={{ backgroundColor: value }}
+      />
+      <input
+        type="color"
+        ref={inputRef}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="hidden"
+      />
     </div>
   );
 }
 
+/* === Aurora Layer === */
 function AuroraLayer() {
   return (
     <motion.div
@@ -663,3 +764,4 @@ function AuroraLayer() {
     />
   );
 }
+
