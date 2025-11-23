@@ -1,29 +1,44 @@
 // src/components/LanguageSelector.jsx
-import { useLanguage } from "../context/LanguageContext";
-import { Globe } from "lucide-react";
+import { useState } from "react";
 
-export default function LanguageSelector() {
-  const { language, setLanguage } = useLanguage();
+export default function LanguageSelector({ onSelect }) {
+  const [lang, setLang] = useState("en");
+
+  const LANGUAGES = [
+    { code: "en", label: "English" },
+    { code: "hi", label: "हिन्दी (Hindi)" },
+    { code: "es", label: "Español (Spanish)" },
+    { code: "fr", label: "Français (French)" },
+    { code: "de", label: "Deutsch (German)" },
+    { code: "zh", label: "中文 (Chinese)" },
+    { code: "ja", label: "日本語 (Japanese)" },
+    { code: "ar", label: "العربية (Arabic)" },
+    { code: "pt", label: "Português (Portuguese)" },
+    { code: "ru", label: "Русский (Russian)" },
+  ];
 
   return (
-    <div className="flex items-center gap-2 bg-white/10 px-3 py-2 rounded-xl shadow-md">
-      <Globe className="w-5 h-5 text-white" />
-      <select
-        value={language}
-        onChange={(e) => setLanguage(e.target.value)}
-        className="bg-transparent text-white outline-none cursor-pointer"
-      >
-        <option value="en">English</option>
-        <option value="es">Español (Spanish)</option>
-        <option value="fr">Français (French)</option>
-        <option value="de">Deutsch (German)</option>
-        <option value="hi">हिन्दी (Hindi)</option>
-        <option value="zh">中文 (Chinese)</option>
-        <option value="ja">日本語 (Japanese)</option>
-        <option value="ar">العربية (Arabic)</option>
-        <option value="pt">Português (Portuguese)</option>
-        <option value="ru">Русский (Russian)</option>
-      </select>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="bg-[#1a1a2e] p-6 rounded-xl w-80 space-y-4 text-center shadow-xl border border-white/10">
+        <h2 className="text-white font-bold text-xl">Choose Your Language</h2>
+
+        <select
+          className="bg-black/30 text-white p-2 rounded w-full"
+          value={lang}
+          onChange={(e) => setLang(e.target.value)}
+        >
+          {LANGUAGES.map((l) => (
+            <option key={l.code} value={l.code}>{l.label}</option>
+          ))}
+        </select>
+
+        <button
+          onClick={() => onSelect(lang)}
+          className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 p-2 rounded text-white font-bold"
+        >
+          Continue
+        </button>
+      </div>
     </div>
   );
 }

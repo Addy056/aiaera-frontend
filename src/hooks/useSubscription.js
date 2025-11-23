@@ -3,8 +3,13 @@ import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 
 /**
- * Custom React hook to fetch user's current subscription status.
- * Returns { plan, active, loading }
+ * useSubscription()
+ * Clean, safe, optimized subscription checker.
+ *
+ * Returns:
+ *  - plan: "free" | "basic" | "pro"
+ *  - active: boolean (is the plan currently valid)
+ *  - loading: boolean
  */
 export default function useSubscription() {
   const [plan, setPlan] = useState("free");
@@ -12,32 +17,49 @@ export default function useSubscription() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchPlan = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+    let mounted = true;
 
-        const { data, error } = await supabase
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!mounted) return;
+        if (!session?.user) {
+          setLoading(false);
+          return;
+        }
+
+        const userId = session.user.id;
+
+        // ---- FIXED: NO MORE 406 ----
+        const { data: sub } = await supabase
           .from("user_subscriptions")
           .select("plan, expires_at")
-          .eq("user_id", user.id)
-          .single();
+          .eq("user_id", userId)
+          .maybeSingle();
 
-        if (error) throw error;
-
-        if (data) {
-          const expired = !data.expires_at || new Date(data.expires_at) < new Date();
-          setPlan(data.plan || "free");
-          setActive(!expired);
+        if (!sub) {
+          setPlan("free");
+          setActive(false);
+          setLoading(false);
+          return;
         }
-      } catch (err) {
-        console.error("❌ Subscription fetch failed:", err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
 
-    fetchPlan();
+        const expired =
+          !sub.expires_at || new Date(sub.expires_at) < new Date();
+
+        setPlan(sub.plan || "free");
+        setActive(!expired);
+      } catch (err) {
+        console.error("❌ Subscription fetch error:", err.message);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   return { plan, active, loading };

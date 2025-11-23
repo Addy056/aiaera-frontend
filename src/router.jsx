@@ -1,29 +1,29 @@
 // src/router.jsx
 import { Routes, Route } from "react-router-dom";
+import React, { Suspense, lazy } from "react";
 
-// Auth Pages
-import Login from "./pages/Login.jsx";
-import Signup from "./pages/Signup.jsx";
-import ForgotPassword from "./pages/ForgotPassword.jsx";
-import UpdatePassword from "./pages/UpdatePassword.jsx";
+// Lazy-load pages for faster performance
+const Login = lazy(() => import("./pages/Login.jsx"));
+const Signup = lazy(() => import("./pages/Signup.jsx"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword.jsx"));
+const UpdatePassword = lazy(() => import("./pages/UpdatePassword.jsx"));
 
-// App Pages
-import Dashboard from "./pages/Dashboard.jsx";
-import Builder from "./pages/Builder.jsx";
-import Leads from "./pages/Leads.jsx";
-import Appointments from "./pages/Appointments.jsx";
-import Integrations from "./pages/Integrations.jsx";
-import Pricing from "./pages/Pricing.jsx";
-import Settings from "./pages/Settings.jsx";
+const Dashboard = lazy(() => import("./pages/Dashboard.jsx"));
+const Builder = lazy(() => import("./pages/Builder.jsx"));
+const Leads = lazy(() => import("./pages/Leads.jsx"));
+const Appointments = lazy(() => import("./pages/Appointments.jsx"));
+const Integrations = lazy(() => import("./pages/Integrations.jsx"));
+const Pricing = lazy(() => import("./pages/Pricing.jsx"));
+const Settings = lazy(() => import("./pages/Settings.jsx"));
 
-// ✅ Correct import: DO NOT use bracket folder name
-import PublicChatbot from "./pages/public-chatbot/PublicChatbot.jsx";
+const PublicChatbot = lazy(() =>
+  import("./pages/public-chatbot/PublicChatbot.jsx")
+);
 
 // Components
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import MainLayout from "./components/MainLayout.jsx";
 
-// Simple 404 Page
 function NotFound() {
   return (
     <div style={{ textAlign: "center", marginTop: "100px" }}>
@@ -36,97 +36,108 @@ function NotFound() {
 
 export default function AppRoutes() {
   return (
-    <Routes>
-      {/* ----------------------------- */}
-      {/* PUBLIC AUTH ROUTES           */}
-      {/* ----------------------------- */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Signup />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/update-password" element={<UpdatePassword />} />
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center text-white bg-black">
+          Loading...
+        </div>
+      }
+    >
+      <Routes>
+        {/* ----------------------------- */}
+        {/* AUTH ROUTES (Public)          */}
+        {/* ----------------------------- */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/update-password" element={<UpdatePassword />} />
 
-      {/* ----------------------------- */}
-      {/* PUBLIC CHATBOT ROUTE          */}
-      {/* MUST BE PUBLIC & OUTSIDE PROTECTED ROUTES */}
-      {/* ----------------------------- */}
-      <Route path="/public-chatbot/:id" element={<PublicChatbot />} />
+        {/* ----------------------------- */}
+        {/* PUBLIC CHATBOT ROUTE          */}
+        {/* ----------------------------- */}
+        <Route path="/public-chatbot/:id" element={<PublicChatbot />} />
 
-      {/* ----------------------------- */}
-      {/* PROTECTED APP ROUTES          */}
-      {/* ----------------------------- */}
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <MainLayout>
-              <Dashboard />
-            </MainLayout>
-          </ProtectedRoute>
-        }
-      />
+        {/* ----------------------------- */}
+        {/* PROTECTED PAGES               */}
+        {/* ----------------------------- */}
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <MainLayout>
+                <Dashboard />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
 
-      <Route
-        path="/builder"
-        element={
-          <ProtectedRoute>
-            <MainLayout>
-              <Builder />
-            </MainLayout>
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="/builder"
+          element={
+            <ProtectedRoute>
+              <MainLayout>
+                <Builder />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
 
-      <Route
-        path="/leads"
-        element={
-          <ProtectedRoute>
-            <MainLayout>
-              <Leads />
-            </MainLayout>
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="/leads"
+          element={
+            <ProtectedRoute>
+              <MainLayout>
+                <Leads />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
 
-      <Route
-        path="/appointments"
-        element={
-          <ProtectedRoute>
-            <MainLayout>
-              <Appointments />
-            </MainLayout>
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="/appointments"
+          element={
+            <ProtectedRoute>
+              <MainLayout>
+                <Appointments />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
 
-      <Route
-        path="/integrations"
-        element={
-          <ProtectedRoute>
-            <MainLayout>
-              <Integrations />
-            </MainLayout>
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="/integrations"
+          element={
+            <ProtectedRoute>
+              <MainLayout>
+                <Integrations />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
 
-      <Route
-        path="/settings"
-        element={
-          <ProtectedRoute>
-            <MainLayout>
-              <Settings />
-            </MainLayout>
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <MainLayout>
+                <Settings />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
 
-      {/* Public Pricing Page */}
-      <Route path="/pricing" element={<Pricing />} />
+        {/* ----------------------------- */}
+        {/* PUBLIC PRICING PAGE           */}
+        {/* DO NOT WRAP WITH PROTECTED ROUTE */}
+        {/* DO NOT USE MainLayout (no sidebar) */}
+        {/* ----------------------------- */}
+        <Route path="/pricing" element={<Pricing />} />
 
-      {/* ----------------------------- */}
-      {/* CATCH-ALL → 404               */}
-      {/* ----------------------------- */}
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+        {/* ----------------------------- */}
+        {/* 404 FALLBACK                  */}
+        {/* ----------------------------- */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Suspense>
   );
 }

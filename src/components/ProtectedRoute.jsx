@@ -6,50 +6,61 @@ import { supabase } from "../supabaseClient";
 export default function ProtectedRoute({ children }) {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
-  const [isExpired, setIsExpired] = useState(false);
+  const [subscriptionActive, setSubscriptionActive] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
-    const fetchSession = async () => {
+    let mounted = true;
+
+    (async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user || null);
 
-      if (session?.user) {
-        // Check subscription
-        const { data: sub, error } = await supabase
-          .from("user_subscriptions")
-          .select("expires_at")
-          .eq("user_id", session.user.id)
-          .single();
+      if (!mounted) return;
 
-        if (sub && new Date(sub.expires_at) < new Date()) {
-          setIsExpired(true);
-        } else {
-          setIsExpired(false);
-        }
+      if (!session?.user) {
+        setUser(null);
+        setLoading(false);
+        return;
       }
 
+      setUser(session.user);
+
+      // ---- FIXED 406 + SUPABASE POLICY ISSUE ----
+      const { data: sub } = await supabase
+        .from("user_subscriptions")
+        .select("expires_at")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
+
+      const active =
+        sub &&
+        sub.expires_at &&
+        new Date(sub.expires_at) > new Date();
+
+      setSubscriptionActive(active);
       setLoading(false);
+    })();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (_event, nextSession) => {
+        setUser(nextSession?.user || null);
+      }
+    );
+
+    return () => {
+      mounted = false;
+      authListener.subscription.unsubscribe();
     };
-
-    fetchSession();
-
-    // Listen for auth changes (login/logout)
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null);
-    });
-
-    return () => listener.subscription.unsubscribe();
   }, []);
 
   if (loading) return <div className="text-center p-6">Loading...</div>;
 
-  // Redirect if not logged in
+  // Not logged in
   if (!user) return <Navigate to="/login" replace />;
 
-  // Redirect if subscription expired and trying to access premium pages
-  const premiumPages = ["/builder", "/leads", "/appointments", "/integrations"];
-  if (isExpired && premiumPages.includes(location.pathname)) {
+  // Premium routes protection
+  const premium = ["/builder", "/leads", "/appointments", "/integrations"];
+  if (!subscriptionActive && premium.includes(location.pathname)) {
     return <Navigate to="/pricing" replace />;
   }
 
