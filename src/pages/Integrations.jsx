@@ -21,7 +21,6 @@ import {
   Save,
   Lock,
   Crosshair,
-  ExternalLink,
 } from "lucide-react";
 
 delete L.Icon.Default.prototype._getIconUrl;
@@ -40,7 +39,6 @@ export default function Integrations() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [userEmail, setUserEmail] = useState("");
-  const [subscriptionActive, setSubscriptionActive] = useState(false);
   const [plan, setPlan] = useState("free");
 
   const [toast, setToast] = useState({ message: "", type: "" });
@@ -60,7 +58,7 @@ export default function Integrations() {
     gmaps_link: "",
   });
 
-  // NEW — Meeting Links JSON state
+  // Meeting Links
   const [meetingLinks, setMeetingLinks] = useState({
     calendly: "",
     google_meet: "",
@@ -86,34 +84,38 @@ export default function Integrations() {
 
   const initIntegrations = async () => {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error("User session error");
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not logged in");
 
       setUserEmail(user.email);
 
+      // FREE ACCESS EMAIL = PRO
       if (user.email === FREE_ACCESS_EMAIL) {
-        setSubscriptionActive(true);
         setPlan("pro");
         await fetchIntegrations(user.id);
         return setLoading(false);
       }
 
+      // Get subscription
       const { data: sub } = await supabase
         .from("user_subscriptions")
         .select("plan, expires_at")
         .eq("user_id", user.id)
-        .single();
+        .limit(1)
+        .maybeSingle();
 
-      if (!sub || new Date(sub.expires_at) < new Date()) {
-        setSubscriptionActive(false);
-        return setLoading(false);
+      if (!sub) {
+        setPlan("free");
+        setLoading(false);
+        return;
       }
 
-      setSubscriptionActive(true);
+      const expired = new Date(sub.expires_at) < new Date();
+      const isActive = sub.plan === "free" ? true : !expired;
+
       setPlan(sub.plan);
-      await fetchIntegrations(user.id);
+      if (isActive) await fetchIntegrations(user.id);
+
       setLoading(false);
     } catch (err) {
       showToast(err.message, "error");
@@ -121,17 +123,15 @@ export default function Integrations() {
     }
   };
 
-  // FETCH USER INTEGRATIONS
+  // Fetch integrations from backend
   const fetchIntegrations = async (userId) => {
     try {
       const res = await fetch(`${API_BASE}?user_id=${userId}`);
       const json = await res.json();
 
-      if (!res.ok || !json.success) throw new Error(json.error);
-
+      if (!json.success) throw new Error(json.error);
       const d = json.data || {};
 
-      // Load normal fields
       setForm((prev) => ({
         ...prev,
         ...d,
@@ -142,7 +142,6 @@ export default function Integrations() {
           `https://www.google.com/maps?q=${prev.business_lat},${prev.business_lng}`,
       }));
 
-      // Load meeting links
       if (d.meeting_links) {
         setMeetingLinks({
           calendly: d.meeting_links.calendly || "",
@@ -153,7 +152,7 @@ export default function Integrations() {
         });
       }
     } catch (err) {
-      showToast("Failed to fetch integrations: " + err.message, "error");
+      showToast("Error fetching integrations", "error");
     }
   };
 
@@ -169,32 +168,21 @@ export default function Integrations() {
     }));
   };
 
-  const detectLocation = () => {
-    if (!navigator.geolocation)
-      return showToast("Geolocation not supported", "error");
-
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        updateLocation(pos.coords.latitude, pos.coords.longitude);
-        showToast("📍 Location updated!", "success");
-      },
-      (err) => showToast("Failed: " + err.message, "error"),
-      { enableHighAccuracy: true, timeout: 8000 }
-    );
-  };
-
   const handleSave = async () => {
+    if (plan !== "pro" && userEmail !== FREE_ACCESS_EMAIL) {
+      showToast("Upgrade to Pro to save integrations.", "error");
+      return;
+    }
+
     setSaving(true);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not logged in");
 
       const payload = {
         ...form,
         user_id: user.id,
-        meeting_links: meetingLinks, // NEW
+        meeting_links: meetingLinks,
       };
 
       const res = await fetch(API_BASE, {
@@ -208,19 +196,11 @@ export default function Integrations() {
 
       showToast("Integrations saved!", "success");
     } catch (err) {
-      showToast("Save failed: " + err.message, "error");
+      showToast(err.message, "error");
     } finally {
       setSaving(false);
     }
   };
-
-  if (!loading && !subscriptionActive) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-white">
-        Subscription Expired
-      </div>
-    );
-  }
 
   if (loading)
     return (
@@ -231,6 +211,7 @@ export default function Integrations() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0b0b1a] via-[#111129] to-[#090a1a] text-white">
+      {/* Toast */}
       {toast.message && (
         <div
           className={`fixed top-5 left-1/2 -translate-x-1/2 px-6 py-3 rounded-xl z-50 ${
@@ -246,39 +227,60 @@ export default function Integrations() {
 
         {/* GRID */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {/* WhatsApp */}
+
+          {/* WhatsApp — FREE */}
           <IntegrationCard title="WhatsApp (Meta API)" icon={<MessageCircle />}>
             <InputField
               name="whatsapp_number_id"
               value={form.whatsapp_number_id}
-              onChange={handleChange}
+              onChange={(e) =>
+                plan === "pro"
+                  ? handleChange(e)
+                  : showToast("Upgrade to Pro to edit", "error")
+              }
               placeholder="WhatsApp Number ID"
+              disabled={plan !== "pro"}
             />
             <InputField
               name="whatsapp_token"
               value={form.whatsapp_token}
-              onChange={handleChange}
+              onChange={(e) =>
+                plan === "pro"
+                  ? handleChange(e)
+                  : showToast("Upgrade to Pro to edit", "error")
+              }
               placeholder="WhatsApp API Token"
+              disabled={plan !== "pro"}
             />
           </IntegrationCard>
 
-          {/* Facebook */}
+          {/* Facebook — FREE */}
           <IntegrationCard title="Facebook Messenger" icon={<Facebook />}>
             <InputField
               name="fb_page_id"
               value={form.fb_page_id}
-              onChange={handleChange}
+              onChange={(e) =>
+                plan === "pro"
+                  ? handleChange(e)
+                  : showToast("Pro only", "error")
+              }
               placeholder="Facebook Page ID"
+              disabled={plan !== "pro"}
             />
             <InputField
               name="fb_page_token"
               value={form.fb_page_token}
-              onChange={handleChange}
+              onChange={(e) =>
+                plan === "pro"
+                  ? handleChange(e)
+                  : showToast("Pro only", "error")
+              }
               placeholder="Facebook Page Token"
+              disabled={plan !== "pro"}
             />
           </IntegrationCard>
 
-          {/* Instagram */}
+          {/* Instagram — PRO ONLY */}
           {plan === "pro" || userEmail === FREE_ACCESS_EMAIL ? (
             <IntegrationCard title="Instagram" icon={<Instagram />}>
               <InputField
@@ -304,67 +306,22 @@ export default function Integrations() {
             <LockedCard title="Instagram Integration" />
           )}
 
-          {/* MEETING LINKS — NEW */}
+          {/* Meeting Links */}
           <IntegrationCard title="Meeting Links" icon={<Calendar />}>
-            <InputField
-              name="calendly"
-              value={meetingLinks.calendly}
-              onChange={(e) =>
-                setMeetingLinks({
-                  ...meetingLinks,
-                  calendly: e.target.value,
-                })
-              }
-              placeholder="Calendly Link"
-            />
-
-            <InputField
-              name="google_meet"
-              value={meetingLinks.google_meet}
-              onChange={(e) =>
-                setMeetingLinks({
-                  ...meetingLinks,
-                  google_meet: e.target.value,
-                })
-              }
-              placeholder="Google Meet Link"
-            />
-
-            <InputField
-              name="zoom"
-              value={meetingLinks.zoom}
-              onChange={(e) =>
-                setMeetingLinks({
-                  ...meetingLinks,
-                  zoom: e.target.value,
-                })
-              }
-              placeholder="Zoom Meeting Link"
-            />
-
-            <InputField
-              name="teams"
-              value={meetingLinks.teams}
-              onChange={(e) =>
-                setMeetingLinks({
-                  ...meetingLinks,
-                  teams: e.target.value,
-                })
-              }
-              placeholder="Microsoft Teams Meeting Link"
-            />
-
-            <InputField
-              name="other"
-              value={meetingLinks.other}
-              onChange={(e) =>
-                setMeetingLinks({
-                  ...meetingLinks,
-                  other: e.target.value,
-                })
-              }
-              placeholder="Other Meeting Link"
-            />
+            {Object.entries(meetingLinks).map(([key, value]) => (
+              <InputField
+                key={key}
+                name={key}
+                value={value}
+                disabled={plan !== "pro"}
+                onChange={(e) =>
+                  plan === "pro"
+                    ? setMeetingLinks({ ...meetingLinks, [key]: e.target.value })
+                    : showToast("Upgrade to Pro to edit", "error")
+                }
+                placeholder={`${key.replace("_", " ")} link`}
+              />
+            ))}
           </IntegrationCard>
 
           {/* Business Location */}
@@ -372,7 +329,12 @@ export default function Integrations() {
             <InputField
               name="business_address"
               value={form.business_address}
-              onChange={handleChange}
+              disabled={plan !== "pro"}
+              onChange={(e) =>
+                plan === "pro"
+                  ? handleChange(e)
+                  : showToast("Pro only", "error")
+              }
               placeholder="Business Address"
             />
 
@@ -381,11 +343,19 @@ export default function Integrations() {
               lng={form.business_lng}
               address={form.business_address}
               gmaps_link={form.gmaps_link}
-              onMapClick={updateLocation}
+              onMapClick={(lat, lng) =>
+                plan === "pro"
+                  ? updateLocation(lat, lng)
+                  : showToast("Pro only", "error")
+              }
             />
 
             <button
-              onClick={detectLocation}
+              onClick={() =>
+                plan === "pro"
+                  ? detectLocation()
+                  : showToast("Pro only", "error")
+              }
               className="mt-3 px-4 py-2 bg-[#7f5af0] rounded-lg"
             >
               <Crosshair className="inline-block w-4 h-4 mr-2" />
@@ -394,11 +364,11 @@ export default function Integrations() {
           </IntegrationCard>
         </div>
 
-        {/* Save */}
+        {/* SAVE BUTTON */}
         <button
           onClick={handleSave}
-          disabled={saving}
-          className="mt-10 w-full py-3 bg-[#7f5af0] rounded-xl"
+          disabled={plan !== "pro" && userEmail !== FREE_ACCESS_EMAIL}
+          className="mt-10 w-full py-3 bg-[#7f5af0] rounded-xl disabled:opacity-50"
         >
           <Save className="inline-block w-5 h-5 mr-2" />
           {saving ? "Saving..." : "Save Integrations"}
@@ -408,7 +378,45 @@ export default function Integrations() {
   );
 }
 
-/* ---------------- Component: Map ---------------- */
+/* Inputs */
+function InputField({ name, value, onChange, placeholder, disabled }) {
+  return (
+    <input
+      type="text"
+      name={name}
+      value={value || ""}
+      onChange={onChange}
+      placeholder={placeholder}
+      disabled={disabled}
+      className="w-full px-3 py-2 mb-3 rounded-lg bg-white/10 outline-none disabled:opacity-50"
+    />
+  );
+}
+
+/* UI Cards */
+function IntegrationCard({ title, icon, children }) {
+  return (
+    <motion.div className="bg-white/5 p-6 rounded-xl border border-white/10">
+      <div className="flex items-center gap-3 mb-4">
+        {icon}
+        <h2 className="text-xl font-semibold">{title}</h2>
+      </div>
+      {children}
+    </motion.div>
+  );
+}
+
+function LockedCard({ title }) {
+  return (
+    <motion.div className="bg-white/5 p-10 rounded-xl text-center text-gray-400 border border-white/10">
+      <Lock className="w-8 h-8 mx-auto mb-3 text-purple-300" />
+      <h3 className="font-semibold">{title}</h3>
+      <p className="text-xs">Available only in Pro plan</p>
+    </motion.div>
+  );
+}
+
+/* Map */
 function MapPreview({ lat, lng, address, gmaps_link, onMapClick }) {
   const LocationSelector = () => {
     useMapEvents({
@@ -437,41 +445,5 @@ function MapPreview({ lat, lng, address, gmaps_link, onMapClick }) {
       </Marker>
       <LocationSelector />
     </MapContainer>
-  );
-}
-
-/* ---------------- Component: UI Cards ---------------- */
-function IntegrationCard({ title, icon, children }) {
-  return (
-    <motion.div className="bg-white/5 p-6 rounded-xl border border-white/10">
-      <div className="flex items-center gap-3 mb-4">
-        {icon}
-        <h2 className="text-xl font-semibold">{title}</h2>
-      </div>
-      {children}
-    </motion.div>
-  );
-}
-
-function LockedCard({ title }) {
-  return (
-    <motion.div className="bg-white/5 p-10 rounded-xl text-center text-gray-400 border border-white/10">
-      <Lock className="w-8 h-8 mx-auto mb-3 text-purple-300" />
-      <h3 className="font-semibold">{title}</h3>
-      <p className="text-xs">Available only in Pro plan</p>
-    </motion.div>
-  );
-}
-
-function InputField({ name, value, onChange, placeholder }) {
-  return (
-    <input
-      type="text"
-      name={name}
-      value={value || ""}
-      onChange={onChange}
-      placeholder={placeholder}
-      className="w-full px-3 py-2 mb-3 rounded-lg bg-white/10 outline-none"
-    />
   );
 }

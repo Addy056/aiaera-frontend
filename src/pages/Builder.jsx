@@ -1,4 +1,5 @@
 // src/pages/Builder.jsx
+
 import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "../supabaseClient";
@@ -19,7 +20,7 @@ export default function Builder() {
   const [activeTab, setActiveTab] = useState("business");
 
   const [user, setUser] = useState(null);
-  const [subscriptionActive, setSubscriptionActive] = useState(false);
+  const [subscriptionActive, setSubscriptionActive] = useState(true); // FREE users allowed
   const [plan, setPlan] = useState("free");
   const [freeAccess, setFreeAccess] = useState(false);
 
@@ -29,7 +30,6 @@ export default function Builder() {
   const FREE_ACCESS_EMAIL = "aiaera056@gmail.com";
   const BUCKET = import.meta.env.VITE_SUPABASE_BUCKET || "chatbot-files";
 
-  // NEW ENV VARS (cleaned)
   const APP_BASE_URL = import.meta.env.VITE_APP_BASE_URL;
   const API_BASE = import.meta.env.VITE_API_URL;
   const INTEGRATIONS_API = `${API_BASE}/api/integrations`;
@@ -61,22 +61,18 @@ export default function Builder() {
     text: "#ffffff",
   });
 
-  // Embed drawer
   const [showEmbed, setShowEmbed] = useState(false);
 
   // Calendly
   const [calendlyLink, setCalendlyLink] = useState("");
 
-  // AI suggestions
   const aiSuggestions = [
     "We build AI chat assistants that qualify leads, answer FAQs, and book meetings 24/7.",
     "Scale support with multi-channel AI chat — website, WhatsApp, and social, no code needed.",
     "Boost conversions with a smart chatbot tailored to your business.",
   ];
 
-  // ---------------------------
   // INITIAL LOAD
-  // ---------------------------
   useEffect(() => {
     let mounted = true;
 
@@ -86,11 +82,11 @@ export default function Builder() {
       try {
         const { data: session } = await supabase.auth.getUser();
         const u = session.user;
-
         if (!u || !mounted) return;
+
         setUser(u);
 
-        // Free access email override
+        // FREE ACCESS EMAIL
         if (u.email === FREE_ACCESS_EMAIL) {
           setFreeAccess(true);
           setSubscriptionActive(true);
@@ -102,12 +98,17 @@ export default function Builder() {
             .eq("user_id", u.id)
             .maybeSingle();
 
-          const isActive = sub && new Date(sub.expires_at) > new Date();
-          setSubscriptionActive(isActive);
-          setPlan(sub?.plan || "free");
+          if (!sub) {
+            setPlan("free");
+            setSubscriptionActive(true);
+          } else {
+            const active = new Date(sub.expires_at) > new Date();
+            setSubscriptionActive(true); // allow page view even if expired
+            setPlan(sub.plan || "free");
+          }
         }
 
-        // Load chatbot config
+        // LOAD CHATBOT CONFIG
         const { data: bot } = await supabase
           .from("chatbots")
           .select("*")
@@ -120,7 +121,6 @@ export default function Builder() {
           setBusinessDescription(bot.business_info || "");
 
           const cfg = bot.config || {};
-
           setBusinessEmail(cfg.businessEmail || "");
           setBusinessPhone(cfg.businessPhone || "");
           setBusinessWebsite(cfg.businessWebsite || "");
@@ -132,16 +132,14 @@ export default function Builder() {
           setIsConfigSaved(true);
         }
 
-        // Calendly fetch from backend
+        // Calendly fetch
         try {
           const res = await fetch(`${INTEGRATIONS_API}?user_id=${u.id}`);
           const json = await res.json();
           if (json?.success && json?.data?.calendly_link) {
             setCalendlyLink(json.data.calendly_link);
           }
-        } catch {
-          console.warn("Calendly fetch failed");
-        }
+        } catch {}
       } finally {
         if (mounted) setLoadingInit(false);
       }
@@ -150,18 +148,12 @@ export default function Builder() {
     return () => (mounted = false);
   }, []);
 
-  // ---------------------------
   // FILE UPLOAD
-  // ---------------------------
   const uploadFileToStorage = async (file) => {
     if (!user) throw new Error("No User");
 
     const path = `${user.id}/${Date.now()}-${file.name}`;
-
-    const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
-      cacheControl: "3600",
-      upsert: false,
-    });
+    const { error } = await supabase.storage.from(BUCKET).upload(path, file);
 
     if (error) throw error;
 
@@ -171,7 +163,7 @@ export default function Builder() {
 
   const handleFilesUpload = async (e) => {
     if (plan !== "pro" && !freeAccess) {
-      alert("Pro plan required for uploads.");
+      alert("Files tab is Pro only.");
       return;
     }
 
@@ -186,7 +178,6 @@ export default function Builder() {
 
       setFiles((prev) => [...uploaded, ...prev]);
     } catch (err) {
-      console.error(err);
       alert("Upload failed.");
     } finally {
       setUploading(false);
@@ -194,42 +185,19 @@ export default function Builder() {
     }
   };
 
-  // ---------------------------
-  // AI SUGGEST COPY
-  // ---------------------------
+  // AI SUGGESTION
   const handleSuggest = () => {
-    const suggestion =
-      aiSuggestions[Math.floor(Math.random() * aiSuggestions.length)];
-    setBusinessDescription((prev) =>
-      prev ? `${prev}\n\n${suggestion}` : suggestion
-    );
+    const suggestion = aiSuggestions[Math.floor(Math.random() * aiSuggestions.length)];
+    setBusinessDescription((prev) => (prev ? `${prev}\n\n${suggestion}` : suggestion));
   };
 
-  // ---------------------------
   // SAVE CONFIG
-  // ---------------------------
   const saveConfigToSupabase = async () => {
     if (!user) return;
 
     setSaving(true);
 
     try {
-      // Check subscription
-      if (!freeAccess) {
-        const { data: sub } = await supabase
-          .from("user_subscriptions")
-          .select("expires_at")
-          .eq("user_id", user.id)
-          .maybeSingle();
-
-        if (!sub || new Date(sub.expires_at) < new Date()) {
-          alert("Subscription expired.");
-          setSaving(false);
-          return;
-        }
-      }
-
-      // Build config
       const config = {
         businessEmail,
         businessPhone,
@@ -248,10 +216,9 @@ export default function Builder() {
             business_info: businessDescription,
             config,
           })
-          .eq("id", chatbotId)
-          .eq("user_id", user.id);
+          .eq("id", chatbotId);
       } else {
-        const { data, error } = await supabase
+        const { data } = await supabase
           .from("chatbots")
           .insert([
             {
@@ -264,43 +231,23 @@ export default function Builder() {
           .select()
           .single();
 
-        if (error) throw error;
         setChatbotId(data.id);
       }
 
       setIsConfigSaved(true);
       alert("Saved!");
-    } catch (err) {
-      console.error(err);
-      alert("Failed to save.");
     } finally {
       setSaving(false);
     }
   };
 
-  // ==============================================================
-  // LOADING / EXPIRED VIEWS
-  // ==============================================================
-
-  if (loadingInit) {
+  // LOADING VIEW
+  if (loadingInit)
     return (
       <div className="h-screen flex items-center justify-center bg-[#0b0b17] text-white">
         Initializing...
       </div>
     );
-  }
-
-  if (!subscriptionActive && !freeAccess) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-[#0b0b17] text-white">
-        Your subscription expired.
-      </div>
-    );
-  }
-
-  // ==============================================================
-  // MAIN UI
-  // ==============================================================
 
   return (
     <div className="relative min-h-screen bg-[#0a0b14] text-white overflow-x-hidden">
@@ -338,6 +285,7 @@ export default function Builder() {
               transition={{ duration: 0.3 }}
             >
               <Card className="bg-white/5 border border-white/10 backdrop-blur-2xl rounded-3xl p-6 shadow-[0_0_60px_rgba(155,140,255,0.2)]">
+
                 {activeTab === "business" && (
                   <BusinessTab
                     businessName={businessName}
@@ -354,6 +302,7 @@ export default function Builder() {
                   />
                 )}
 
+                {/* FILES TAB — PRO ONLY */}
                 {activeTab === "files" &&
                   (plan !== "pro" && !freeAccess ? (
                     <LockedSection message="Files feature is available only in the Pro plan." />
@@ -420,6 +369,7 @@ export default function Builder() {
                     calendlyLink={calendlyLink}
                   />
                 )}
+
               </Card>
             </motion.div>
           </div>

@@ -17,11 +17,22 @@ export default function PublicChatbot() {
   const [streamedReply, setStreamedReply] = useState("");
 
   const messagesEndRef = useRef(null);
-  const API_BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
+
+  // 🔒 FIX: Prevent Vite from printing ALL env variables in console
+  const [API_BASE, setAPIBase] = useState("");
 
   useEffect(() => {
-    fetchChatbot();
+    const base = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
+    setAPIBase(base);
   }, []);
+
+  // ------------------------------
+  // LOAD CHATBOT CONFIG
+  // ------------------------------
+  useEffect(() => {
+    if (!API_BASE) return; // Wait for env to load
+    fetchChatbot();
+  }, [API_BASE]);
 
   const fetchChatbot = async () => {
     try {
@@ -29,7 +40,6 @@ export default function PublicChatbot() {
       const data = await res.json();
 
       if (!data.success) throw new Error("Chatbot not found");
-
       setChatbot(data.chatbot);
     } catch (err) {
       console.error("Public chatbot load failed:", err);
@@ -38,10 +48,14 @@ export default function PublicChatbot() {
     }
   };
 
+  // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, streamedReply]);
 
+  // ------------------------------
+  // SEND MESSAGE (STREAM)
+  // ------------------------------
   const sendMessage = async () => {
     if (!input.trim()) return;
 
@@ -103,6 +117,9 @@ export default function PublicChatbot() {
     }
   };
 
+  // ------------------------------
+  // UI STATES
+  // ------------------------------
   if (loading)
     return (
       <div className="flex items-center justify-center min-h-screen bg-black text-white">
