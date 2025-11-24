@@ -7,8 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Bot, Calendar, Code2, Copy, Eye } from "lucide-react";
 
 import ColorSwatch from "./ColorSwatch";
-import ChatbotPreview from "../../ChatbotPreview";
-
+import ChatbotPreview from "@/components/ChatbotPreview.jsx";
 export default function StudioTab({
   presetThemes,
   themeColors,

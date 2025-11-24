@@ -1,8 +1,8 @@
 // src/router.jsx
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import React, { Suspense, lazy } from "react";
 
-// Lazy-load pages for faster performance
+// Lazy-load pages
 const Login = lazy(() => import("./pages/Login.jsx"));
 const Signup = lazy(() => import("./pages/Signup.jsx"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword.jsx"));
@@ -24,12 +24,18 @@ const PublicChatbot = lazy(() =>
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import MainLayout from "./components/MainLayout.jsx";
 
+// 404 fallback
 function NotFound() {
   return (
-    <div style={{ textAlign: "center", marginTop: "100px" }}>
-      <h1>404 - Page Not Found</h1>
-      <p>The page you are looking for does not exist.</p>
-      <a href="/">Go back to Dashboard</a>
+    <div className="min-h-screen flex flex-col items-center justify-center text-white bg-[#0a0a12]">
+      <h1 className="text-4xl mb-2 font-bold">404 - Page Not Found</h1>
+      <p className="text-gray-400 mb-4">The page you're looking for doesn't exist.</p>
+      <a
+        href="/"
+        className="px-6 py-3 bg-[#7f5af0] rounded-xl shadow-md hover:bg-[#9b7ff7] transition-all"
+      >
+        Go to Dashboard
+      </a>
     </div>
   );
 }
@@ -38,14 +44,14 @@ export default function AppRoutes() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center text-white bg-black">
+        <div className="min-h-screen flex items-center justify-center text-white bg-black/90 text-xl">
           Loading...
         </div>
       }
     >
       <Routes>
         {/* ----------------------------- */}
-        {/* AUTH ROUTES (Public)          */}
+        {/* PUBLIC AUTH ROUTES           */}
         {/* ----------------------------- */}
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
@@ -58,7 +64,7 @@ export default function AppRoutes() {
         <Route path="/public-chatbot/:id" element={<PublicChatbot />} />
 
         {/* ----------------------------- */}
-        {/* PROTECTED PAGES               */}
+        {/* PROTECTED PAGES (Main App)    */}
         {/* ----------------------------- */}
         <Route
           path="/"
@@ -127,14 +133,12 @@ export default function AppRoutes() {
         />
 
         {/* ----------------------------- */}
-        {/* PUBLIC PRICING PAGE           */}
-        {/* DO NOT WRAP WITH PROTECTED ROUTE */}
-        {/* DO NOT USE MainLayout (no sidebar) */}
+        {/* PUBLIC PRICING PAGE             */}
         {/* ----------------------------- */}
         <Route path="/pricing" element={<Pricing />} />
 
         {/* ----------------------------- */}
-        {/* 404 FALLBACK                  */}
+        {/* 404 ROUTE                     */}
         {/* ----------------------------- */}
         <Route path="*" element={<NotFound />} />
       </Routes>

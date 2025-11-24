@@ -5,27 +5,29 @@ import { supabase } from "../supabaseClient";
 
 export default function ProtectedRoute({ children }) {
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null);
+  const [sessionUser, setSessionUser] = useState(null);
   const [subscriptionActive, setSubscriptionActive] = useState(false);
+
   const location = useLocation();
 
   useEffect(() => {
-    let mounted = true;
+    let isMounted = true;
 
-    (async () => {
+    async function loadUser() {
+      // Get existing session
       const { data: { session } } = await supabase.auth.getSession();
 
-      if (!mounted) return;
+      if (!isMounted) return;
 
       if (!session?.user) {
-        setUser(null);
+        setSessionUser(null);
         setLoading(false);
         return;
       }
 
-      setUser(session.user);
+      setSessionUser(session.user);
 
-      // ---- FIXED 406 + SUPABASE POLICY ISSUE ----
+      // Fetch subscription status
       const { data: sub } = await supabase
         .from("user_subscriptions")
         .select("expires_at")
@@ -33,34 +35,52 @@ export default function ProtectedRoute({ children }) {
         .maybeSingle();
 
       const active =
-        sub &&
-        sub.expires_at &&
+        sub?.expires_at &&
         new Date(sub.expires_at) > new Date();
 
       setSubscriptionActive(active);
       setLoading(false);
-    })();
+    }
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (_event, nextSession) => {
-        setUser(nextSession?.user || null);
+    loadUser();
+
+    // Listen for login/logout events
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event, newSession) => {
+        setSessionUser(newSession?.user || null);
       }
     );
 
     return () => {
-      mounted = false;
-      authListener.subscription.unsubscribe();
+      isMounted = false;
+      listener.subscription.unsubscribe();
     };
   }, []);
 
-  if (loading) return <div className="text-center p-6">Loading...</div>;
+  // Still loading user session
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-white text-lg">
+        Loading...
+      </div>
+    );
+  }
 
-  // Not logged in
-  if (!user) return <Navigate to="/login" replace />;
+  // If not logged in → always redirect to login
+  if (!sessionUser) {
+    return <Navigate to="/login" replace />;
+  }
 
-  // Premium routes protection
-  const premium = ["/builder", "/leads", "/appointments", "/integrations"];
-  if (!subscriptionActive && premium.includes(location.pathname)) {
+  // Pages that require an ACTIVE plan
+  const premiumPages = [
+    "/builder",
+    "/leads",
+    "/appointments",
+    "/integrations",
+  ];
+
+  // If user tries to access a premium feature without subscription
+  if (!subscriptionActive && premiumPages.includes(location.pathname)) {
     return <Navigate to="/pricing" replace />;
   }
 

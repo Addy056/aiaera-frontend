@@ -1,5 +1,5 @@
 // src/pages/Integrations.jsx
-import React, { useEffect, useState, useRef, useMemo } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "../supabaseClient";
 import {
@@ -24,7 +24,6 @@ import {
   ExternalLink,
 } from "lucide-react";
 
-// Fix Leaflet icon paths
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
@@ -33,7 +32,6 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
-// GLOBAL CONSTANTS
 const FREE_ACCESS_EMAIL = "aiaera056@gmail.com";
 const DEFAULT_LAT = 19.076;
 const DEFAULT_LNG = 72.8777;
@@ -46,7 +44,6 @@ export default function Integrations() {
   const [plan, setPlan] = useState("free");
 
   const [toast, setToast] = useState({ message: "", type: "" });
-
   const mountedRef = useRef(false);
 
   const [form, setForm] = useState({
@@ -54,7 +51,6 @@ export default function Integrations() {
     whatsapp_token: "",
     fb_page_id: "",
     fb_page_token: "",
-    calendly_link: "",
     instagram_user_id: "",
     instagram_page_id: "",
     instagram_access_token: "",
@@ -64,12 +60,17 @@ export default function Integrations() {
     gmaps_link: "",
   });
 
-  // Backend API base
+  // NEW — Meeting Links JSON state
+  const [meetingLinks, setMeetingLinks] = useState({
+    calendly: "",
+    google_meet: "",
+    zoom: "",
+    teams: "",
+    other: "",
+  });
+
   const API_BASE = `${import.meta.env.VITE_API_URL}/api/integrations`;
 
-  // ------------------------------
-  // Toast Helper
-  // ------------------------------
   const showToast = (message, type = "success") => {
     setToast({ message, type });
     setTimeout(() => {
@@ -77,9 +78,6 @@ export default function Integrations() {
     }, 6000);
   };
 
-  // ------------------------------
-  // INIT PAGE
-  // ------------------------------
   useEffect(() => {
     mountedRef.current = true;
     initIntegrations();
@@ -90,13 +88,11 @@ export default function Integrations() {
     try {
       const {
         data: { user },
-        error,
       } = await supabase.auth.getUser();
-      if (error || !user) throw new Error("Unable to load user session.");
+      if (!user) throw new Error("User session error");
 
       setUserEmail(user.email);
 
-      // Free access override
       if (user.email === FREE_ACCESS_EMAIL) {
         setSubscriptionActive(true);
         setPlan("pro");
@@ -104,7 +100,6 @@ export default function Integrations() {
         return setLoading(false);
       }
 
-      // Subscription check
       const { data: sub } = await supabase
         .from("user_subscriptions")
         .select("plan, expires_at")
@@ -117,9 +112,8 @@ export default function Integrations() {
       }
 
       setSubscriptionActive(true);
-      setPlan(sub.plan ?? "free");
+      setPlan(sub.plan);
       await fetchIntegrations(user.id);
-
       setLoading(false);
     } catch (err) {
       showToast(err.message, "error");
@@ -127,18 +121,17 @@ export default function Integrations() {
     }
   };
 
-  // ------------------------------
   // FETCH USER INTEGRATIONS
-  // ------------------------------
   const fetchIntegrations = async (userId) => {
     try {
       const res = await fetch(`${API_BASE}?user_id=${userId}`);
       const json = await res.json();
 
-      if (!res.ok || !json.success) throw new Error(json.error || "Error");
+      if (!res.ok || !json.success) throw new Error(json.error);
 
       const d = json.data || {};
 
+      // Load normal fields
       setForm((prev) => ({
         ...prev,
         ...d,
@@ -148,20 +141,25 @@ export default function Integrations() {
           d.gmaps_link ||
           `https://www.google.com/maps?q=${prev.business_lat},${prev.business_lng}`,
       }));
+
+      // Load meeting links
+      if (d.meeting_links) {
+        setMeetingLinks({
+          calendly: d.meeting_links.calendly || "",
+          google_meet: d.meeting_links.google_meet || "",
+          zoom: d.meeting_links.zoom || "",
+          teams: d.meeting_links.teams || "",
+          other: d.meeting_links.other || "",
+        });
+      }
     } catch (err) {
       showToast("Failed to fetch integrations: " + err.message, "error");
     }
   };
 
-  // ------------------------------
-  // HANDLE CHANGE
-  // ------------------------------
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
-  // ------------------------------
-  // HANDLE LOCATION & GMAPS LINK
-  // ------------------------------
   const updateLocation = (lat, lng) => {
     setForm((prev) => ({
       ...prev,
@@ -171,50 +169,33 @@ export default function Integrations() {
     }));
   };
 
-  // ------------------------------
-  // USE MY LOCATION
-  // ------------------------------
   const detectLocation = () => {
-    if (!navigator.geolocation) {
+    if (!navigator.geolocation)
       return showToast("Geolocation not supported", "error");
-    }
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         updateLocation(pos.coords.latitude, pos.coords.longitude);
         showToast("📍 Location updated!", "success");
       },
-      (err) => {
-        showToast("Failed to get location: " + err.message, "error");
-      },
+      (err) => showToast("Failed: " + err.message, "error"),
       { enableHighAccuracy: true, timeout: 8000 }
     );
   };
 
-  // ------------------------------
-  // MAP CLICK SELECTOR
-  // ------------------------------
-  const LocationSelector = () => {
-    useMapEvents({
-      click(e) {
-        updateLocation(e.latlng.lat, e.latlng.lng);
-      },
-    });
-    return null;
-  };
-
-  // ------------------------------
-  // SAVE INTEGRATIONS
-  // ------------------------------
   const handleSave = async () => {
     setSaving(true);
     try {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not logged in.");
+      if (!user) throw new Error("Not logged in");
 
-      const payload = { ...form, user_id: user.id };
+      const payload = {
+        ...form,
+        user_id: user.id,
+        meeting_links: meetingLinks, // NEW
+      };
 
       const res = await fetch(API_BASE, {
         method: "POST",
@@ -223,10 +204,9 @@ export default function Integrations() {
       });
 
       const json = await res.json();
-      if (!res.ok || !json.success)
-        throw new Error(json.error || "Failed to save integrations");
+      if (!json.success) throw new Error(json.error);
 
-      showToast("Integrations saved successfully!", "success");
+      showToast("Integrations saved!", "success");
     } catch (err) {
       showToast("Save failed: " + err.message, "error");
     } finally {
@@ -234,52 +214,26 @@ export default function Integrations() {
     }
   };
 
-  // ------------------------------
-  // BLOCK PAGE IF SUBSCRIPTION EXPIRED
-  // ------------------------------
   if (!loading && !subscriptionActive) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[#090a1a] via-[#0f1025] to-[#080816] text-white text-center p-8">
-        <h1 className="text-4xl font-bold mb-3">🚫 Subscription Expired</h1>
-        <p className="text-gray-400 mb-6 text-lg">
-          Renew to access Integrations Dashboard.
-        </p>
-        <a
-          href="/pricing"
-          className="px-6 py-3 rounded-2xl bg-[#7f5af0] hover:bg-[#9d7ff7] transition-all shadow-lg"
-        >
-          Renew Now
-        </a>
+      <div className="min-h-screen flex items-center justify-center text-white">
+        Subscription Expired
       </div>
     );
   }
 
-  // ------------------------------
-  // LOADING SCREEN
-  // ------------------------------
-  if (loading) {
+  if (loading)
     return (
       <div className="min-h-screen flex items-center justify-center text-white">
         Loading...
       </div>
     );
-  }
 
-  // ------------------------------
-  // MAIN UI
-  // ------------------------------
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0b0b1a] via-[#111129] to-[#090a1a] text-white relative overflow-hidden">
-      {/* Background Glow */}
-      <div className="absolute inset-0 -z-10">
-        <div className="absolute top-10 left-10 w-[500px] h-[500px] rounded-full blur-3xl bg-gradient-to-br from-[#bfa7ff]/20 to-[#7f5af0]/10" />
-        <div className="absolute bottom-10 right-10 w-[450px] h-[450px] rounded-full blur-3xl bg-gradient-to-tr from-[#7f5af0]/15 to-[#00eaff]/10" />
-      </div>
-
-      {/* Toast */}
+    <div className="min-h-screen bg-gradient-to-br from-[#0b0b1a] via-[#111129] to-[#090a1a] text-white">
       {toast.message && (
         <div
-          className={`fixed top-5 left-1/2 -translate-x-1/2 px-6 py-3 rounded-2xl shadow-lg z-50 ${
+          className={`fixed top-5 left-1/2 -translate-x-1/2 px-6 py-3 rounded-xl z-50 ${
             toast.type === "success" ? "bg-green-600" : "bg-red-600"
           }`}
         >
@@ -287,34 +241,13 @@ export default function Integrations() {
         </div>
       )}
 
-      <div className="relative px-4 sm:px-8 pt-10 pb-20 ml-0 md:ml-28 max-w-6xl mx-auto">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="mb-10 text-center sm:text-left"
-        >
-          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight bg-gradient-to-r from-[#9d8dfd] via-[#bdafff] to-[#d4cfff] bg-clip-text text-transparent">
-            Integrations Dashboard
-          </h1>
-          <p className="text-gray-400 mt-2 text-sm sm:text-base">
-            Manage your AI assistant’s connections with ease ✨
-          </p>
-        </motion.div>
+      <div className="px-6 pt-10 pb-16 max-w-6xl mx-auto">
+        <h1 className="text-4xl font-bold mb-12">Integrations Dashboard</h1>
 
-        {/* Cards Grid */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55 }}
-          className="grid grid-cols-1 sm:grid-cols-2 gap-6"
-        >
+        {/* GRID */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {/* WhatsApp */}
-          <IntegrationCard
-            title="WhatsApp (Meta Cloud API)"
-            icon={<MessageCircle />}
-          >
+          <IntegrationCard title="WhatsApp (Meta API)" icon={<MessageCircle />}>
             <InputField
               name="whatsapp_number_id"
               value={form.whatsapp_number_id}
@@ -330,10 +263,7 @@ export default function Integrations() {
           </IntegrationCard>
 
           {/* Facebook */}
-          <IntegrationCard
-            title="Facebook Messenger"
-            icon={<Facebook />}
-          >
+          <IntegrationCard title="Facebook Messenger" icon={<Facebook />}>
             <InputField
               name="fb_page_id"
               value={form.fb_page_id}
@@ -348,7 +278,7 @@ export default function Integrations() {
             />
           </IntegrationCard>
 
-          {/* Instagram (Pro only) */}
+          {/* Instagram */}
           {plan === "pro" || userEmail === FREE_ACCESS_EMAIL ? (
             <IntegrationCard title="Instagram" icon={<Instagram />}>
               <InputField
@@ -374,13 +304,66 @@ export default function Integrations() {
             <LockedCard title="Instagram Integration" />
           )}
 
-          {/* Calendly */}
-          <IntegrationCard title="Calendly" icon={<Calendar />}>
+          {/* MEETING LINKS — NEW */}
+          <IntegrationCard title="Meeting Links" icon={<Calendar />}>
             <InputField
-              name="calendly_link"
-              value={form.calendly_link}
-              onChange={handleChange}
+              name="calendly"
+              value={meetingLinks.calendly}
+              onChange={(e) =>
+                setMeetingLinks({
+                  ...meetingLinks,
+                  calendly: e.target.value,
+                })
+              }
               placeholder="Calendly Link"
+            />
+
+            <InputField
+              name="google_meet"
+              value={meetingLinks.google_meet}
+              onChange={(e) =>
+                setMeetingLinks({
+                  ...meetingLinks,
+                  google_meet: e.target.value,
+                })
+              }
+              placeholder="Google Meet Link"
+            />
+
+            <InputField
+              name="zoom"
+              value={meetingLinks.zoom}
+              onChange={(e) =>
+                setMeetingLinks({
+                  ...meetingLinks,
+                  zoom: e.target.value,
+                })
+              }
+              placeholder="Zoom Meeting Link"
+            />
+
+            <InputField
+              name="teams"
+              value={meetingLinks.teams}
+              onChange={(e) =>
+                setMeetingLinks({
+                  ...meetingLinks,
+                  teams: e.target.value,
+                })
+              }
+              placeholder="Microsoft Teams Meeting Link"
+            />
+
+            <InputField
+              name="other"
+              value={meetingLinks.other}
+              onChange={(e) =>
+                setMeetingLinks({
+                  ...meetingLinks,
+                  other: e.target.value,
+                })
+              }
+              placeholder="Other Meeting Link"
             />
           </IntegrationCard>
 
@@ -393,8 +376,7 @@ export default function Integrations() {
               placeholder="Business Address"
             />
 
-            {/* MAP */}
-            <MemoizedMap
+            <MapPreview
               lat={form.business_lat}
               lng={form.business_lng}
               address={form.business_address}
@@ -402,51 +384,32 @@ export default function Integrations() {
               onMapClick={updateLocation}
             />
 
-            <div className="flex items-center justify-between mt-3">
-              <p className="text-sm text-gray-400">
-                Click the map or use GPS to update location.
-              </p>
-
-              <button
-                onClick={detectLocation}
-                className="flex items-center gap-2 px-4 py-2 bg-[#7f5af0]/80 hover:bg-[#9d8dfd] text-white rounded-xl text-sm transition-all"
-              >
-                <Crosshair className="w-4 h-4" /> Use My Location
-              </button>
-            </div>
+            <button
+              onClick={detectLocation}
+              className="mt-3 px-4 py-2 bg-[#7f5af0] rounded-lg"
+            >
+              <Crosshair className="inline-block w-4 h-4 mr-2" />
+              Use My Location
+            </button>
           </IntegrationCard>
-        </motion.div>
+        </div>
 
-        {/* Save Button */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.3 }}
-          className="mt-10"
+        {/* Save */}
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="mt-10 w-full py-3 bg-[#7f5af0] rounded-xl"
         >
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="w-full py-3 rounded-xl flex items-center justify-center gap-2 bg-gradient-to-r from-[#7f5af0] via-[#9e8ffb] to-[#bfa7ff] hover:from-[#9b7ff9] hover:to-[#d6c6ff] transition-all font-semibold shadow-lg disabled:opacity-50"
-          >
-            <Save className="w-5 h-5 text-white" />{" "}
-            {saving ? "Saving..." : "Save Integrations"}
-          </button>
-        </motion.div>
+          <Save className="inline-block w-5 h-5 mr-2" />
+          {saving ? "Saving..." : "Save Integrations"}
+        </button>
       </div>
     </div>
   );
 }
 
-/* ---------------------- Map Component ---------------------- */
-
-const MemoizedMap = React.memo(function MapPreview({
-  lat,
-  lng,
-  address,
-  gmaps_link,
-  onMapClick,
-}) {
+/* ---------------- Component: Map ---------------- */
+function MapPreview({ lat, lng, address, gmaps_link, onMapClick }) {
   const LocationSelector = () => {
     useMapEvents({
       click(e) {
@@ -458,61 +421,32 @@ const MemoizedMap = React.memo(function MapPreview({
 
   return (
     <MapContainer
-      center={[lat || DEFAULT_LAT, lng || DEFAULT_LNG]}
+      center={[lat, lng]}
       zoom={13}
-      style={{
-        height: "250px",
-        width: "100%",
-        borderRadius: "1rem",
-        overflow: "hidden",
-      }}
+      style={{ height: "240px", borderRadius: "1rem", marginTop: "10px" }}
     >
-      <TileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution="OpenStreetMap"
-      />
-      <Marker position={[lat || DEFAULT_LAT, lng || DEFAULT_LNG]}>
+      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+      <Marker position={[lat, lng]}>
         <Popup>
-          <div className="text-sm">
-            {address ? (
-              <>
-                <strong>{address}</strong>
-                <br />
-              </>
-            ) : null}
-
-            <a
-              href={gmaps_link}
-              target="_blank"
-              rel="noreferrer"
-              className="text-[#7f5af0] underline flex items-center gap-1 mt-1"
-            >
-              Open in Google Maps <ExternalLink className="w-3 h-3" />
-            </a>
-          </div>
+          <strong>{address}</strong>
+          <br />
+          <a href={gmaps_link} target="_blank" className="text-purple-400">
+            Open in Maps
+          </a>
         </Popup>
       </Marker>
-
       <LocationSelector />
     </MapContainer>
   );
-});
+}
 
-/* ---------------------- UI Components ---------------------- */
-
+/* ---------------- Component: UI Cards ---------------- */
 function IntegrationCard({ title, icon, children }) {
   return (
-    <motion.div
-      whileHover={{ scale: 1.015 }}
-      className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-5 sm:p-6 shadow-lg hover:bg-white/10 transition-all"
-    >
+    <motion.div className="bg-white/5 p-6 rounded-xl border border-white/10">
       <div className="flex items-center gap-3 mb-4">
-        <div className="w-9 h-9 flex items-center justify-center rounded-xl bg-gradient-to-br from-[#bfa7ff]/30 to-[#7f5af0]/20 shadow-inner">
-          {React.cloneElement(icon, { className: "w-5 h-5 text-[#9d8dfd]" })}
-        </div>
-        <h2 className="text-lg sm:text-xl font-semibold text-white/90">
-          {title}
-        </h2>
+        {icon}
+        <h2 className="text-xl font-semibold">{title}</h2>
       </div>
       {children}
     </motion.div>
@@ -521,13 +455,10 @@ function IntegrationCard({ title, icon, children }) {
 
 function LockedCard({ title }) {
   return (
-    <motion.div
-      whileHover={{ scale: 1.01 }}
-      className="flex flex-col items-center justify-center bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-10 text-center shadow-lg text-gray-400"
-    >
-      <Lock className="w-8 h-8 mb-3 text-[#bfa7ff]" />
-      <p className="text-sm mb-2 font-semibold">{title}</p>
-      <p className="text-xs text-gray-500">🔒 Available only in the Pro plan</p>
+    <motion.div className="bg-white/5 p-10 rounded-xl text-center text-gray-400 border border-white/10">
+      <Lock className="w-8 h-8 mx-auto mb-3 text-purple-300" />
+      <h3 className="font-semibold">{title}</h3>
+      <p className="text-xs">Available only in Pro plan</p>
     </motion.div>
   );
 }
@@ -540,7 +471,7 @@ function InputField({ name, value, onChange, placeholder }) {
       value={value || ""}
       onChange={onChange}
       placeholder={placeholder}
-      className="w-full mb-3 px-3 py-2 rounded-lg bg-white/10 text-white placeholder-gray-400 outline-none focus:bg-white/20 focus:ring-2 focus:ring-[#9d8dfd]/50 transition-all"
+      className="w-full px-3 py-2 mb-3 rounded-lg bg-white/10 outline-none"
     />
   );
 }
