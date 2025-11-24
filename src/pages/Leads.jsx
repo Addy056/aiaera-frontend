@@ -19,9 +19,6 @@ import { supabase } from "../supabaseClient";
 
 const FREE_ACCESS_EMAIL = "aiaera056@gmail.com";
 
-// -----------------------------------------------------
-// PAGE
-// -----------------------------------------------------
 export default function Leads() {
   const [userEmail, setUserEmail] = useState("");
   const [leads, setLeads] = useState([]);
@@ -30,11 +27,12 @@ export default function Leads() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [search, setSearch] = useState("");
 
-  const isExpired = (dateStr) => !dateStr || new Date(dateStr) < new Date();
+  const isExpired = (dateStr) =>
+    !dateStr || new Date(dateStr).getTime() < Date.now();
 
-  // -----------------------------------------------------
-  // INIT (AUTH + SUBSCRIPTION + LEADS)
-  // -----------------------------------------------------
+  // -------------------------
+  // INIT
+  // -------------------------
   useEffect(() => {
     (async () => {
       try {
@@ -43,14 +41,14 @@ export default function Leads() {
 
         setUserEmail(user.email);
 
-        // Free ACCESS override (PRO)
+        // Free access override
         if (user.email === FREE_ACCESS_EMAIL) {
           setPlan("pro");
           await fetchLeads(user.id);
           return setLoading(false);
         }
 
-        // Check subscription
+        // Subscription check
         const { data: sub } = await supabase
           .from("user_subscriptions")
           .select("plan, expires_at")
@@ -63,15 +61,15 @@ export default function Leads() {
         }
 
         const expired = isExpired(sub.expires_at);
-        const activePlan = sub.plan === "free" ? "free" : expired ? "free" : sub.plan;
 
-        setPlan(activePlan);
+        const effectivePlan =
+          sub.plan === "free" ? "free" : expired ? "free" : "pro";
 
-        // Only load data for PRO
-        if (activePlan === "pro") {
+        setPlan(effectivePlan);
+
+        if (effectivePlan === "pro") {
           await fetchLeads(user.id);
         }
-
       } catch (err) {
         console.error("❌ Leads init error:", err);
       } finally {
@@ -80,9 +78,9 @@ export default function Leads() {
     })();
   }, []);
 
-  // -----------------------------------------------------
-  // FETCH LEADS
-  // -----------------------------------------------------
+  // -------------------------
+  // FETCH LEADS (SAFE)
+  // -------------------------
   const fetchLeads = async (userId) => {
     try {
       const { data } = await supabase
@@ -91,62 +89,77 @@ export default function Leads() {
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
 
-      setLeads(data || []);
+      setLeads(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("❌ Error fetching leads:", err);
+      setLeads([]);
     }
   };
 
-  // -----------------------------------------------------
-  // FILTER
-  // -----------------------------------------------------
+  // -------------------------
+  // FILTER (SAFE)
+  // -------------------------
   const filteredLeads = useMemo(() => {
     if (plan !== "pro" && userEmail !== FREE_ACCESS_EMAIL) return [];
+
     const q = search.toLowerCase();
-    return leads.filter((l) =>
-      [l.name, l.email, l.message]
+
+    return leads.filter((l) => {
+      return [l.name, l.email, l.message]
         .filter(Boolean)
-        .some((f) => f.toLowerCase().includes(q))
-    );
+        .some((f) => f.toString().toLowerCase().includes(q));
+    });
   }, [search, leads, plan]);
 
-  // -----------------------------------------------------
-  // STATS
-  // -----------------------------------------------------
+  // -------------------------
+  // TREND 7 DAYS (SAFE)
+  // -------------------------
   const trend7 = useMemo(() => {
     if (plan !== "pro") return [];
+
     const now = new Date();
     const arr = [];
 
     for (let i = 6; i >= 0; i++) {
-      const d = new Date();
+      const d = new Date(now);
       d.setDate(now.getDate() - i);
 
-      const c = leads.filter(
-        (l) => new Date(l.created_at).toDateString() === d.toDateString()
-      ).length;
+      const dailyCount = leads.filter((l) => {
+        if (!l.created_at) return false;
+        return (
+          new Date(l.created_at).toDateString() === d.toDateString()
+        );
+      }).length;
 
-      arr.push({ label: d.toLocaleDateString("en-GB"), count: c });
+      arr.push({
+        label: d.toLocaleDateString("en-GB"),
+        count: dailyCount,
+      });
     }
 
     return arr;
   }, [leads, plan]);
 
-  const last7 = plan === "pro" ? trend7.reduce((a, b) => a + b.count, 0) : null;
+  const last7 = plan === "pro"
+    ? trend7.reduce((a, b) => a + (b.count || 0), 0)
+    : null;
 
-  // -----------------------------------------------------
+  // -------------------------
   // CSV EXPORT
-  // -----------------------------------------------------
+  // -------------------------
   const exportCSV = () => {
     if (plan !== "pro") return alert("Upgrade to PRO to export leads.");
     if (!leads.length) return alert("No leads to export.");
 
     const headers = ["Name", "Email", "Message", "Date"];
+
     const rows = leads.map((l) => [
       l.name || "",
       l.email || "",
       `"${(l.message || "").replace(/"/g, '""')}"`,
-      new Date(l.created_at).toLocaleString(),
+      l.created_at
+        ? new Date(l.created_at).toLocaleString()
+        : "",
     ]);
 
     const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
@@ -159,9 +172,9 @@ export default function Leads() {
     a.click();
   };
 
-  // -----------------------------------------------------
+  // -------------------------
   // LOADING
-  // -----------------------------------------------------
+  // -------------------------
   if (loading) {
     return (
       <ProtectedRoute>
@@ -172,90 +185,50 @@ export default function Leads() {
     );
   }
 
-  // -----------------------------------------------------
-  // MAIN UI (always visible)
-  // -----------------------------------------------------
+  // -------------------------
+  // MAIN UI
+  // -------------------------
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-gradient-to-br from-[#0b0b1a] via-[#141131] to-[#081427] text-white relative overflow-hidden">
-        
+
         <FloatingMenu userEmail={userEmail} />
 
-        {/* Header */}
         <div className="relative px-5 sm:px-10 pt-14 pb-20 ml-0 md:ml-28 max-w-7xl mx-auto">
 
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-10">
-            <div>
-              <h1 className="text-4xl sm:text-5xl font-extrabold bg-gradient-to-r from-[#bfa7ff] to-[#8d77ff] bg-clip-text text-transparent">
-                Leads Intelligence
-              </h1>
-              <p className="text-gray-400 mt-2">
-                Your AI assistant brings leads here in real-time.
-              </p>
-            </div>
+          {/* HEADER */}
+          <Header
+            search={search}
+            setSearch={setSearch}
+            plan={plan}
+            exportCSV={exportCSV}
+          />
 
-            <div className="flex items-center gap-3">
+          {/* TABS */}
+          <Tabs activeTab={activeTab} setActiveTab={setActiveTab} />
 
-              <div className="flex items-center bg-white/10 rounded-xl px-3">
-                <Search className="w-5 h-5 text-[#bfa7ff] mr-2" />
-                <input
-                  className="bg-transparent outline-none py-2 text-sm text-white"
-                  placeholder="Search name, email or message..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  disabled={plan !== "pro"}
-                />
-              </div>
-
-              <button
-                onClick={exportCSV}
-                disabled={plan !== "pro"}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold shadow-lg 
-                  ${plan === "pro"
-                    ? "bg-gradient-to-r from-[#9b8cff] to-[#bfa7ff]"
-                    : "bg-gray-600 cursor-not-allowed opacity-50"
-                  }`}
-              >
-                <ArrowDownTrayIcon className="w-4 h-4" />
-                Export
-              </button>
-            </div>
-          </div>
-
-          {/* Tabs */}
-          <div className="flex overflow-x-auto pb-2 mb-6 space-x-3">
-            <Tab id="dashboard" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Sparkles />} label="Dashboard" />
-            <Tab id="timeline" activeTab={activeTab} setActiveTab={setActiveTab} icon={<MessageSquare />} label="Timeline" />
-            <Tab id="universe" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Users />} label="Universe" />
-          </div>
-
-          {/* Content */}
+          {/* CONTENT */}
           <div className="min-h-[420px]">
-
-            {activeTab === "dashboard" &&
+            {activeTab === "dashboard" && (
               <DashboardView
                 leads={filteredLeads}
                 trend7={trend7}
                 last7={last7}
                 plan={plan}
-                userEmail={userEmail}
               />
-            }
+            )}
 
-            {activeTab === "timeline" &&
-              (plan === "pro" || userEmail === FREE_ACCESS_EMAIL
+            {activeTab === "timeline" && (
+              plan === "pro" || userEmail === FREE_ACCESS_EMAIL
                 ? <TimelineView leads={filteredLeads} />
                 : <LockedSection message="Timeline is available only on Pro plan." />
-              )
-            }
+            )}
 
-            {activeTab === "universe" &&
-              (plan === "pro" || userEmail === FREE_ACCESS_EMAIL
+            {activeTab === "universe" && (
+              plan === "pro" || userEmail === FREE_ACCESS_EMAIL
                 ? <UniverseGridView leads={filteredLeads} />
                 : <LockedSection message="Universe view is available only on Pro plan." />
-              )
-            }
-
+            )}
           </div>
 
         </div>
@@ -264,26 +237,84 @@ export default function Leads() {
   );
 }
 
-// -----------------------------------------------------
-// COMPONENTS
-// -----------------------------------------------------
-function Tab({ id, activeTab, setActiveTab, icon, label }) {
-  const active = id === activeTab;
+/* --------------------------------------------
+   HEADER COMPONENT
+-------------------------------------------- */
+function Header({ search, setSearch, plan, exportCSV }) {
   return (
-    <button
-      onClick={() => setActiveTab(id)}
-      className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all border 
-        ${active
-          ? "border-[#bfa7ff]/40 bg-white/10 shadow-lg"
-          : "border-white/10 bg-white/5 hover:bg-white/10"
-        }`}
-    >
-      <span className={active ? "text-[#bfa7ff]" : "text-white"}>{icon}</span>
-      <span className="text-sm">{label}</span>
-    </button>
+    <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-10">
+      <div>
+        <h1 className="text-4xl sm:text-5xl font-extrabold bg-gradient-to-r from-[#bfa7ff] to-[#8d77ff] bg-clip-text text-transparent">
+          Leads Intelligence
+        </h1>
+        <p className="text-gray-400 mt-2">
+          Your AI assistant collects leads here.
+        </p>
+      </div>
+
+      <div className="flex items-center gap-3">
+
+        <div className="flex items-center bg-white/10 rounded-xl px-3">
+          <Search className="w-5 h-5 text-[#bfa7ff] mr-2" />
+          <input
+            className="bg-transparent outline-none py-2 text-sm text-white"
+            placeholder="Search..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            disabled={plan !== "pro"}
+          />
+        </div>
+
+        <button
+          onClick={exportCSV}
+          disabled={plan !== "pro"}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold shadow-lg 
+            ${plan === "pro"
+              ? "bg-gradient-to-r from-[#9b8cff] to-[#bfa7ff]"
+              : "bg-gray-600 cursor-not-allowed opacity-50"
+            }`}
+        >
+          <ArrowDownTrayIcon className="w-4 h-4" />
+          Export
+        </button>
+      </div>
+    </div>
   );
 }
 
+/* --------------------------------------------
+   TABS
+-------------------------------------------- */
+function Tabs({ activeTab, setActiveTab }) {
+  const TabButton = ({ id, label, icon }) => {
+    const active = id === activeTab;
+    return (
+      <button
+        onClick={() => setActiveTab(id)}
+        className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all border 
+          ${active
+            ? "border-[#bfa7ff]/40 bg-white/10 shadow-lg"
+            : "border-white/10 bg-white/5 hover:bg-white/10"
+          }`}
+      >
+        <span className={active ? "text-[#bfa7ff]" : "text-white"}>{icon}</span>
+        <span className="text-sm">{label}</span>
+      </button>
+    );
+  };
+
+  return (
+    <div className="flex overflow-x-auto pb-2 mb-6 space-x-3">
+      <TabButton id="dashboard" label="Dashboard" icon={<Sparkles />} />
+      <TabButton id="timeline" label="Timeline" icon={<MessageSquare />} />
+      <TabButton id="universe" label="Universe" icon={<Users />} />
+    </div>
+  );
+}
+
+/* --------------------------------------------
+   LOCKED SECTION
+-------------------------------------------- */
 function LockedSection({ message }) {
   return (
     <div className="flex flex-col items-center justify-center h-[380px] bg-white/5 border border-white/10 backdrop-blur-2xl rounded-2xl text-gray-400 shadow-xl">
@@ -293,9 +324,9 @@ function LockedSection({ message }) {
   );
 }
 
-// -----------------------------------------------------
-// DASHBOARD VIEW (SOFT LOCKED FOR FREE USERS)
-// -----------------------------------------------------
+/* --------------------------------------------
+   DASHBOARD VIEW
+-------------------------------------------- */
 function DashboardView({ leads, trend7, last7, plan }) {
   const total = plan === "pro" ? leads.length : "—";
   const last7Val = plan === "pro" ? last7 : "—";
@@ -310,12 +341,10 @@ function DashboardView({ leads, trend7, last7, plan }) {
         <KPI title="Avg / Day" value={avg} icon={<Sparkles />} locked={plan !== "pro"} />
       </div>
 
-      {/* Trend chart */}
-      {plan === "pro" ? (
-        <TrendSparkline trend7={trend7} />
-      ) : (
-        <LockedSection message="Statistics are available only on Pro plan." />
-      )}
+      {/* Analytics */}
+      {plan === "pro"
+        ? <TrendSparkline trend7={trend7} />
+        : <LockedSection message="Statistics are available only on Pro plan." />}
     </motion.div>
   );
 }
@@ -328,9 +357,7 @@ function KPI({ title, value, icon, locked }) {
           {icon}
           {title}
         </div>
-        <div className="text-2xl font-bold text-[#bfa7ff]">
-          {locked ? "—" : value}
-        </div>
+        <div className="text-2xl font-bold text-[#bfa7ff]">{locked ? "—" : value}</div>
       </div>
     </motion.div>
   );
@@ -343,12 +370,12 @@ function TrendSparkline({ trend7 }) {
 
   const points = useMemo(() => {
     if (trend7.length < 2) return [];
-    const max = Math.max(...trend7.map((t) => t.count), 1);
+    const max = Math.max(...trend7.map((t) => t.count || 0), 1);
     const stepX = (width - pad * 2) / (trend7.length - 1);
 
     return trend7.map((t, i) => {
       const x = pad + i * stepX;
-      const y = height - pad - (t.count / max) * (height - pad * 2);
+      const y = height - pad - ((t.count || 0) / max) * (height - pad * 2);
       return [x, y];
     });
   }, [trend7]);
@@ -385,13 +412,12 @@ function TrendSparkline({ trend7 }) {
   );
 }
 
-// -----------------------------------------------------
-// TIMELINE
-// -----------------------------------------------------
+/* --------------------------------------------
+   TIMELINE VIEW
+-------------------------------------------- */
 function TimelineView({ leads }) {
-  if (!leads.length) {
+  if (!leads.length)
     return <LockedSection message="No leads yet or this feature is Pro only." />;
-  }
 
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 shadow-xl">
@@ -400,16 +426,22 @@ function TimelineView({ leads }) {
 
         <div className="space-y-6">
           {leads.map((l, i) => (
-            <motion.div key={l.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.25, delay: i * 0.03 }} className="relative">
+            <motion.div key={l.id || i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.25, delay: i * 0.03 }} className="relative">
+
               <div className="absolute left-0 top-2 w-2 h-2 rounded-full bg-gradient-to-r from-[#9b8cff] to-[#bfa7ff]"></div>
 
               <div className="bg-white/5 border border-white/10 rounded-xl p-4">
                 <div className="flex justify-between">
                   <div className="font-semibold text-white">{l.name || "—"}</div>
-                  <div className="text-xs text-gray-400">{new Date(l.created_at).toLocaleString()}</div>
+                  <div className="text-xs text-gray-400">
+                    {l.created_at
+                      ? new Date(l.created_at).toLocaleString()
+                      : "—"}
+                  </div>
                 </div>
 
                 <div className="text-[#00eaff] text-sm">{l.email || "—"}</div>
+
                 <p className="text-sm text-gray-300 mt-1 line-clamp-3">
                   {l.message || "—"}
                 </p>
@@ -423,9 +455,9 @@ function TimelineView({ leads }) {
   );
 }
 
-// -----------------------------------------------------
-// UNIVERSE VIEW
-// -----------------------------------------------------
+/* --------------------------------------------
+   UNIVERSE
+-------------------------------------------- */
 function UniverseGridView({ leads }) {
   if (!leads.length)
     return <LockedSection message="No leads yet to visualize." />;
@@ -434,27 +466,23 @@ function UniverseGridView({ leads }) {
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       {leads.slice(0, 60).map((l, i) => (
         <motion.div
-          key={l.id}
+          key={l.id || i}
           initial={{ opacity: 0, scale: 0.85 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.4, delay: i * 0.02, type: "spring", stiffness: 120 }}
           className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-5 shadow-xl"
         >
           <h3 className="text-lg font-semibold text-white/90 truncate">{l.name || "Lead"}</h3>
-          <p className="text-[#00eaff] text-sm mt-1 truncate">{l.email}</p>
+          <p className="text-[#00eaff] text-sm mt-1 truncate">{l.email || "—"}</p>
           <p className="text-gray-300 text-sm mt-2 line-clamp-3">{l.message || "No message"}</p>
 
-          <div className="text-xs text-gray-400 mt-3">{new Date(l.created_at).toLocaleString()}</div>
+          <div className="text-xs text-gray-400 mt-3">
+            {l.created_at
+              ? new Date(l.created_at).toLocaleString()
+              : "—"}
+          </div>
         </motion.div>
       ))}
     </motion.div>
-  );
-}
-
-function EmptyState({ text }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-10 text-center text-gray-300">
-      {text}
-    </div>
   );
 }
