@@ -6,18 +6,18 @@ import { supabase } from "../supabaseClient";
 export default function ProtectedRoute({ children }) {
   const [loading, setLoading] = useState(true);
   const [sessionUser, setSessionUser] = useState(null);
-  const [subscriptionActive, setSubscriptionActive] = useState(false);
+  const [subscriptionActive, setSubscriptionActive] = useState(true); // FREE plan = active
+  const [plan, setPlan] = useState("free");
 
   const location = useLocation();
 
   useEffect(() => {
-    let isMounted = true;
+    let mounted = true;
 
     async function loadUser() {
-      // Get existing session
       const { data: { session } } = await supabase.auth.getSession();
 
-      if (!isMounted) return;
+      if (!mounted) return;
 
       if (!session?.user) {
         setSessionUser(null);
@@ -27,24 +27,40 @@ export default function ProtectedRoute({ children }) {
 
       setSessionUser(session.user);
 
-      // Fetch subscription status
+      /** Fetch subscription */
       const { data: sub } = await supabase
         .from("user_subscriptions")
-        .select("expires_at")
+        .select("plan, expires_at")
         .eq("user_id", session.user.id)
         .maybeSingle();
 
-      const active =
-        sub?.expires_at &&
-        new Date(sub.expires_at) > new Date();
+      // If no subscription found → FREE plan
+      if (!sub) {
+        setPlan("free");
+        setSubscriptionActive(true);
+        setLoading(false);
+        return;
+      }
 
-      setSubscriptionActive(active);
+      setPlan(sub.plan || "free");
+
+      // Free plan = always active
+      if (sub.plan === "free") {
+        setSubscriptionActive(true);
+        setLoading(false);
+        return;
+      }
+
+      // Basic/Pro → check expiry
+      const expired = !sub.expires_at || new Date(sub.expires_at) < new Date();
+      setSubscriptionActive(!expired);
+
       setLoading(false);
     }
 
     loadUser();
 
-    // Listen for login/logout events
+    // Auth state listener
     const { data: listener } = supabase.auth.onAuthStateChange(
       (_event, newSession) => {
         setSessionUser(newSession?.user || null);
@@ -52,12 +68,14 @@ export default function ProtectedRoute({ children }) {
     );
 
     return () => {
-      isMounted = false;
+      mounted = false;
       listener.subscription.unsubscribe();
     };
   }, []);
 
-  // Still loading user session
+  // -------------------------
+  // Loading state
+  // -------------------------
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-white text-lg">
@@ -66,12 +84,16 @@ export default function ProtectedRoute({ children }) {
     );
   }
 
-  // If not logged in → always redirect to login
+  // -------------------------
+  // User not logged in → redirect login
+  // -------------------------
   if (!sessionUser) {
     return <Navigate to="/login" replace />;
   }
 
-  // Pages that require an ACTIVE plan
+  // -------------------------
+  // Premium pages
+  // -------------------------
   const premiumPages = [
     "/builder",
     "/leads",
@@ -79,10 +101,11 @@ export default function ProtectedRoute({ children }) {
     "/integrations",
   ];
 
-  // If user tries to access a premium feature without subscription
-  if (!subscriptionActive && premiumPages.includes(location.pathname)) {
+  // Only expire PAID users
+  if (!subscriptionActive && plan !== "free" && premiumPages.includes(location.pathname)) {
     return <Navigate to="/pricing" replace />;
   }
 
+  // All good → render page
   return children;
 }
