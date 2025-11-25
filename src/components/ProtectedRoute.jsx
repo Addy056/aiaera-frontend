@@ -6,15 +6,15 @@ import { supabase } from "../supabaseClient";
 export default function ProtectedRoute({ children }) {
   const [loading, setLoading] = useState(true);
   const [sessionUser, setSessionUser] = useState(null);
-  const [subscriptionActive, setSubscriptionActive] = useState(true); // FREE plan = active
   const [plan, setPlan] = useState("free");
+  const [subscriptionActive, setSubscriptionActive] = useState(true);
 
   const location = useLocation();
 
   useEffect(() => {
     let mounted = true;
 
-    async function loadUser() {
+    async function init() {
       const { data: { session } } = await supabase.auth.getSession();
 
       if (!mounted) return;
@@ -27,45 +27,36 @@ export default function ProtectedRoute({ children }) {
 
       setSessionUser(session.user);
 
-      /** Fetch subscription */
       const { data: sub } = await supabase
         .from("user_subscriptions")
         .select("plan, expires_at")
         .eq("user_id", session.user.id)
         .maybeSingle();
 
-      // If no subscription found → FREE plan
-      if (!sub) {
+      if (!mounted) return;
+
+      // FREE plan = always active
+      if (!sub || sub.plan === "free") {
         setPlan("free");
         setSubscriptionActive(true);
         setLoading(false);
         return;
       }
 
-      setPlan(sub.plan || "free");
+      setPlan(sub.plan);
 
-      // Free plan = always active
-      if (sub.plan === "free") {
-        setSubscriptionActive(true);
-        setLoading(false);
-        return;
-      }
-
-      // Basic/Pro → check expiry
       const expired = !sub.expires_at || new Date(sub.expires_at) < new Date();
       setSubscriptionActive(!expired);
 
       setLoading(false);
     }
 
-    loadUser();
+    init();
 
-    // Auth state listener
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      (_event, newSession) => {
-        setSessionUser(newSession?.user || null);
-      }
-    );
+    // Supabase auth listener
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSessionUser(newSession?.user || null);
+    });
 
     return () => {
       mounted = false;
@@ -85,27 +76,22 @@ export default function ProtectedRoute({ children }) {
   }
 
   // -------------------------
-  // User not logged in → redirect login
+  // User not logged in
   // -------------------------
   if (!sessionUser) {
     return <Navigate to="/login" replace />;
   }
 
   // -------------------------
-  // Premium pages
+  // Premium route access check
   // -------------------------
-  const premiumPages = [
-    "/builder",
-    "/leads",
-    "/appointments",
-    "/integrations",
-  ];
+  const premiumPages = ["/builder", "/leads", "/appointments", "/integrations"];
 
-  // Only expire PAID users
-  if (!subscriptionActive && plan !== "free" && premiumPages.includes(location.pathname)) {
+  // only block PAID users who have expired subscriptions
+  if (plan !== "free" && !subscriptionActive && premiumPages.includes(location.pathname)) {
     return <Navigate to="/pricing" replace />;
   }
 
-  // All good → render page
+  // Authenticated + allowed
   return children;
 }
