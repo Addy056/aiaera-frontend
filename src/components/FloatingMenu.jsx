@@ -1,5 +1,6 @@
 // src/components/FloatingMenu.jsx
-import { NavLink } from "react-router-dom";
+
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Bot,
@@ -25,25 +26,19 @@ const navItems = [
   { path: "/settings", label: "Settings", icon: Settings },
 ];
 
-// SAFER logout: backend redirectTo must match Supabase settings
-const FRONTEND_LOGIN = import.meta.env.VITE_APP_BASE_URL + "/login";
+export default function FloatingMenu({ userEmail }) {
+  const navigate = useNavigate();
 
-export default function FloatingMenu() {
+  // SAFE Logout → No undefined/login error
   const handleLogout = async () => {
     try {
-      // Redirect method for Supabase auth v2
-      const { error } = await supabase.auth.signOut({
-        scope: "local",
-        redirectTo: FRONTEND_LOGIN,
-      });
+      await supabase.auth.signOut({ scope: "local" });
 
-      if (error) throw error;
-
-      // Fallback for browsers that ignore redirectTo
-      window.location.href = FRONTEND_LOGIN;
+      // Redirect using React Router (safe & reliable)
+      navigate("/login", { replace: true });
     } catch (err) {
       console.error("Logout failed:", err.message);
-      window.location.href = FRONTEND_LOGIN;
+      navigate("/login", { replace: true });
     }
   };
 

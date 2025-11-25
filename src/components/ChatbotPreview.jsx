@@ -11,7 +11,7 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
   const [streamedReply, setStreamedReply] = useState("");
   const messagesEndRef = useRef(null);
 
-  const API_BASE = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, "");
+const API_BASE = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
 
   const themeColors = chatbotConfig?.themeColors || {
     background: "#1a1a2e",
