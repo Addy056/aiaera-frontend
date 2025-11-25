@@ -21,7 +21,7 @@ export default function Leads() {
 
   const isExpired = (d) => !d || new Date(d) < new Date();
 
-  // INITIAL LOAD
+  // INITIAL LOAD — FIXED
   useEffect(() => {
     (async () => {
       try {
@@ -30,13 +30,14 @@ export default function Leads() {
 
         setUserEmail(user.email);
 
-        // Free access = PRO
+        // FULL ACCESS DEV EMAIL
         if (user.email === FREE_ACCESS_EMAIL) {
           setPlan("pro");
           await fetchLeads(user.id);
-          return setLoading(false);
+          return; // ❌ important — prevents double setLoading
         }
 
+        // Get subscription
         const { data: sub } = await supabase
           .from("user_subscriptions")
           .select("plan, expires_at")
@@ -45,7 +46,7 @@ export default function Leads() {
 
         if (!sub) {
           setPlan("free");
-          return setLoading(false);
+          return;
         }
 
         const activePlan =
@@ -75,11 +76,11 @@ export default function Leads() {
       setLeads(data || []);
     } catch (err) {
       console.error("❌ Fetch leads error:", err);
-      setLeads([]); // fallback prevents crash
+      setLeads([]);
     }
   };
 
-  // SAFE FILTER (CRASH PROOF)
+  // SEARCH FILTER — SAFE
   const filteredLeads = useMemo(() => {
     if (plan !== "pro" && userEmail !== FREE_ACCESS_EMAIL) return [];
 
@@ -87,14 +88,14 @@ export default function Leads() {
     if (!q) return leads;
 
     return leads.filter((l) => {
-      const name = String(l?.name || "").toLowerCase();
-      const email = String(l?.email || "").toLowerCase();
-      const msg = String(l?.message || "").toLowerCase();
+      const name = (l?.name || "").toLowerCase();
+      const email = (l?.email || "").toLowerCase();
+      const msg = (l?.message || "").toLowerCase();
       return name.includes(q) || email.includes(q) || msg.includes(q);
     });
   }, [search, leads, plan]);
 
-  // STATS (SAFE)
+  // LAST 7 DAYS DATA
   const trend7 = useMemo(() => {
     if (plan !== "pro") return [];
 
@@ -105,32 +106,34 @@ export default function Leads() {
       const d = new Date();
       d.setDate(now.getDate() - i);
 
-      const count = leads.filter(
+      const cnt = leads.filter(
         (l) => new Date(l.created_at).toDateString() === d.toDateString()
       ).length;
 
-      arr.push({ label: d.toLocaleDateString("en-GB"), count });
+      arr.push({ label: d.toLocaleDateString("en-GB"), count: cnt });
     }
 
     return arr;
   }, [leads, plan]);
 
-  const last7 = trend7?.reduce((a, b) => a + b.count, 0) || 0;
+  const last7 = trend7.reduce((a, b) => a + b.count, 0);
 
-  // CSV
+  // CSV EXPORT
   const exportCSV = () => {
     if (plan !== "pro") return alert("Upgrade to PRO to export leads.");
     if (!leads.length) return alert("No leads to export.");
 
-    const headers = ["Name", "Email", "Message", "Date"];
-    const rows = leads.map((l) => [
-      l.name || "",
-      l.email || "",
-      `"${String(l.message || "").replace(/"/g, '""')}"`,
-      new Date(l.created_at).toLocaleString(),
-    ]);
+    const rows = [
+      ["Name", "Email", "Message", "Date"],
+      ...leads.map((l) => [
+        l.name || "",
+        l.email || "",
+        `"${String(l.message || "").replace(/"/g, '""')}"`,
+        new Date(l.created_at).toLocaleString(),
+      ]),
+    ];
 
-    const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
+    const csv = rows.map((r) => r.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
 
@@ -326,7 +329,7 @@ function TimelineView({ leads }) {
 
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="border border-white/10 bg-white/5 p-6 rounded-2xl">
-      {leads.map((l, i) => (
+      {leads.map((l) => (
         <div key={l.id} className="mb-4 p-4 bg-white/5 rounded-xl border border-white/10">
           <div className="font-semibold text-white">{l.name}</div>
           <div className="text-[#00eaff] text-sm">{l.email}</div>
