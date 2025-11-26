@@ -1,5 +1,4 @@
 // src/pages/Builder.jsx
-
 import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "../supabaseClient";
@@ -20,7 +19,7 @@ export default function Builder() {
   const [activeTab, setActiveTab] = useState("business");
 
   const [user, setUser] = useState(null);
-  const [subscriptionActive, setSubscriptionActive] = useState(true); // FREE users allowed
+  const [subscriptionActive, setSubscriptionActive] = useState(true);
   const [plan, setPlan] = useState("free");
   const [freeAccess, setFreeAccess] = useState(false);
 
@@ -66,13 +65,68 @@ export default function Builder() {
   // Calendly
   const [calendlyLink, setCalendlyLink] = useState("");
 
+  // ✅ CHATBOT PREVIEW STREAM STATE
+  const [previewMessage, setPreviewMessage] = useState("");
+  const [previewReply, setPreviewReply] = useState("");
+  const [isStreaming, setIsStreaming] = useState(false);
+  const eventSourceRef = useRef(null);
+
   const aiSuggestions = [
     "We build AI chat assistants that qualify leads, answer FAQs, and book meetings 24/7.",
     "Scale support with multi-channel AI chat — website, WhatsApp, and social, no code needed.",
     "Boost conversions with a smart chatbot tailored to your business.",
   ];
 
+  // ------------------------
+  // ✅ START STREAM FUNCTION
+  // ------------------------
+  const startPreviewStream = (message) => {
+    if (!chatbotId || !message.trim()) return;
+
+    // Cleanup old stream
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+    }
+
+    setPreviewReply("");
+    setIsStreaming(true);
+
+    const messages = [{ role: "user", content: message }];
+    const encoded = encodeURIComponent(JSON.stringify(messages));
+
+    const url = `${API_BASE}/api/chatbot/preview-stream/${chatbotId}?messages=${encoded}`;
+
+    const es = new EventSource(url);
+    eventSourceRef.current = es;
+
+    es.addEventListener("token", (e) => {
+      const token = JSON.parse(e.data);
+      setPreviewReply((prev) => prev + token);
+    });
+
+    es.addEventListener("done", () => {
+      es.close();
+      setIsStreaming(false);
+    });
+
+    es.onerror = () => {
+      console.error("❌ SSE stream error");
+      es.close();
+      setIsStreaming(false);
+    };
+  };
+
+  useEffect(() => {
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
+    };
+  }, []);
+
+  // ------------------------
   // INITIAL LOAD
+  // ------------------------
   useEffect(() => {
     let mounted = true;
 
@@ -86,7 +140,6 @@ export default function Builder() {
 
         setUser(u);
 
-        // FREE ACCESS EMAIL
         if (u.email === FREE_ACCESS_EMAIL) {
           setFreeAccess(true);
           setSubscriptionActive(true);
@@ -102,13 +155,11 @@ export default function Builder() {
             setPlan("free");
             setSubscriptionActive(true);
           } else {
-            const active = new Date(sub.expires_at) > new Date();
-            setSubscriptionActive(true); // allow page view even if expired
+            setSubscriptionActive(true);
             setPlan(sub.plan || "free");
           }
         }
 
-        // LOAD CHATBOT CONFIG
         const { data: bot } = await supabase
           .from("chatbots")
           .select("*")
@@ -132,7 +183,6 @@ export default function Builder() {
           setIsConfigSaved(true);
         }
 
-        // Calendly fetch
         try {
           const res = await fetch(`${INTEGRATIONS_API}?user_id=${u.id}`);
           const json = await res.json();
@@ -148,13 +198,14 @@ export default function Builder() {
     return () => (mounted = false);
   }, []);
 
+  // ------------------------
   // FILE UPLOAD
+  // ------------------------
   const uploadFileToStorage = async (file) => {
     if (!user) throw new Error("No User");
 
     const path = `${user.id}/${Date.now()}-${file.name}`;
     const { error } = await supabase.storage.from(BUCKET).upload(path, file);
-
     if (error) throw error;
 
     const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
@@ -175,79 +226,79 @@ export default function Builder() {
     try {
       const uploaded = [];
       for (const f of selected) uploaded.push(await uploadFileToStorage(f));
-
       setFiles((prev) => [...uploaded, ...prev]);
-    } catch (err) {
-      alert("Upload failed.");
     } finally {
       setUploading(false);
       fileInputRef.current.value = "";
     }
   };
 
+  // ------------------------
   // AI SUGGESTION
+  // ------------------------
   const handleSuggest = () => {
     const suggestion = aiSuggestions[Math.floor(Math.random() * aiSuggestions.length)];
     setBusinessDescription((prev) => (prev ? `${prev}\n\n${suggestion}` : suggestion));
   };
 
+  // ------------------------
   // SAVE CONFIG
+  // ------------------------
   const saveConfigToSupabase = async () => {
     if (!user) return;
 
     setSaving(true);
 
-    try {
-      const config = {
-        businessEmail,
-        businessPhone,
-        businessWebsite,
-        files,
-        logo_url: logoUrl,
-        themeColors,
-        calendlyLink,
-      };
+    const config = {
+      businessEmail,
+      businessPhone,
+      businessWebsite,
+      files,
+      logo_url: logoUrl,
+      themeColors,
+      calendlyLink,
+    };
 
-      if (chatbotId) {
-        await supabase
-          .from("chatbots")
-          .update({
+    if (chatbotId) {
+      await supabase
+        .from("chatbots")
+        .update({
+          name: businessName,
+          business_info: businessDescription,
+          config,
+        })
+        .eq("id", chatbotId);
+    } else {
+      const { data } = await supabase
+        .from("chatbots")
+        .insert([
+          {
+            user_id: user.id,
             name: businessName,
             business_info: businessDescription,
             config,
-          })
-          .eq("id", chatbotId);
-      } else {
-        const { data } = await supabase
-          .from("chatbots")
-          .insert([
-            {
-              user_id: user.id,
-              name: businessName,
-              business_info: businessDescription,
-              config,
-            },
-          ])
-          .select()
-          .single();
-
-        setChatbotId(data.id);
-      }
-
-      setIsConfigSaved(true);
-      alert("Saved!");
-    } finally {
-      setSaving(false);
+          },
+        ])
+        .select()
+        .single();
+      setChatbotId(data.id);
     }
+
+    setIsConfigSaved(true);
+    setSaving(false);
+    alert("Saved!");
   };
 
+  // ------------------------
   // LOADING VIEW
-  if (loadingInit)
+  // ------------------------
+  if (loadingInit) {
     return (
       <div className="h-screen flex items-center justify-center bg-[#0b0b17] text-white">
         Initializing...
       </div>
     );
+  }
 
   return (
     <div className="relative min-h-screen bg-[#0a0b14] text-white overflow-x-hidden">
@@ -278,13 +329,8 @@ export default function Builder() {
           <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
           <div className="col-span-12 lg:col-span-9">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Card className="bg-white/5 border border-white/10 backdrop-blur-2xl rounded-3xl p-6 shadow-[0_0_60px_rgba(155,140,255,0.2)]">
+            <motion.div key={activeTab} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <Card className="bg-white/5 border border-white/10 backdrop-blur-2xl rounded-3xl p-6">
 
                 {activeTab === "business" && (
                   <BusinessTab
@@ -299,10 +345,14 @@ export default function Builder() {
                     businessWebsite={businessWebsite}
                     setBusinessWebsite={setBusinessWebsite}
                     handleSuggest={handleSuggest}
+                    previewMessage={previewMessage}
+                    setPreviewMessage={setPreviewMessage}
+                    previewReply={previewReply}
+                    isStreaming={isStreaming}
+                    startPreviewStream={startPreviewStream}
                   />
                 )}
 
-                {/* FILES TAB — PRO ONLY */}
                 {activeTab === "files" &&
                   (plan !== "pro" && !freeAccess ? (
                     <LockedSection message="Files feature is available only in the Pro plan." />
@@ -327,32 +377,6 @@ export default function Builder() {
                   <StudioTab
                     themeColors={themeColors}
                     setThemeColors={setThemeColors}
-                    presetThemes={{
-                      aurora: {
-                        background: "#0e0b24",
-                        userBubble: "#7f5af0",
-                        botBubble: "#00eaff",
-                        text: "#ffffff",
-                      },
-                      night: {
-                        background: "#0c0f1d",
-                        userBubble: "#bba7ff",
-                        botBubble: "#6b21a8",
-                        text: "#f7f7fb",
-                      },
-                      glass: {
-                        background: "#ffffff20",
-                        userBubble: "#7f5af0",
-                        botBubble: "#a78bfa",
-                        text: "#0b0c11",
-                      },
-                      ocean: {
-                        background: "#081427",
-                        userBubble: "#7f5af0",
-                        botBubble: "#4ad9ff",
-                        text: "#e8f7ff",
-                      },
-                    }}
                     logoUrl={logoUrl}
                     setLogoUrl={setLogoUrl}
                     logoInputRef={logoInputRef}
