@@ -16,16 +16,18 @@ export default function ChatbotPreview({ chatbotConfig }) {
   const API_BASE =
     import.meta.env.VITE_API_URL || "https://aiaera-backend.onrender.com";
 
-  const themeColors = chatbotConfig?.themeColors && 
-Object.keys(chatbotConfig.themeColors || {}).length > 0
-  ? chatbotConfig.themeColors
-  : {
-      background: "#000000",   // Pure Black
-      userBubble: "#ffffff",   // White user bubbles
-      botBubble: "#1a1a1a",    // Soft black bot bubble
-      text: "#ffffff",        // White text
-    };
+  // ✅ ✅ BLACK & WHITE DEFAULT UNTIL USER CUSTOMIZES
+  const isUserCustomized =
+    chatbotConfig?.themeColors?.__custom === true;
 
+  const themeColors = isUserCustomized
+    ? chatbotConfig.themeColors
+    : {
+        background: "#000000", // Black
+        userBubble: "#ffffff", // White
+        botBubble: "#1a1a1a",  // Soft black
+        text: "#ffffff",      // White text
+      };
 
   const calendlyLink = chatbotConfig?.calendlyLink;
 
@@ -39,6 +41,7 @@ Object.keys(chatbotConfig.themeColors || {}).length > 0
     };
   }, []);
 
+  // ✅ Detect booking intent
   const isBookingIntent = (text) => {
     const t = text.toLowerCase();
     return (
@@ -108,7 +111,7 @@ Object.keys(chatbotConfig.themeColors || {}).length > 0
       if (calendlyLink && isBookingIntent(userMessage)) {
         updatedMessages.push({
           role: "assistant",
-          content: calendlyLink, // PURE URL ONLY
+          content: calendlyLink,
           isLink: true,
         });
       }
@@ -144,7 +147,7 @@ Object.keys(chatbotConfig.themeColors || {}).length > 0
           {chatbotConfig?.logoUrl && (
             <img src={chatbotConfig.logoUrl} alt="Logo" style={styles.logo} />
           )}
-          <span style={{ fontWeight: "bold" }}>
+          <span style={{ fontWeight: "bold", color: "#000" }}>
             {chatbotConfig?.name || "Business Assistant"}
           </span>
         </div>
@@ -281,7 +284,7 @@ const styles = {
     outline: "none",
   },
   button: {
-    color: "white",
+    color: "black",
     border: "none",
     padding: "0 18px",
     borderRadius: "12px",
