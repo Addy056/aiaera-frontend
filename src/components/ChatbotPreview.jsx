@@ -26,7 +26,7 @@ export default function ChatbotPreview({ chatbotConfig }) {
         background: "#000000", // Black
         userBubble: "#ffffff", // White
         botBubble: "#1a1a1a",  // Soft black
-        text: "#ffffff",      // White text
+        text: "#080808ff",      // White text
       };
 
   const calendlyLink = chatbotConfig?.calendlyLink;
