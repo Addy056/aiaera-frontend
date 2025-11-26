@@ -16,12 +16,16 @@ export default function ChatbotPreview({ chatbotConfig }) {
   const API_BASE =
     import.meta.env.VITE_API_URL || "https://aiaera-backend.onrender.com";
 
-  const themeColors = chatbotConfig?.themeColors || {
-    background: "#1a1a2e",
-    userBubble: "#7f5af0",
-    botBubble: "#6b21a8",
-    text: "#ffffff",
-  };
+  const themeColors = chatbotConfig?.themeColors && 
+Object.keys(chatbotConfig.themeColors || {}).length > 0
+  ? chatbotConfig.themeColors
+  : {
+      background: "#000000",   // Pure Black
+      userBubble: "#ffffff",   // White user bubbles
+      botBubble: "#1a1a1a",    // Soft black bot bubble
+      text: "#ffffff",        // White text
+    };
+
 
   const calendlyLink = chatbotConfig?.calendlyLink;
 
