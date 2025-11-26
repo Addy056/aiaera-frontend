@@ -11,7 +11,8 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
   const [streamedReply, setStreamedReply] = useState("");
   const messagesEndRef = useRef(null);
 
-const API_BASE = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
+  // ✅ FORCE backend only (prevents frontend self-call forever)
+  const API_BASE = import.meta.env.VITE_BACKEND_URL;
 
   const themeColors = chatbotConfig?.themeColors || {
     background: "#1a1a2e",
@@ -27,7 +28,6 @@ const API_BASE = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
   const sendMessage = async () => {
     if (!input.trim()) return;
 
-    // Sliding window memory (keep last 6 message pairs)
     const newMessages = [
       ...messages.slice(-6),
       { role: "user", content: input },
@@ -40,8 +40,9 @@ const API_BASE = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
 
     try {
       const chatbotId = chatbotConfig?.id;
+
       if (!chatbotId) {
-        setMessages(prev => [
+        setMessages((prev) => [
           ...prev,
           { role: "assistant", content: "⚠️ Chatbot not saved yet." },
         ]);
@@ -49,31 +50,15 @@ const API_BASE = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
         return;
       }
 
-      // Fetch token (session) for protected route
-      let headers = {};
-      if (user) {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        if (session?.access_token) {
-          headers["Authorization"] = `Bearer ${session.access_token}`;
-        }
-      }
-
-      // SSE stream
-      const evtSource = new EventSource(
-        `${API_BASE}/api/chatbot/preview-stream/${chatbotId}`,
-        { withCredentials: false }
+      // ✅ PREPARE BASE64 QUERY FOR BACKEND
+      const encodedMessages = btoa(
+        JSON.stringify(newMessages)
       );
 
-      // Send data as initial event
-      evtSource.onopen = () => {
-        evtSource.dispatchEvent(
-          new MessageEvent("send", {
-            data: JSON.stringify({ messages: newMessages }),
-          })
-        );
-      };
+      // ✅ CORRECT SSE CALL → BACKEND ONLY
+      const evtSource = new EventSource(
+        `${API_BASE}/api/chatbot/preview-stream/${chatbotId}?messages=${encodedMessages}`
+      );
 
       evtSource.addEventListener("token", (e) => {
         const token = JSON.parse(e.data);
@@ -85,18 +70,24 @@ const API_BASE = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
           ...prev,
           { role: "assistant", content: streamedReply },
         ]);
+        setStreamedReply("");
         setIsStreaming(false);
         evtSource.close();
       });
 
       evtSource.addEventListener("error", () => {
+        console.error("SSE stream error");
         setIsStreaming(false);
         evtSource.close();
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: "⚠️ Connection lost. Try again." },
+        ]);
       });
     } catch (err) {
       console.error("Preview stream error:", err);
       setIsStreaming(false);
-      setMessages(prev => [
+      setMessages((prev) => [
         ...prev,
         { role: "assistant", content: "⚠️ Something went wrong." },
       ]);
@@ -111,20 +102,10 @@ const API_BASE = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
   };
 
   return (
-    <div
-      style={{
-        ...styles.wrapper,
-        background: themeColors.background,
-      }}
-    >
+    <div style={{ ...styles.wrapper, background: themeColors.background }}>
       <div style={styles.chatbotPreview}>
         {/* Header */}
-        <div
-          style={{
-            ...styles.header,
-            background: themeColors.userBubble,
-          }}
-        >
+        <div style={{ ...styles.header, background: themeColors.userBubble }}>
           {chatbotConfig?.logoUrl && (
             <img src={chatbotConfig.logoUrl} alt="Logo" style={styles.logo} />
           )}
@@ -160,7 +141,6 @@ const API_BASE = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
             </div>
           ))}
 
-          {/* TYPING STREAMED REPLY */}
           {isStreaming && (
             <div style={{ ...styles.message, ...styles.assistantMsg }}>
               <div
@@ -170,13 +150,7 @@ const API_BASE = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
                   color: themeColors.text,
                 }}
               >
-                {streamedReply || (
-                  <div style={styles.typingIndicatorWrapper}>
-                    <div style={styles.dot}></div>
-                    <div style={styles.dot2}></div>
-                    <div style={styles.dot3}></div>
-                  </div>
-                )}
+                {streamedReply || "Typing..."}
               </div>
             </div>
           )}
@@ -191,19 +165,12 @@ const API_BASE = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Ask something..."
-            style={{
-              ...styles.textarea,
-              color: themeColors.text,
-            }}
+            style={{ ...styles.textarea, color: themeColors.text }}
           />
-
           <button
             onClick={sendMessage}
             disabled={isStreaming}
-            style={{
-              ...styles.button,
-              background: themeColors.userBubble,
-            }}
+            style={{ ...styles.button, background: themeColors.userBubble }}
           >
             Send
           </button>
@@ -216,10 +183,7 @@ const API_BASE = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
 /* -------------------------------- Styles -------------------------------- */
 
 const styles = {
-  wrapper: {
-    display: "flex",
-    height: "100%",
-  },
+  wrapper: { display: "flex", height: "100%" },
 
   chatbotPreview: {
     flex: 1,
@@ -253,10 +217,7 @@ const styles = {
     gap: "8px",
   },
 
-  message: {
-    display: "flex",
-    maxWidth: "80%",
-  },
+  message: { display: "flex", maxWidth: "80%" },
   userMsg: { alignSelf: "flex-end" },
   assistantMsg: { alignSelf: "flex-start" },
 
@@ -289,35 +250,5 @@ const styles = {
     borderRadius: "12px",
     cursor: "pointer",
     fontWeight: "bold",
-  },
-
-  typingIndicatorWrapper: {
-    display: "flex",
-    gap: "6px",
-    alignItems: "center",
-  },
-
-  dot: {
-    width: "6px",
-    height: "6px",
-    background: "#fff",
-    borderRadius: "50%",
-    animation: "bounce 1s infinite ease-in-out",
-  },
-  dot2: {
-    width: "6px",
-    height: "6px",
-    background: "#fff",
-    borderRadius: "50%",
-    animation: "bounce 1s infinite ease-in-out",
-    animationDelay: "0.2s",
-  },
-  dot3: {
-    width: "6px",
-    height: "6px",
-    background: "#fff",
-    borderRadius: "50%",
-    animation: "bounce 1s infinite ease-in-out",
-    animationDelay: "0.4s",
   },
 };
