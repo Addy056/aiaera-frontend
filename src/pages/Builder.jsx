@@ -33,23 +33,19 @@ export default function Builder() {
   const API_BASE = import.meta.env.VITE_API_URL;
   const INTEGRATIONS_API = `${API_BASE}/api/integrations`;
 
-  // Chatbot record fields
   const [chatbotId, setChatbotId] = useState(null);
   const [isConfigSaved, setIsConfigSaved] = useState(false);
 
-  // Business fields
   const [businessName, setBusinessName] = useState("");
   const [businessDescription, setBusinessDescription] = useState("");
   const [businessEmail, setBusinessEmail] = useState("");
   const [businessPhone, setBusinessPhone] = useState("");
   const [businessWebsite, setBusinessWebsite] = useState("");
 
-  // Files
   const [files, setFiles] = useState([]);
   const fileInputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
 
-  // Theme
   const [logoUrl, setLogoUrl] = useState(null);
   const logoInputRef = useRef(null);
 
@@ -61,11 +57,9 @@ export default function Builder() {
   });
 
   const [showEmbed, setShowEmbed] = useState(false);
-
-  // Calendly
   const [calendlyLink, setCalendlyLink] = useState("");
 
-  // ✅ CHATBOT PREVIEW STREAM STATE
+  // ✅ STREAM STATE
   const [previewMessage, setPreviewMessage] = useState("");
   const [previewReply, setPreviewReply] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
@@ -77,13 +71,10 @@ export default function Builder() {
     "Boost conversions with a smart chatbot tailored to your business.",
   ];
 
-  // ------------------------
-  // ✅ START STREAM FUNCTION
-  // ------------------------
+  // ✅ STREAM FUNCTION
   const startPreviewStream = (message) => {
     if (!chatbotId || !message.trim()) return;
 
-    // Cleanup old stream
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
     }
@@ -95,7 +86,6 @@ export default function Builder() {
     const encoded = encodeURIComponent(JSON.stringify(messages));
 
     const url = `${API_BASE}/api/chatbot/preview-stream/${chatbotId}?messages=${encoded}`;
-
     const es = new EventSource(url);
     eventSourceRef.current = es;
 
@@ -110,7 +100,6 @@ export default function Builder() {
     });
 
     es.onerror = () => {
-      console.error("❌ SSE stream error");
       es.close();
       setIsStreaming(false);
     };
@@ -124,9 +113,7 @@ export default function Builder() {
     };
   }, []);
 
-  // ------------------------
-  // INITIAL LOAD
-  // ------------------------
+  // ✅ INITIAL LOAD
   useEffect(() => {
     let mounted = true;
 
@@ -151,13 +138,8 @@ export default function Builder() {
             .eq("user_id", u.id)
             .maybeSingle();
 
-          if (!sub) {
-            setPlan("free");
-            setSubscriptionActive(true);
-          } else {
-            setSubscriptionActive(true);
-            setPlan(sub.plan || "free");
-          }
+          setPlan(sub?.plan || "free");
+          setSubscriptionActive(true);
         }
 
         const { data: bot } = await supabase
@@ -175,7 +157,6 @@ export default function Builder() {
           setBusinessEmail(cfg.businessEmail || "");
           setBusinessPhone(cfg.businessPhone || "");
           setBusinessWebsite(cfg.businessWebsite || "");
-
           setFiles(Array.isArray(cfg.files) ? cfg.files : []);
           setLogoUrl(cfg.logo_url || null);
           if (cfg.themeColors) setThemeColors(cfg.themeColors);
@@ -198,9 +179,7 @@ export default function Builder() {
     return () => (mounted = false);
   }, []);
 
-  // ------------------------
-  // FILE UPLOAD
-  // ------------------------
+  // ✅ FILE UPLOAD
   const uploadFileToStorage = async (file) => {
     if (!user) throw new Error("No User");
 
@@ -233,17 +212,13 @@ export default function Builder() {
     }
   };
 
-  // ------------------------
-  // AI SUGGESTION
-  // ------------------------
+  // ✅ AI SUGGESTION
   const handleSuggest = () => {
     const suggestion = aiSuggestions[Math.floor(Math.random() * aiSuggestions.length)];
     setBusinessDescription((prev) => (prev ? `${prev}\n\n${suggestion}` : suggestion));
   };
 
-  // ------------------------
-  // SAVE CONFIG
-  // ------------------------
+  // ✅ SAVE CONFIG
   const saveConfigToSupabase = async () => {
     if (!user) return;
 
@@ -281,6 +256,7 @@ export default function Builder() {
         ])
         .select()
         .single();
+
       setChatbotId(data.id);
     }
 
@@ -289,9 +265,6 @@ export default function Builder() {
     alert("Saved!");
   };
 
-  // ------------------------
-  // LOADING VIEW
-  // ------------------------
   if (loadingInit) {
     return (
       <div className="h-screen flex items-center justify-center bg-[#0b0b17] text-white">
@@ -315,11 +288,7 @@ export default function Builder() {
             </p>
           </div>
 
-          <Button
-            onClick={saveConfigToSupabase}
-            disabled={saving}
-            className="bg-gradient-to-r from-[#7f5af0] via-[#9b8cff] to-[#5be7ff]"
-          >
+          <Button onClick={saveConfigToSupabase} disabled={saving}>
             <Save className="w-4 h-4 mr-2" />
             {saving ? "Saving..." : "Save"}
           </Button>
@@ -377,6 +346,32 @@ export default function Builder() {
                   <StudioTab
                     themeColors={themeColors}
                     setThemeColors={setThemeColors}
+                    presetThemes={{
+                      aurora: {
+                        background: "#0e0b24",
+                        userBubble: "#7f5af0",
+                        botBubble: "#00eaff",
+                        text: "#ffffff",
+                      },
+                      night: {
+                        background: "#0c0f1d",
+                        userBubble: "#bba7ff",
+                        botBubble: "#6b21a8",
+                        text: "#f7f7fb",
+                      },
+                      glass: {
+                        background: "#ffffff20",
+                        userBubble: "#7f5af0",
+                        botBubble: "#a78bfa",
+                        text: "#0b0c11",
+                      },
+                      ocean: {
+                        background: "#081427",
+                        userBubble: "#7f5af0",
+                        botBubble: "#4ad9ff",
+                        text: "#e8f7ff",
+                      },
+                    }}
                     logoUrl={logoUrl}
                     setLogoUrl={setLogoUrl}
                     logoInputRef={logoInputRef}
