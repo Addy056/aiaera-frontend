@@ -46,11 +46,10 @@ const safeNum = (v, fb) =>
 const safeStr = (v) =>
   typeof v === "string" ? v : "";
 
-/* ✅ SAFE API URL (works even if one env is missing) */
+/* ✅ ✅ ✅ HARD-FORCED BACKEND URL (FIXES YOUR 405 FOREVER) */
 const API_BASE = (
-  import.meta.env.VITE_BACKEND_URL ||
   import.meta.env.VITE_API_URL ||
-  ""
+  "https://aiaera-backend.onrender.com"
 ).replace(/\/$/, "") + "/api/integrations";
 
 export default function Integrations() {
@@ -97,22 +96,18 @@ export default function Integrations() {
     return () => (mountedRef.current = false);
   }, []);
 
-  /* ✅ INIT WITH SAFE SUBSCRIPTION CHECK */
+  /* ✅ INIT */
   const init = async () => {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not logged in");
 
       setUserEmail(user.email);
 
-      // Free access email = always Pro
       if (user.email === FREE_ACCESS_EMAIL) {
         setPlan("pro");
         await fetchData(user.id);
-        setLoading(false);
-        return;
+        return setLoading(false);
       }
 
       const { data: sub } = await supabase
@@ -123,17 +118,14 @@ export default function Integrations() {
 
       if (!sub) {
         setPlan("free");
-        setLoading(false);
-        return;
+        return setLoading(false);
       }
 
       const expired = new Date(sub.expires_at) < new Date();
       const active = sub.plan === "free" || !expired;
 
       setPlan(sub.plan);
-      if (active) {
-        await fetchData(user.id);
-      }
+      if (active) await fetchData(user.id);
     } catch (err) {
       showToast(err.message, "error");
     } finally {
@@ -141,12 +133,11 @@ export default function Integrations() {
     }
   };
 
-  /* ✅ FETCH INTEGRATIONS – SAFE EVEN IF DATA IS MISSING */
+  /* ✅ FETCH */
   const fetchData = async (userId) => {
     try {
       const res = await fetch(`${API_BASE}?user_id=${userId}`);
       const json = await res.json();
-
       const d = json?.data || {};
 
       const lat = safeNum(d.business_lat, DEFAULT_LAT);
@@ -176,15 +167,13 @@ export default function Integrations() {
         other: safeStr(d?.meeting_links?.other),
       });
     } catch {
-      // If API fails, we just keep defaults, no crash
-      showToast("Using default values (no saved integrations yet)", "error");
+      showToast("Using default values (no saved data yet)", "error");
     }
   };
 
   const handleChange = (e) =>
     setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
 
-  /* ✅ MAP LOCATION UPDATE – ALWAYS SAFE */
   const updateLocation = (lat, lng) => {
     const safeLat = safeNum(lat, DEFAULT_LAT);
     const safeLng = safeNum(lng, DEFAULT_LNG);
@@ -197,10 +186,9 @@ export default function Integrations() {
     }));
   };
 
-  /* ✅ GEOLOCATION – SAFE FALLBACKS */
   const detectLocation = () => {
     if (!navigator.geolocation)
-      return showToast("Location not supported in this browser", "error");
+      return showToast("Location not supported", "error");
 
     navigator.geolocation.getCurrentPosition(
       (pos) => updateLocation(pos.coords.latitude, pos.coords.longitude),
@@ -208,19 +196,16 @@ export default function Integrations() {
     );
   };
 
-  /* ✅ SAVE – ONLY PRO OR FREE_ACCESS_EMAIL */
+  /* ✅ SAVE */
   const handleSave = async () => {
     if (plan !== "pro" && userEmail !== FREE_ACCESS_EMAIL) {
-      showToast("Upgrade to Pro to save integrations", "error");
+      showToast("Upgrade to Pro", "error");
       return;
     }
 
     setSaving(true);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not logged in");
+      const { data: { user } } = await supabase.auth.getUser();
 
       const payload = {
         ...form,
@@ -235,7 +220,7 @@ export default function Integrations() {
       });
 
       const json = await res.json();
-      if (!json.success) throw new Error(json.error || "Failed to save");
+      if (!json.success) throw new Error(json.error);
 
       showToast("Integrations saved successfully");
     } catch (e) {
@@ -265,91 +250,35 @@ export default function Integrations() {
         <h1 className="text-4xl font-bold mb-12">Integrations Dashboard</h1>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {/* WhatsApp */}
-          <IntegrationCard title="WhatsApp (Meta API)" icon={<MessageCircle />}>
-            <InputField
-              name="whatsapp_number_id"
-              value={form.whatsapp_number_id}
-              onChange={handleChange}
-              placeholder="WhatsApp Number ID"
-            />
-            <InputField
-              name="whatsapp_token"
-              value={form.whatsapp_token}
-              onChange={handleChange}
-              placeholder="WhatsApp API Token"
-            />
+          <IntegrationCard title="WhatsApp" icon={<MessageCircle />}>
+            <InputField name="whatsapp_number_id" value={form.whatsapp_number_id} onChange={handleChange} />
+            <InputField name="whatsapp_token" value={form.whatsapp_token} onChange={handleChange} />
           </IntegrationCard>
 
-          {/* Facebook */}
-          <IntegrationCard title="Facebook Messenger" icon={<Facebook />}>
-            <InputField
-              name="fb_page_id"
-              value={form.fb_page_id}
-              onChange={handleChange}
-              placeholder="Facebook Page ID"
-            />
-            <InputField
-              name="fb_page_token"
-              value={form.fb_page_token}
-              onChange={handleChange}
-              placeholder="Facebook Page Token"
-            />
+          <IntegrationCard title="Facebook" icon={<Facebook />}>
+            <InputField name="fb_page_id" value={form.fb_page_id} onChange={handleChange} />
+            <InputField name="fb_page_token" value={form.fb_page_token} onChange={handleChange} />
           </IntegrationCard>
 
-          {/* Instagram – PRO ONLY */}
           {plan === "pro" || userEmail === FREE_ACCESS_EMAIL ? (
             <IntegrationCard title="Instagram" icon={<Instagram />}>
-              <InputField
-                name="instagram_user_id"
-                value={form.instagram_user_id}
-                onChange={handleChange}
-                placeholder="Instagram User ID"
-              />
-              <InputField
-                name="instagram_page_id"
-                value={form.instagram_page_id}
-                onChange={handleChange}
-                placeholder="Connected Page ID"
-              />
-              <InputField
-                name="instagram_access_token"
-                value={form.instagram_access_token}
-                onChange={handleChange}
-                placeholder="Instagram Access Token"
-              />
+              <InputField name="instagram_user_id" value={form.instagram_user_id} onChange={handleChange} />
+              <InputField name="instagram_page_id" value={form.instagram_page_id} onChange={handleChange} />
+              <InputField name="instagram_access_token" value={form.instagram_access_token} onChange={handleChange} />
             </IntegrationCard>
           ) : (
             <LockedCard title="Instagram Integration" />
           )}
 
-          {/* Meeting Links */}
           <IntegrationCard title="Meeting Links" icon={<Calendar />}>
-            {Object.entries(meetingLinks).map(([key, value]) => (
-              <InputField
-                key={key}
-                name={key}
-                value={value}
-                onChange={(e) =>
-                  setMeetingLinks({
-                    ...meetingLinks,
-                    [key]: e.target.value,
-                  })
-                }
-                placeholder={`${key.replace("_", " ")} link`}
-              />
+            {Object.entries(meetingLinks).map(([k, v]) => (
+              <InputField key={k} value={v} onChange={(e) =>
+                setMeetingLinks({ ...meetingLinks, [k]: e.target.value })
+              } />
             ))}
           </IntegrationCard>
 
-          {/* Business Location */}
           <IntegrationCard title="Business Location" icon={<MapPin />}>
-            <InputField
-              name="business_address"
-              value={form.business_address}
-              onChange={handleChange}
-              placeholder="Business Address"
-            />
-
             <MapPreview
               lat={safeNum(form.business_lat, DEFAULT_LAT)}
               lng={safeNum(form.business_lng, DEFAULT_LNG)}
@@ -357,23 +286,14 @@ export default function Integrations() {
               gmaps_link={form.gmaps_link}
               onMapClick={updateLocation}
             />
-
-            <button
-              onClick={detectLocation}
-              className="mt-3 px-4 py-2 bg-[#7f5af0] rounded-lg"
-            >
+            <button onClick={detectLocation} className="mt-3 px-4 py-2 bg-[#7f5af0] rounded-lg">
               <Crosshair className="inline-block w-4 h-4 mr-2" />
               Use My Location
             </button>
           </IntegrationCard>
         </div>
 
-        {/* SAVE BUTTON */}
-        <button
-          onClick={handleSave}
-          disabled={plan !== "pro" && userEmail !== FREE_ACCESS_EMAIL}
-          className="mt-10 w-full py-3 bg-[#7f5af0] rounded-xl disabled:opacity-50"
-        >
+        <button onClick={handleSave} className="mt-10 w-full py-3 bg-[#7f5af0] rounded-xl">
           <Save className="inline-block w-5 h-5 mr-2" />
           {saving ? "Saving..." : "Save Integrations"}
         </button>
@@ -382,18 +302,16 @@ export default function Integrations() {
   );
 }
 
-/* ✅ REUSABLE UI PIECES */
+/* ✅ UI HELPERS */
 
-function InputField({ name, value, onChange, placeholder, disabled }) {
+function InputField({ name, value, onChange, placeholder }) {
   return (
     <input
-      type="text"
       name={name}
       value={value || ""}
       onChange={onChange}
-      placeholder={placeholder}
-      disabled={disabled}
-      className="w-full px-3 py-2 mb-3 rounded-lg bg-white/10 outline-none disabled:opacity-50"
+      placeholder={placeholder || "Enter value"}
+      className="w-full px-3 py-2 mb-3 rounded-lg bg-white/10 outline-none"
     />
   );
 }
@@ -412,15 +330,14 @@ function IntegrationCard({ title, icon, children }) {
 
 function LockedCard({ title }) {
   return (
-    <motion.div className="bg-white/5 p-10 rounded-xl text-center text-gray-400 border border-white/10">
+    <motion.div className="bg-white/5 p-10 rounded-xl text-center border border-white/10">
       <Lock className="w-8 h-8 mx-auto mb-3 text-purple-300" />
       <h3 className="font-semibold">{title}</h3>
-      <p className="text-xs">Available only in Pro plan</p>
+      <p className="text-xs">Available only in Pro</p>
     </motion.div>
   );
 }
 
-/* ✅ MAP – FULLY SAFE TO MISSING VALUES */
 function MapPreview({ lat, lng, address, gmaps_link, onMapClick }) {
   const Selector = () => {
     useMapEvents({
@@ -431,24 +348,13 @@ function MapPreview({ lat, lng, address, gmaps_link, onMapClick }) {
     return null;
   };
 
-  const safeLat = safeNum(lat, DEFAULT_LAT);
-  const safeLng = safeNum(lng, DEFAULT_LNG);
-  const safeLink =
-    gmaps_link ||
-    `https://www.google.com/maps?q=${safeLat},${safeLng}`;
-
   return (
-    <MapContainer
-      center={[safeLat, safeLng]}
-      zoom={13}
-      style={{ height: "240px", borderRadius: "1rem", marginTop: "10px" }}
-    >
+    <MapContainer center={[lat, lng]} zoom={13} style={{ height: "240px" }}>
       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-      <Marker position={[safeLat, safeLng]}>
+      <Marker position={[lat, lng]}>
         <Popup>
-          <strong>{address || "Business Location"}</strong>
-          <br />
-          <a href={safeLink} target="_blank" rel="noreferrer">
+          {address || "Business Location"} <br />
+          <a href={gmaps_link} target="_blank" rel="noreferrer">
             Open in Maps
           </a>
         </Popup>
