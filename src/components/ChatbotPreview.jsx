@@ -51,9 +51,10 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
       }
 
       // ✅ PREPARE BASE64 QUERY FOR BACKEND
-      const encodedMessages = btoa(
-        JSON.stringify(newMessages)
+      const encodedMessages = encodeURIComponent(
+       JSON.stringify(newMessages)
       );
+
 
       // ✅ CORRECT SSE CALL → BACKEND ONLY
       const evtSource = new EventSource(
