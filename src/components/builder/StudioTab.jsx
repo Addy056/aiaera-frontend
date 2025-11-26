@@ -1,9 +1,7 @@
-// src/components/builder/StudioTab.jsx
-
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Bot, Calendar, Code2, Copy, Eye } from "lucide-react";
+import { Bot, Code2, Copy, Eye } from "lucide-react";   // ✅ Calendar REMOVED
 
 import ColorSwatch from "./ColorSwatch";
 import ChatbotPreview from "@/components/ChatbotPreview.jsx";
@@ -29,7 +27,7 @@ export default function StudioTab({
   showEmbed,
   setShowEmbed,
 
-  calendlyLink,
+  calendlyLink, // ✅ Still passed ONLY to chatbot (not UI button)
 }) {
   const [copying, setCopying] = useState(false);
 
@@ -170,13 +168,13 @@ export default function StudioTab({
                 files,
                 logoUrl,
                 themeColors,
-                calendlyLink,
+                calendlyLink, // ✅ Used ONLY inside chatbot now
               }}
               user={user}
             />
           </div>
 
-          {/* EMBED BUTTONS */}
+          {/* ✅ ONLY EMBED BUTTON REMAINS */}
           {isConfigSaved && chatbotId && (
             <div className="mt-5 space-y-3">
               <Button
@@ -185,16 +183,6 @@ export default function StudioTab({
               >
                 {showEmbed ? "Hide Embed Code" : "Get Embed Code"}
               </Button>
-
-              {!!calendlyLink && (
-                <Button
-                  onClick={() => window.open(calendlyLink, "_blank")}
-                  className="w-full bg-gradient-to-r from-[#00eaff] via-[#7f5af0] to-[#bfa7ff]"
-                >
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Book a Meeting
-                </Button>
-              )}
             </div>
           )}
         </Card>
