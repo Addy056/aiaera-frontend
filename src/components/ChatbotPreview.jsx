@@ -9,10 +9,12 @@ export default function ChatbotPreview({ chatbotConfig }) {
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamedReply, setStreamedReply] = useState("");
+
   const messagesEndRef = useRef(null);
   const eventSourceRef = useRef(null);
+  const streamedRef = useRef(""); // ✅ fixes React closure bug
 
-  // ✅ HARD GUARANTEE BACKEND URL (NO ENV FAILURE POSSIBLE)
+  // ✅ HARD BACKEND GUARANTEE
   const API_BASE =
     import.meta.env.VITE_API_URL || "https://aiaera-backend.onrender.com";
 
@@ -27,7 +29,6 @@ export default function ChatbotPreview({ chatbotConfig }) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, streamedReply]);
 
-  // ✅ CLEANUP ON UNMOUNT
   useEffect(() => {
     return () => {
       if (eventSourceRef.current) {
@@ -48,9 +49,9 @@ export default function ChatbotPreview({ chatbotConfig }) {
     setInput("");
     setIsStreaming(true);
     setStreamedReply("");
+    streamedRef.current = "";
 
     const chatbotId = chatbotConfig?.id;
-
     if (!chatbotId) {
       setMessages((prev) => [
         ...prev,
@@ -60,14 +61,11 @@ export default function ChatbotPreview({ chatbotConfig }) {
       return;
     }
 
-    // ✅ ALWAYS ENCODE SAFE
     const encodedMessages = encodeURIComponent(JSON.stringify(newMessages));
-
-    // ✅ GUARANTEED BACKEND SSE URL (NO undefined EVER AGAIN)
     const streamUrl = `${API_BASE}/api/chatbot/preview-stream/${chatbotId}?messages=${encodedMessages}`;
+
     console.log("✅ SSE CONNECT:", streamUrl);
 
-    // ✅ CLOSE OLD STREAM
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
     }
@@ -75,17 +73,31 @@ export default function ChatbotPreview({ chatbotConfig }) {
     const evtSource = new EventSource(streamUrl);
     eventSourceRef.current = evtSource;
 
+    // ✅ PRIMARY TOKEN HANDLER
     evtSource.addEventListener("token", (e) => {
       const token = JSON.parse(e.data);
-      setStreamedReply((prev) => prev + token);
+      streamedRef.current += token;
+      setStreamedReply(streamedRef.current);
+      console.log("TOKEN:", token);
     });
+
+    // ✅ FALLBACK HANDLER (some browsers need this)
+    evtSource.onmessage = (e) => {
+      try {
+        const token = JSON.parse(e.data);
+        streamedRef.current += token;
+        setStreamedReply(streamedRef.current);
+      } catch {}
+    };
 
     evtSource.addEventListener("done", () => {
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: streamedReply },
+        { role: "assistant", content: streamedRef.current || "⚠️ Empty reply." },
       ]);
+
       setStreamedReply("");
+      streamedRef.current = "";
       setIsStreaming(false);
       evtSource.close();
     });
@@ -186,10 +198,8 @@ export default function ChatbotPreview({ chatbotConfig }) {
 }
 
 /* --------------------------- Styles --------------------------- */
-
 const styles = {
   wrapper: { display: "flex", height: "100%" },
-
   chatbotPreview: {
     flex: 1,
     display: "flex",
@@ -197,7 +207,6 @@ const styles = {
     borderRadius: "16px",
     overflow: "hidden",
   },
-
   header: {
     padding: "12px",
     color: "white",
@@ -205,14 +214,12 @@ const styles = {
     alignItems: "center",
     gap: "10px",
   },
-
   logo: {
     width: "36px",
     height: "36px",
     objectFit: "cover",
     borderRadius: "10px",
   },
-
   messages: {
     flex: 1,
     overflowY: "auto",
@@ -221,24 +228,20 @@ const styles = {
     flexDirection: "column",
     gap: "8px",
   },
-
   message: { display: "flex", maxWidth: "80%" },
   userMsg: { alignSelf: "flex-end" },
   assistantMsg: { alignSelf: "flex-start" },
-
   bubble: {
     padding: "10px 14px",
     borderRadius: "16px",
     wordBreak: "break-word",
   },
-
   inputArea: {
     display: "flex",
     gap: "8px",
     padding: "12px",
     borderTop: "1px solid rgba(255,255,255,0.1)",
   },
-
   textarea: {
     flex: 1,
     padding: "10px",
@@ -247,7 +250,6 @@ const styles = {
     border: "none",
     outline: "none",
   },
-
   button: {
     color: "white",
     border: "none",
