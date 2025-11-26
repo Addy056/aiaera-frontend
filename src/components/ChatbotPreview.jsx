@@ -35,7 +35,6 @@ export default function ChatbotPreview({ chatbotConfig }) {
     };
   }, []);
 
-  // ✅ Detect booking intent
   const isBookingIntent = (text) => {
     const t = text.toLowerCase();
     return (
@@ -101,11 +100,12 @@ export default function ChatbotPreview({ chatbotConfig }) {
         },
       ];
 
-      // ✅ AUTO APPEND CALENDLY BUTTON IF USER ASKED FOR MEETING
+      // ✅ AUTO APPEND CLICKABLE CALENDLY LINK
       if (calendlyLink && isBookingIntent(userMessage)) {
         updatedMessages.push({
           role: "assistant",
-          content: `📅 Book a meeting here:\n${calendlyLink}`,
+          content: calendlyLink, // PURE URL ONLY
+          isLink: true,
         });
       }
 
@@ -166,14 +166,18 @@ export default function ChatbotPreview({ chatbotConfig }) {
                   color: themeColors.text,
                 }}
               >
-                {msg.content.startsWith("http") ? (
+                {msg.isLink ? (
                   <a
                     href={msg.content}
                     target="_blank"
                     rel="noreferrer"
-                    style={{ color: "#00eaff", textDecoration: "underline" }}
+                    style={{
+                      color: "#00eaff",
+                      textDecoration: "underline",
+                      fontWeight: "bold",
+                    }}
                   >
-                    {msg.content}
+                    📅 Book Your Meeting
                   </a>
                 ) : (
                   msg.content
