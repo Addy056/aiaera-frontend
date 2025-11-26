@@ -22,7 +22,6 @@ export default function BusinessTab({
     <div className="space-y-6">
       <h2 className="text-2xl font-bold tracking-tight">Business Information</h2>
 
-      {/* Business Name */}
       <Input
         placeholder="Business Name"
         value={businessName}
@@ -30,7 +29,6 @@ export default function BusinessTab({
         className="bg-black/30 border-0 text-white"
       />
 
-      {/* Business Description */}
       <div className="space-y-3">
         <Textarea
           placeholder="Describe your business"
@@ -48,7 +46,6 @@ export default function BusinessTab({
         </Button>
       </div>
 
-      {/* Email */}
       <Input
         placeholder="Business Email"
         value={businessEmail}
@@ -56,7 +53,6 @@ export default function BusinessTab({
         className="bg-black/30 border-0 text-white"
       />
 
-      {/* Phone */}
       <Input
         placeholder="Phone Number"
         value={businessPhone}
@@ -64,7 +60,6 @@ export default function BusinessTab({
         className="bg-black/30 border-0 text-white"
       />
 
-      {/* Website */}
       <Input
         placeholder="Website URL"
         value={businessWebsite}

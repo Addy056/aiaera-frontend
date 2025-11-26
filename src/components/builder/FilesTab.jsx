@@ -14,7 +14,6 @@ export default function FilesTab({
     <div className="space-y-6">
       <h2 className="text-2xl font-bold tracking-tight">Files</h2>
 
-      {/* Upload Section */}
       <div className="flex items-center gap-3">
         <input
           ref={fileInputRef}
@@ -34,7 +33,6 @@ export default function FilesTab({
         </Button>
       </div>
 
-      {/* Files List */}
       <div className="grid sm:grid-cols-2 gap-3">
         {files.length > 0 ? (
           files.map((file) => (

@@ -1,15 +1,15 @@
 // src/components/builder/StudioTab.jsx
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-
 import { Bot, Calendar, Code2, Copy, Eye } from "lucide-react";
 
 import ColorSwatch from "./ColorSwatch";
 import ChatbotPreview from "@/components/ChatbotPreview.jsx";
+
 export default function StudioTab({
-  presetThemes,
+  presetThemes = {},                  // ✅ HARD SAFETY DEFAULT
   themeColors,
   setThemeColors,
 
@@ -20,7 +20,7 @@ export default function StudioTab({
 
   chatbotId,
   businessName,
-  files,
+  files = [],
   user,
   isConfigSaved,
 
@@ -32,6 +32,10 @@ export default function StudioTab({
   calendlyLink,
 }) {
   const [copying, setCopying] = useState(false);
+
+  // ✅ SAFE FRONTEND BASE (PREVENTS undefined/public-chatbot URLs)
+  const SAFE_APP_BASE =
+    APP_BASE_URL || window?.location?.origin || "";
 
   // -----------------------------
   // Logo Upload Handler
@@ -54,16 +58,22 @@ export default function StudioTab({
   // -----------------------------
   // Copy Embed Code
   // -----------------------------
-  const copyEmbedCode = (embedCode) => {
-    setCopying(true);
-    navigator.clipboard.writeText(embedCode);
-    setTimeout(() => setCopying(false), 800);
+  const copyEmbedCode = async (embedCode) => {
+    try {
+      setCopying(true);
+      await navigator.clipboard.writeText(embedCode);
+    } finally {
+      setTimeout(() => setCopying(false), 800);
+    }
   };
 
   // -----------------------------
-  // Embed code string
+  // ✅ SAFE EMBED CODE STRING
   // -----------------------------
-  const iframeEmbed = `<iframe src="${APP_BASE_URL}/public-chatbot/${chatbotId}" width="400" height="500" style="border:none; border-radius:16px;"></iframe>`;
+  const iframeEmbed = useMemo(() => {
+    if (!SAFE_APP_BASE || !chatbotId) return "";
+    return `<iframe src="${SAFE_APP_BASE}/public-chatbot/${chatbotId}" width="400" height="500" style="border:none; border-radius:16px;"></iframe>`;
+  }, [SAFE_APP_BASE, chatbotId]);
 
   return (
     <div className="space-y-10">
@@ -73,22 +83,24 @@ export default function StudioTab({
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-        {/* --------------------------------------------------------
-           LEFT SIDE — DESIGN PANEL
-        ---------------------------------------------------------*/}
+        {/* LEFT — DESIGN PANEL */}
         <Card className="bg-white/5 border border-white/10 backdrop-blur-xl p-6 rounded-3xl shadow-[0_0_40px_rgba(127,90,240,0.25)]">
-          
-          {/* Presets */}
+
+          {/* ✅ PRESET THEMES (SAFE LOOP) */}
           <div className="flex flex-wrap gap-3 mb-6">
-            {Object.entries(presetThemes).map(([key, theme]) => (
-              <Button
-                key={key}
-                className="bg-white/10 hover:bg-white/20 capitalize"
-                onClick={() => setThemeColors(theme)}
-              >
-                {key}
-              </Button>
-            ))}
+            {Object.keys(presetThemes).length > 0 ? (
+              Object.entries(presetThemes).map(([key, theme]) => (
+                <Button
+                  key={key}
+                  className="bg-white/10 hover:bg-white/20 capitalize"
+                  onClick={() => setThemeColors(theme)}
+                >
+                  {key}
+                </Button>
+              ))
+            ) : (
+              <p className="text-xs text-gray-400">No presets</p>
+            )}
           </div>
 
           {/* Color Swatches */}
@@ -134,7 +146,7 @@ export default function StudioTab({
               Upload Logo
             </Button>
 
-            {logoUrl && (
+            {!!logoUrl && (
               <img
                 src={logoUrl}
                 alt="logo"
@@ -142,12 +154,9 @@ export default function StudioTab({
               />
             )}
           </div>
-
         </Card>
 
-        {/* --------------------------------------------------------
-           RIGHT SIDE — LIVE PREVIEW
-        ---------------------------------------------------------*/}
+        {/* RIGHT — LIVE PREVIEW */}
         <Card className="bg-white/10 border border-white/10 rounded-3xl p-6 backdrop-blur-2xl">
           <h3 className="font-semibold mb-3 flex items-center gap-2 text-white">
             <Bot className="w-5 h-5" /> Live Chatbot Preview
@@ -177,7 +186,7 @@ export default function StudioTab({
                 {showEmbed ? "Hide Embed Code" : "Get Embed Code"}
               </Button>
 
-              {calendlyLink && (
+              {!!calendlyLink && (
                 <Button
                   onClick={() => window.open(calendlyLink, "_blank")}
                   className="w-full bg-gradient-to-r from-[#00eaff] via-[#7f5af0] to-[#bfa7ff]"
@@ -191,9 +200,7 @@ export default function StudioTab({
         </Card>
       </div>
 
-      {/* --------------------------------------------------------
-         EMBED CODE DRAWER
-      ---------------------------------------------------------*/}
+      {/* EMBED CODE DRAWER */}
       {showEmbed && isConfigSaved && chatbotId && (
         <Card className="bg-white/5 border border-white/10 p-6 rounded-3xl backdrop-blur-xl">
           <div className="flex items-center justify-between mb-3">
@@ -202,7 +209,7 @@ export default function StudioTab({
             </h4>
 
             <a
-              href={`${APP_BASE_URL}/public-chatbot/${chatbotId}`}
+              href={`${SAFE_APP_BASE}/public-chatbot/${chatbotId}`}
               target="_blank"
               rel="noreferrer"
               className="text-sm text-[#bfa7ff] hover:underline flex items-center gap-1"
