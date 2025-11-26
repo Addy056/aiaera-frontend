@@ -30,7 +30,7 @@ export default function Builder() {
   const BUCKET = import.meta.env.VITE_SUPABASE_BUCKET || "chatbot-files";
 
   const APP_BASE_URL = import.meta.env.VITE_APP_BASE_URL;
-  const API_BASE = import.meta.env.VITE_API_URL;
+const API_BASE = import.meta.env.VITE_API_URL || "https://aiaera-backend.onrender.com";
   const INTEGRATIONS_API = `${API_BASE}/api/integrations`;
 
   const [chatbotId, setChatbotId] = useState(null);
