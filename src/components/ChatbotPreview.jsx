@@ -12,9 +12,8 @@ export default function ChatbotPreview({ chatbotConfig }) {
 
   const messagesEndRef = useRef(null);
   const eventSourceRef = useRef(null);
-  const streamedRef = useRef(""); // ✅ fixes React closure bug
+  const streamedRef = useRef("");
 
-  // ✅ HARD BACKEND GUARANTEE
   const API_BASE =
     import.meta.env.VITE_API_URL || "https://aiaera-backend.onrender.com";
 
@@ -64,8 +63,7 @@ export default function ChatbotPreview({ chatbotConfig }) {
     const encodedMessages = encodeURIComponent(JSON.stringify(newMessages));
     const streamUrl = `${API_BASE}/api/chatbot/preview-stream/${chatbotId}?messages=${encodedMessages}`;
 
-    console.log("✅ SSE CONNECT:", streamUrl);
-
+    // ✅ CLOSE OLD STREAM
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
     }
@@ -73,27 +71,27 @@ export default function ChatbotPreview({ chatbotConfig }) {
     const evtSource = new EventSource(streamUrl);
     eventSourceRef.current = evtSource;
 
-    // ✅ PRIMARY TOKEN HANDLER
+    // ✅ TOKEN HANDLER (ACCUMULATE SAFELY)
     evtSource.addEventListener("token", (e) => {
-      const token = JSON.parse(e.data);
-      streamedRef.current += token;
-      setStreamedReply(streamedRef.current);
-      console.log("TOKEN:", token);
-    });
-
-    // ✅ FALLBACK HANDLER (some browsers need this)
-    evtSource.onmessage = (e) => {
       try {
         const token = JSON.parse(e.data);
         streamedRef.current += token;
+
+        // ✅ force UI update from ref every time
         setStreamedReply(streamedRef.current);
       } catch {}
-    };
+    });
 
+    // ✅ FINALIZE ONLY AFTER LAST TOKEN IS RENDERED
     evtSource.addEventListener("done", () => {
+      const finalText = streamedRef.current.trim();
+
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: streamedRef.current || "⚠️ Empty reply." },
+        {
+          role: "assistant",
+          content: finalText || "⚠️ No response generated.",
+        },
       ]);
 
       setStreamedReply("");
@@ -103,9 +101,8 @@ export default function ChatbotPreview({ chatbotConfig }) {
     });
 
     evtSource.onerror = () => {
-      console.error("❌ SSE stream error");
-      setIsStreaming(false);
       evtSource.close();
+      setIsStreaming(false);
       setMessages((prev) => [
         ...prev,
         { role: "assistant", content: "⚠️ Connection lost. Try again." },
@@ -123,7 +120,6 @@ export default function ChatbotPreview({ chatbotConfig }) {
   return (
     <div style={{ ...styles.wrapper, background: themeColors.background }}>
       <div style={styles.chatbotPreview}>
-
         <div style={{ ...styles.header, background: themeColors.userBubble }}>
           {chatbotConfig?.logoUrl && (
             <img src={chatbotConfig.logoUrl} alt="Logo" style={styles.logo} />
@@ -197,7 +193,6 @@ export default function ChatbotPreview({ chatbotConfig }) {
   );
 }
 
-/* --------------------------- Styles --------------------------- */
 const styles = {
   wrapper: { display: "flex", height: "100%" },
   chatbotPreview: {
