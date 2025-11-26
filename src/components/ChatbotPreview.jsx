@@ -1,4 +1,3 @@
-// src/components/ChatbotPreview.jsx
 import { useState, useRef, useEffect } from "react";
 
 export default function ChatbotPreview({ chatbotConfig }) {
@@ -24,24 +23,38 @@ export default function ChatbotPreview({ chatbotConfig }) {
     text: "#ffffff",
   };
 
+  const calendlyLink = chatbotConfig?.calendlyLink;
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, streamedReply]);
 
   useEffect(() => {
     return () => {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-      }
+      if (eventSourceRef.current) eventSourceRef.current.close();
     };
   }, []);
+
+  // ✅ Detect booking intent
+  const isBookingIntent = (text) => {
+    const t = text.toLowerCase();
+    return (
+      t.includes("book") ||
+      t.includes("meeting") ||
+      t.includes("schedule") ||
+      t.includes("appointment") ||
+      t.includes("call")
+    );
+  };
 
   const sendMessage = () => {
     if (!input.trim() || isStreaming) return;
 
+    const userMessage = input;
+
     const newMessages = [
       ...messages.slice(-6),
-      { role: "user", content: input },
+      { role: "user", content: userMessage },
     ];
 
     setMessages(newMessages);
@@ -51,6 +64,7 @@ export default function ChatbotPreview({ chatbotConfig }) {
     streamedRef.current = "";
 
     const chatbotId = chatbotConfig?.id;
+
     if (!chatbotId) {
       setMessages((prev) => [
         ...prev,
@@ -63,37 +77,39 @@ export default function ChatbotPreview({ chatbotConfig }) {
     const encodedMessages = encodeURIComponent(JSON.stringify(newMessages));
     const streamUrl = `${API_BASE}/api/chatbot/preview-stream/${chatbotId}?messages=${encodedMessages}`;
 
-    // ✅ CLOSE OLD STREAM
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-    }
+    if (eventSourceRef.current) eventSourceRef.current.close();
 
     const evtSource = new EventSource(streamUrl);
     eventSourceRef.current = evtSource;
 
-    // ✅ TOKEN HANDLER (ACCUMULATE SAFELY)
     evtSource.addEventListener("token", (e) => {
       try {
         const token = JSON.parse(e.data);
         streamedRef.current += token;
-
-        // ✅ force UI update from ref every time
         setStreamedReply(streamedRef.current);
       } catch {}
     });
 
-    // ✅ FINALIZE ONLY AFTER LAST TOKEN IS RENDERED
     evtSource.addEventListener("done", () => {
       const finalText = streamedRef.current.trim();
 
-      setMessages((prev) => [
-        ...prev,
+      const updatedMessages = [
+        ...newMessages,
         {
           role: "assistant",
           content: finalText || "⚠️ No response generated.",
         },
-      ]);
+      ];
 
+      // ✅ AUTO APPEND CALENDLY BUTTON IF USER ASKED FOR MEETING
+      if (calendlyLink && isBookingIntent(userMessage)) {
+        updatedMessages.push({
+          role: "assistant",
+          content: `📅 Book a meeting here:\n${calendlyLink}`,
+        });
+      }
+
+      setMessages(updatedMessages);
       setStreamedReply("");
       streamedRef.current = "";
       setIsStreaming(false);
@@ -150,7 +166,18 @@ export default function ChatbotPreview({ chatbotConfig }) {
                   color: themeColors.text,
                 }}
               >
-                {msg.content}
+                {msg.content.startsWith("http") ? (
+                  <a
+                    href={msg.content}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ color: "#00eaff", textDecoration: "underline" }}
+                  >
+                    {msg.content}
+                  </a>
+                ) : (
+                  msg.content
+                )}
               </div>
             </div>
           ))}
