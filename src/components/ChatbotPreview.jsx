@@ -1,7 +1,7 @@
+// src/components/ChatbotPreview.jsx
 import { useState, useRef, useEffect } from "react";
-import { supabase } from "../supabaseClient";
 
-export default function ChatbotPreview({ chatbotConfig, user }) {
+export default function ChatbotPreview({ chatbotConfig }) {
   const [messages, setMessages] = useState([
     { role: "assistant", content: "Hi 👋 How can we assist you today?" },
   ]);
@@ -10,9 +10,11 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamedReply, setStreamedReply] = useState("");
   const messagesEndRef = useRef(null);
+  const eventSourceRef = useRef(null);
 
-  // ✅ FORCE backend only (prevents frontend self-call forever)
-  const API_BASE = import.meta.env.VITE_BACKEND_URL;
+  // ✅ HARD GUARANTEE BACKEND URL (NO ENV FAILURE POSSIBLE)
+  const API_BASE =
+    import.meta.env.VITE_API_URL || "https://aiaera-backend.onrender.com";
 
   const themeColors = chatbotConfig?.themeColors || {
     background: "#1a1a2e",
@@ -25,8 +27,17 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, streamedReply]);
 
-  const sendMessage = async () => {
-    if (!input.trim()) return;
+  // ✅ CLEANUP ON UNMOUNT
+  useEffect(() => {
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
+    };
+  }, []);
+
+  const sendMessage = () => {
+    if (!input.trim() || isStreaming) return;
 
     const newMessages = [
       ...messages.slice(-6),
@@ -38,61 +49,56 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
     setIsStreaming(true);
     setStreamedReply("");
 
-    try {
-      const chatbotId = chatbotConfig?.id;
+    const chatbotId = chatbotConfig?.id;
 
-      if (!chatbotId) {
-        setMessages((prev) => [
-          ...prev,
-          { role: "assistant", content: "⚠️ Chatbot not saved yet." },
-        ]);
-        setIsStreaming(false);
-        return;
-      }
-
-      // ✅ PREPARE BASE64 QUERY FOR BACKEND
-      const encodedMessages = encodeURIComponent(
-       JSON.stringify(newMessages)
-      );
-
-
-      // ✅ CORRECT SSE CALL → BACKEND ONLY
-      const evtSource = new EventSource(
-        `${API_BASE}/api/chatbot/preview-stream/${chatbotId}?messages=${encodedMessages}`
-      );
-
-      evtSource.addEventListener("token", (e) => {
-        const token = JSON.parse(e.data);
-        setStreamedReply((prev) => prev + token);
-      });
-
-      evtSource.addEventListener("done", () => {
-        setMessages((prev) => [
-          ...prev,
-          { role: "assistant", content: streamedReply },
-        ]);
-        setStreamedReply("");
-        setIsStreaming(false);
-        evtSource.close();
-      });
-
-      evtSource.addEventListener("error", () => {
-        console.error("SSE stream error");
-        setIsStreaming(false);
-        evtSource.close();
-        setMessages((prev) => [
-          ...prev,
-          { role: "assistant", content: "⚠️ Connection lost. Try again." },
-        ]);
-      });
-    } catch (err) {
-      console.error("Preview stream error:", err);
-      setIsStreaming(false);
+    if (!chatbotId) {
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: "⚠️ Something went wrong." },
+        { role: "assistant", content: "⚠️ Chatbot not saved yet." },
       ]);
+      setIsStreaming(false);
+      return;
     }
+
+    // ✅ ALWAYS ENCODE SAFE
+    const encodedMessages = encodeURIComponent(JSON.stringify(newMessages));
+
+    // ✅ GUARANTEED BACKEND SSE URL (NO undefined EVER AGAIN)
+    const streamUrl = `${API_BASE}/api/chatbot/preview-stream/${chatbotId}?messages=${encodedMessages}`;
+    console.log("✅ SSE CONNECT:", streamUrl);
+
+    // ✅ CLOSE OLD STREAM
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+    }
+
+    const evtSource = new EventSource(streamUrl);
+    eventSourceRef.current = evtSource;
+
+    evtSource.addEventListener("token", (e) => {
+      const token = JSON.parse(e.data);
+      setStreamedReply((prev) => prev + token);
+    });
+
+    evtSource.addEventListener("done", () => {
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: streamedReply },
+      ]);
+      setStreamedReply("");
+      setIsStreaming(false);
+      evtSource.close();
+    });
+
+    evtSource.onerror = () => {
+      console.error("❌ SSE stream error");
+      setIsStreaming(false);
+      evtSource.close();
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "⚠️ Connection lost. Try again." },
+      ]);
+    };
   };
 
   const handleKeyDown = (e) => {
@@ -105,7 +111,7 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
   return (
     <div style={{ ...styles.wrapper, background: themeColors.background }}>
       <div style={styles.chatbotPreview}>
-        {/* Header */}
+
         <div style={{ ...styles.header, background: themeColors.userBubble }}>
           {chatbotConfig?.logoUrl && (
             <img src={chatbotConfig.logoUrl} alt="Logo" style={styles.logo} />
@@ -115,7 +121,6 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
           </span>
         </div>
 
-        {/* Messages */}
         <div style={styles.messages}>
           {messages.map((msg, i) => (
             <div
@@ -159,7 +164,6 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input */}
         <div style={styles.inputArea}>
           <textarea
             value={input}
@@ -181,7 +185,7 @@ export default function ChatbotPreview({ chatbotConfig, user }) {
   );
 }
 
-/* -------------------------------- Styles -------------------------------- */
+/* --------------------------- Styles --------------------------- */
 
 const styles = {
   wrapper: { display: "flex", height: "100%" },
