@@ -16,17 +16,19 @@ export default function ChatbotPreview({ chatbotConfig }) {
   const API_BASE =
     import.meta.env.VITE_API_URL || "https://aiaera-backend.onrender.com";
 
-  // ✅ ✅ BLACK & WHITE DEFAULT UNTIL USER CUSTOMIZES
+  // ✅ BLACK & WHITE DEFAULT (HIGH CONTRAST)
   const isUserCustomized =
     chatbotConfig?.themeColors?.__custom === true;
 
   const themeColors = isUserCustomized
     ? chatbotConfig.themeColors
     : {
-        background: "#000000", // Black
-        userBubble: "#ffffff", // White
-        botBubble: "#1a1a1a",  // Soft black
-        text: "#080808ff",      // White text
+        background: "#0A0A0A",
+        userBubble: "#F2F2F2",
+        botBubble: "#1E1E1E",
+        userText: "#000000",
+        botText: "#FFFFFF",
+        accent: "#00EAFF",
       };
 
   const calendlyLink = chatbotConfig?.calendlyLink;
@@ -41,7 +43,7 @@ export default function ChatbotPreview({ chatbotConfig }) {
     };
   }, []);
 
-  // ✅ Detect booking intent
+  // ✅ Booking intent detection
   const isBookingIntent = (text) => {
     const t = text.toLowerCase();
     return (
@@ -107,7 +109,7 @@ export default function ChatbotPreview({ chatbotConfig }) {
         },
       ];
 
-      // ✅ AUTO APPEND CLICKABLE CALENDLY LINK
+      // ✅ AUTO ADD CLICKABLE CALENDLY LINK
       if (calendlyLink && isBookingIntent(userMessage)) {
         updatedMessages.push({
           role: "assistant",
@@ -143,15 +145,17 @@ export default function ChatbotPreview({ chatbotConfig }) {
   return (
     <div style={{ ...styles.wrapper, background: themeColors.background }}>
       <div style={styles.chatbotPreview}>
+        {/* HEADER */}
         <div style={{ ...styles.header, background: themeColors.userBubble }}>
           {chatbotConfig?.logoUrl && (
             <img src={chatbotConfig.logoUrl} alt="Logo" style={styles.logo} />
           )}
-          <span style={{ fontWeight: "bold", color: "#000" }}>
+          <span style={{ fontWeight: "bold", color: themeColors.userText }}>
             {chatbotConfig?.name || "Business Assistant"}
           </span>
         </div>
 
+        {/* MESSAGES */}
         <div style={styles.messages}>
           {messages.map((msg, i) => (
             <div
@@ -170,7 +174,10 @@ export default function ChatbotPreview({ chatbotConfig }) {
                     msg.role === "user"
                       ? themeColors.userBubble
                       : themeColors.botBubble,
-                  color: themeColors.text,
+                  color:
+                    msg.role === "user"
+                      ? themeColors.userText
+                      : themeColors.botText,
                 }}
               >
                 {msg.isLink ? (
@@ -179,7 +186,7 @@ export default function ChatbotPreview({ chatbotConfig }) {
                     target="_blank"
                     rel="noreferrer"
                     style={{
-                      color: "#00eaff",
+                      color: themeColors.accent,
                       textDecoration: "underline",
                       fontWeight: "bold",
                     }}
@@ -199,7 +206,7 @@ export default function ChatbotPreview({ chatbotConfig }) {
                 style={{
                   ...styles.bubble,
                   backgroundColor: themeColors.botBubble,
-                  color: themeColors.text,
+                  color: themeColors.botText,
                 }}
               >
                 {streamedReply || "Typing..."}
@@ -210,18 +217,26 @@ export default function ChatbotPreview({ chatbotConfig }) {
           <div ref={messagesEndRef} />
         </div>
 
+        {/* INPUT */}
         <div style={styles.inputArea}>
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Ask something..."
-            style={{ ...styles.textarea, color: themeColors.text }}
+            style={{
+              ...styles.textarea,
+              color: themeColors.botText,
+            }}
           />
           <button
             onClick={sendMessage}
             disabled={isStreaming}
-            style={{ ...styles.button, background: themeColors.userBubble }}
+            style={{
+              ...styles.button,
+              background: themeColors.userBubble,
+              color: themeColors.userText,
+            }}
           >
             Send
           </button>
@@ -231,8 +246,11 @@ export default function ChatbotPreview({ chatbotConfig }) {
   );
 }
 
+/* ---------------- STYLES ---------------- */
+
 const styles = {
   wrapper: { display: "flex", height: "100%" },
+
   chatbotPreview: {
     flex: 1,
     display: "flex",
@@ -240,19 +258,21 @@ const styles = {
     borderRadius: "16px",
     overflow: "hidden",
   },
+
   header: {
     padding: "12px",
-    color: "white",
     display: "flex",
     alignItems: "center",
     gap: "10px",
   },
+
   logo: {
     width: "36px",
     height: "36px",
     objectFit: "cover",
     borderRadius: "10px",
   },
+
   messages: {
     flex: 1,
     overflowY: "auto",
@@ -261,20 +281,24 @@ const styles = {
     flexDirection: "column",
     gap: "8px",
   },
+
   message: { display: "flex", maxWidth: "80%" },
   userMsg: { alignSelf: "flex-end" },
   assistantMsg: { alignSelf: "flex-start" },
+
   bubble: {
     padding: "10px 14px",
     borderRadius: "16px",
     wordBreak: "break-word",
   },
+
   inputArea: {
     display: "flex",
     gap: "8px",
     padding: "12px",
     borderTop: "1px solid rgba(255,255,255,0.1)",
   },
+
   textarea: {
     flex: 1,
     padding: "10px",
@@ -283,8 +307,8 @@ const styles = {
     border: "none",
     outline: "none",
   },
+
   button: {
-    color: "black",
     border: "none",
     padding: "0 18px",
     borderRadius: "12px",
