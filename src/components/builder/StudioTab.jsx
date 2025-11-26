@@ -1,13 +1,13 @@
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Bot, Code2, Copy, Eye } from "lucide-react";   // ✅ Calendar REMOVED
+import { Bot, Code2, Copy } from "lucide-react"; // ✅ Eye & Calendar removed
 
 import ColorSwatch from "./ColorSwatch";
 import ChatbotPreview from "@/components/ChatbotPreview.jsx";
 
 export default function StudioTab({
-  presetThemes = {},                  // ✅ HARD SAFETY DEFAULT
+  presetThemes = {},
   themeColors,
   setThemeColors,
 
@@ -27,17 +27,13 @@ export default function StudioTab({
   showEmbed,
   setShowEmbed,
 
-  calendlyLink, // ✅ Still passed ONLY to chatbot (not UI button)
+  calendlyLink, // still passed only to chatbot
 }) {
   const [copying, setCopying] = useState(false);
 
-  // ✅ SAFE FRONTEND BASE (PREVENTS undefined/public-chatbot URLs)
   const SAFE_APP_BASE =
     APP_BASE_URL || window?.location?.origin || "";
 
-  // -----------------------------
-  // Logo Upload Handler
-  // -----------------------------
   const handleLogoUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -53,9 +49,6 @@ export default function StudioTab({
     }
   };
 
-  // -----------------------------
-  // Copy Embed Code
-  // -----------------------------
   const copyEmbedCode = async (embedCode) => {
     try {
       setCopying(true);
@@ -65,9 +58,6 @@ export default function StudioTab({
     }
   };
 
-  // -----------------------------
-  // ✅ SAFE EMBED CODE STRING
-  // -----------------------------
   const iframeEmbed = useMemo(() => {
     if (!SAFE_APP_BASE || !chatbotId) return "";
     return `<iframe src="${SAFE_APP_BASE}/public-chatbot/${chatbotId}" width="400" height="500" style="border:none; border-radius:16px;"></iframe>`;
@@ -83,8 +73,6 @@ export default function StudioTab({
 
         {/* LEFT — DESIGN PANEL */}
         <Card className="bg-white/5 border border-white/10 backdrop-blur-xl p-6 rounded-3xl shadow-[0_0_40px_rgba(127,90,240,0.25)]">
-
-          {/* ✅ PRESET THEMES (SAFE LOOP) */}
           <div className="flex flex-wrap gap-3 mb-6">
             {Object.keys(presetThemes).length > 0 ? (
               Object.entries(presetThemes).map(([key, theme]) => (
@@ -101,7 +89,6 @@ export default function StudioTab({
             )}
           </div>
 
-          {/* Color Swatches */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <ColorSwatch
               label="Background"
@@ -131,7 +118,6 @@ export default function StudioTab({
             />
           </div>
 
-          {/* Logo Upload */}
           <div className="flex items-center gap-4 mt-6">
             <input
               ref={logoInputRef}
@@ -168,13 +154,12 @@ export default function StudioTab({
                 files,
                 logoUrl,
                 themeColors,
-                calendlyLink, // ✅ Used ONLY inside chatbot now
+                calendlyLink,
               }}
               user={user}
             />
           </div>
 
-          {/* ✅ ONLY EMBED BUTTON REMAINS */}
           {isConfigSaved && chatbotId && (
             <div className="mt-5 space-y-3">
               <Button
@@ -188,23 +173,13 @@ export default function StudioTab({
         </Card>
       </div>
 
-      {/* EMBED CODE DRAWER */}
+      {/* EMBED CODE DRAWER (NO PREVIEW LINK NOW) */}
       {showEmbed && isConfigSaved && chatbotId && (
         <Card className="bg-white/5 border border-white/10 p-6 rounded-3xl backdrop-blur-xl">
           <div className="flex items-center justify-between mb-3">
             <h4 className="font-semibold flex items-center gap-2">
               <Code2 className="w-4 h-4" /> Embed Code
             </h4>
-
-            <a
-              href={`${SAFE_APP_BASE}/public-chatbot/${chatbotId}`}
-              target="_blank"
-              rel="noreferrer"
-              className="text-sm text-[#bfa7ff] hover:underline flex items-center gap-1"
-            >
-              <Eye className="w-4 h-4" />
-              Preview
-            </a>
           </div>
 
           <textarea
