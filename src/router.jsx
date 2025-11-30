@@ -1,8 +1,8 @@
 // src/router.jsx
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import React, { Suspense, lazy } from "react";
 
-// Lazy-load pages
+// Lazy-loaded pages
 const Login = lazy(() => import("./pages/Login.jsx"));
 const Signup = lazy(() => import("./pages/Signup.jsx"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword.jsx"));
@@ -24,12 +24,14 @@ const PublicChatbot = lazy(() =>
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import MainLayout from "./components/MainLayout.jsx";
 
-// 404 fallback
+// 404 Fallback Page
 function NotFound() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center text-white bg-[#0a0a12]">
       <h1 className="text-4xl mb-2 font-bold">404 - Page Not Found</h1>
-      <p className="text-gray-400 mb-4">The page you're looking for doesn't exist.</p>
+      <p className="text-gray-400 mb-4">
+        The page you're looking for doesn't exist.
+      </p>
       <a
         href="/"
         className="px-6 py-3 bg-[#7f5af0] rounded-xl shadow-md hover:bg-[#9b7ff7] transition-all"
@@ -51,7 +53,7 @@ export default function AppRoutes() {
     >
       <Routes>
         {/* ----------------------------- */}
-        {/* PUBLIC AUTH ROUTES           */}
+        {/* PUBLIC AUTH ROUTES            */}
         {/* ----------------------------- */}
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
@@ -59,12 +61,12 @@ export default function AppRoutes() {
         <Route path="/update-password" element={<UpdatePassword />} />
 
         {/* ----------------------------- */}
-        {/* PUBLIC CHATBOT ROUTE          */}
+        {/* ✅ PUBLIC CHATBOT (IFRAME)    */}
         {/* ----------------------------- */}
         <Route path="/public-chatbot/:id" element={<PublicChatbot />} />
 
         {/* ----------------------------- */}
-        {/* PROTECTED PAGES (Main App)    */}
+        {/* PROTECTED MAIN APP ROUTES     */}
         {/* ----------------------------- */}
         <Route
           path="/"
@@ -133,12 +135,12 @@ export default function AppRoutes() {
         />
 
         {/* ----------------------------- */}
-        {/* PUBLIC PRICING PAGE             */}
+        {/* PUBLIC PRICING PAGE           */}
         {/* ----------------------------- */}
         <Route path="/pricing" element={<Pricing />} />
 
         {/* ----------------------------- */}
-        {/* 404 ROUTE                     */}
+        {/* 404 FALLBACK                  */}
         {/* ----------------------------- */}
         <Route path="*" element={<NotFound />} />
       </Routes>
