@@ -1,5 +1,3 @@
-// src/pages/public-chatbot/PublicChatbot.jsx
-
 import { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 
@@ -18,7 +16,6 @@ export default function PublicChatbot() {
 
   const messagesEndRef = useRef(null);
 
-  // 🔒 FIX: Prevent Vite from printing ALL env variables in console
   const [API_BASE, setAPIBase] = useState("");
 
   useEffect(() => {
@@ -30,7 +27,7 @@ export default function PublicChatbot() {
   // LOAD CHATBOT CONFIG
   // ------------------------------
   useEffect(() => {
-    if (!API_BASE) return; // Wait for env to load
+    if (!API_BASE) return;
     fetchChatbot();
   }, [API_BASE]);
 
@@ -54,10 +51,10 @@ export default function PublicChatbot() {
   }, [messages, streamedReply]);
 
   // ------------------------------
-  // SEND MESSAGE (STREAM)
+  // ✅ ✅ ✅ SEND MESSAGE (FIXED FOR OPTION 1)
   // ------------------------------
   const sendMessage = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || isStreaming) return;
 
     const newMessages = [
       ...messages.slice(-6),
@@ -70,17 +67,13 @@ export default function PublicChatbot() {
     setIsStreaming(true);
 
     try {
-      const evtSource = new EventSource(
-        `${API_BASE}/api/chatbot/preview-stream/${id}`
+      const encodedMessages = encodeURIComponent(
+        JSON.stringify(newMessages)
       );
 
-      evtSource.onopen = () => {
-        evtSource.dispatchEvent(
-          new MessageEvent("send", {
-            data: JSON.stringify({ messages: newMessages }),
-          })
-        );
-      };
+      const evtSource = new EventSource(
+        `${API_BASE}/api/chatbot/preview-stream/${id}?messages=${encodedMessages}`
+      );
 
       evtSource.addEventListener("token", (e) => {
         const token = JSON.parse(e.data);
@@ -92,13 +85,18 @@ export default function PublicChatbot() {
           ...prev,
           { role: "assistant", content: streamedReply },
         ]);
+        setStreamedReply("");
         setIsStreaming(false);
         evtSource.close();
       });
 
       evtSource.onerror = () => {
-        setIsStreaming(false);
         evtSource.close();
+        setIsStreaming(false);
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: "⚠️ Connection lost." },
+        ]);
       };
     } catch (err) {
       console.error("Stream error:", err);
