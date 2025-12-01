@@ -23,7 +23,6 @@ export default function Appointments() {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [plan, setPlan] = useState("free");
-
   const [activeTab, setActiveTab] = useState("dashboard");
 
   const isExpired = (dateStr) =>
@@ -40,7 +39,6 @@ export default function Appointments() {
 
         setUserEmail(user.email);
 
-        // DEV OVERRIDE (always PRO)
         if (user.email === FREE_ACCESS_EMAIL) {
           setPlan("pro");
           await fetchAppointments(user.id);
@@ -84,9 +82,6 @@ export default function Appointments() {
     init();
   }, []);
 
-  // ---------------------------------------------
-  // FETCH APPOINTMENTS
-  // ---------------------------------------------
   const fetchAppointments = async (userId) => {
     const { data } = await supabase
       .from("appointments")
@@ -99,9 +94,6 @@ export default function Appointments() {
     setAppointments(data || []);
   };
 
-  // ---------------------------------------------
-  // FETCH LEADS (for conversion metric)
-  // ---------------------------------------------
   const fetchLeads = async (userId) => {
     const { data } = await supabase
       .from("leads")
@@ -111,9 +103,6 @@ export default function Appointments() {
     setLeads(data || []);
   };
 
-  // ---------------------------------------------
-  // EXPORT CSV (PRO ONLY)
-  // ---------------------------------------------
   const exportCSV = () => {
     if (plan !== "pro") return alert("Upgrade to PRO to export.");
     if (!appointments.length) return alert("No appointments to export.");
@@ -165,11 +154,6 @@ export default function Appointments() {
     return arr;
   }, [appointments, plan]);
 
-  const last7 = trend7.reduce((a, b) => a + b.count, 0);
-
-  // ---------------------------------------------
-  // BUSINESS KPIs (Option C)
-  // ---------------------------------------------
   const total = plan === "pro" ? appointments.length : "—";
 
   const conversionRate = useMemo(() => {
@@ -196,7 +180,7 @@ export default function Appointments() {
 
       const diff =
         (new Date(appt.created_at) - new Date(lead.created_at)) /
-        3600000; // hours
+        3600000;
 
       if (diff > 0) {
         totalHours += diff;
@@ -209,9 +193,6 @@ export default function Appointments() {
     return (totalHours / count).toFixed(1) + " hrs";
   }, [appointments, leads, plan]);
 
-  // ---------------------------------------------
-  // LOADING UI
-  // ---------------------------------------------
   if (loading)
     return (
       <ProtectedRoute>
@@ -269,7 +250,6 @@ export default function Appointments() {
               : <Locked text="Universe is Pro only." />)
           }
 
-          {/* Export button */}
           <div className="mt-10">
             <button
               onClick={exportCSV}
@@ -284,9 +264,7 @@ export default function Appointments() {
   );
 }
 
-/* ---------------------------------------------------- */
-/* TAB COMPONENT */
-/* ---------------------------------------------------- */
+/* ---------------- TAB ---------------- */
 function Tab({ id, activeTab, setActiveTab, icon, label }) {
   const active = id === activeTab;
 
@@ -305,9 +283,7 @@ function Tab({ id, activeTab, setActiveTab, icon, label }) {
   );
 }
 
-/* ---------------------------------------------------- */
-/* LOCKED BOX */
-/* ---------------------------------------------------- */
+/* ---------------- LOCKED ---------------- */
 function Locked({ text }) {
   return (
     <div className="flex flex-col items-center justify-center h-[380px] bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl text-gray-400">
@@ -317,18 +293,14 @@ function Locked({ text }) {
   );
 }
 
-/* ---------------------------------------------------- */
-/* DASHBOARD VIEW */
-/* ---------------------------------------------------- */
+/* ---------------- DASHBOARD VIEW ---------------- */
 function DashboardView({ total, conversionRate, avgTime, trend7, plan }) {
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
 
         <KPI title="Total Appointments" value={total} icon={<Calendar />} locked={plan !== "pro"} />
-
         <KPI title="Conversion Rate" value={conversionRate} icon={<Users />} locked={plan !== "pro"} />
-
         <KPI title="Avg Lead → Appointment" value={avgTime} icon={<Clock />} locked={plan !== "pro"} />
 
       </div>
@@ -340,9 +312,7 @@ function DashboardView({ total, conversionRate, avgTime, trend7, plan }) {
   );
 }
 
-/* ---------------------------------------------------- */
-/* KPI CARD */
-/* ---------------------------------------------------- */
+/* ---------------- KPI ---------------- */
 function KPI({ title, value, icon, locked }) {
   return (
     <motion.div whileHover={{ scale: 1.03 }} className="rounded-2xl border border-white/10 bg-white/5 p-5">
@@ -359,20 +329,27 @@ function KPI({ title, value, icon, locked }) {
   );
 }
 
-/* ---------------------------------------------------- */
-/* SPARKLINE */
-/* ---------------------------------------------------- */
+/* ---------------- ✅ SAFE SPARKLINE (NaN FIXED) ---------------- */
 function Sparkline({ trend7 }) {
   const width = 800;
   const height = 120;
   const pad = 8;
 
+  if (!Array.isArray(trend7) || trend7.length === 0) return null;
+
+  const max = Math.max(...trend7.map((x) => Number(x.count) || 0)) || 1;
+
+  const stepX =
+    trend7.length > 1
+      ? (width - pad * 2) / (trend7.length - 1)
+      : 0;
+
   const points = trend7.map((t, i) => {
-    const max = Math.max(...trend7.map((x) => x.count));
-    const stepX = (width - pad * 2) / (trend7.length - 1);
+    const safeCount = Number(t.count) || 0;
     const x = pad + i * stepX;
     const y =
-      height - pad - (t.count / max) * (height - pad * 2);
+      height - pad - (safeCount / max) * (height - pad * 2);
+
     return [x, y];
   });
 
@@ -401,9 +378,7 @@ function Sparkline({ trend7 }) {
   );
 }
 
-/* ---------------------------------------------------- */
-/* TIMELINE VIEW */
-/* ---------------------------------------------------- */
+/* ---------------- TIMELINE ---------------- */
 function TimelineView({ appointments }) {
   if (!appointments.length) return <Locked text="No appointments yet." />;
 
@@ -429,9 +404,7 @@ function TimelineView({ appointments }) {
   );
 }
 
-/* ---------------------------------------------------- */
-/* UNIVERSE GRID */
-/* ---------------------------------------------------- */
+/* ---------------- UNIVERSE ---------------- */
 function UniverseGridView({ appointments }) {
   if (!appointments.length) return <Locked text="No appointments yet." />;
 
