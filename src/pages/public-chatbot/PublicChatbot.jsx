@@ -1,6 +1,35 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 
+/* ✅ LINK PARSER (MAKES URLS CLICKABLE) */
+const renderMessageWithLinks = (text) => {
+  if (!text) return null;
+
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = text.split(urlRegex);
+
+  return parts.map((part, index) => {
+    if (part.match(urlRegex)) {
+      return (
+        <a
+          key={index}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            color: "#00e5ff",
+            textDecoration: "underline",
+            fontWeight: "bold",
+          }}
+        >
+          {part}
+        </a>
+      );
+    }
+    return <span key={index}>{part}</span>;
+  });
+};
+
 export default function PublicChatbot() {
   const { id } = useParams(); // chatbot ID from URL
   const [chatbot, setChatbot] = useState(null);
@@ -50,7 +79,7 @@ export default function PublicChatbot() {
   }, [messages, streamedReply]);
 
   // ------------------------------
-  // ✅ ✅ ✅ SEND MESSAGE (FULLY FIXED)
+  // ✅ ✅ ✅ SEND MESSAGE (FINAL FIXED VERSION)
   // ------------------------------
   const sendMessage = async () => {
     if (!input.trim() || isStreaming) return;
@@ -74,11 +103,11 @@ export default function PublicChatbot() {
         `${API_BASE}/api/chatbot/preview-stream/${id}?messages=${encodedMessages}`
       );
 
-      let fullReply = ""; // ✅ CRITICAL FIX: local accumulator
+      let fullReply = ""; // ✅ local accumulator
 
       evtSource.addEventListener("token", (e) => {
         const token = JSON.parse(e.data);
-        fullReply += token; // ✅ build final message safely
+        fullReply += token;
         setStreamedReply((prev) => prev + token);
       });
 
@@ -231,7 +260,7 @@ export default function PublicChatbot() {
                   color: theme.text,
                 }}
               >
-                {msg.content}
+                {renderMessageWithLinks(msg.content)}
               </div>
             </div>
           ))}
@@ -248,7 +277,9 @@ export default function PublicChatbot() {
                   color: theme.text,
                 }}
               >
-                {streamedReply || (
+                {streamedReply ? (
+                  renderMessageWithLinks(streamedReply)
+                ) : (
                   <div style={{ display: "flex", gap: "5px" }}>
                     <div style={dotStyle}></div>
                     <div style={{ ...dotStyle, animationDelay: "0.2s" }}></div>
