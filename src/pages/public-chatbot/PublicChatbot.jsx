@@ -15,7 +15,6 @@ export default function PublicChatbot() {
   const [streamedReply, setStreamedReply] = useState("");
 
   const messagesEndRef = useRef(null);
-
   const [API_BASE, setAPIBase] = useState("");
 
   useEffect(() => {
@@ -51,7 +50,7 @@ export default function PublicChatbot() {
   }, [messages, streamedReply]);
 
   // ------------------------------
-  // ✅ ✅ ✅ SEND MESSAGE (FIXED FOR OPTION 1)
+  // ✅ ✅ ✅ SEND MESSAGE (FULLY FIXED)
   // ------------------------------
   const sendMessage = async () => {
     if (!input.trim() || isStreaming) return;
@@ -75,16 +74,23 @@ export default function PublicChatbot() {
         `${API_BASE}/api/chatbot/preview-stream/${id}?messages=${encodedMessages}`
       );
 
+      let fullReply = ""; // ✅ CRITICAL FIX: local accumulator
+
       evtSource.addEventListener("token", (e) => {
         const token = JSON.parse(e.data);
+        fullReply += token; // ✅ build final message safely
         setStreamedReply((prev) => prev + token);
       });
 
       evtSource.addEventListener("done", () => {
         setMessages((prev) => [
           ...prev,
-          { role: "assistant", content: streamedReply },
+          {
+            role: "assistant",
+            content: fullReply || "⚠️ No reply generated.",
+          },
         ]);
+
         setStreamedReply("");
         setIsStreaming(false);
         evtSource.close();
