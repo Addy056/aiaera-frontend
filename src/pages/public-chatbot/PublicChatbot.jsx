@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 
-/* ✅ LINK PARSER (MAKES URLS CLICKABLE) */
+/* ✅ LINK PARSER */
 const renderMessageWithLinks = (text) => {
   if (!text) return null;
 
@@ -31,11 +31,10 @@ const renderMessageWithLinks = (text) => {
 };
 
 export default function PublicChatbot() {
-  const { id } = useParams(); // chatbot ID from URL
+  const { id } = useParams();
   const [chatbot, setChatbot] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Chat state
   const [messages, setMessages] = useState([
     { role: "assistant", content: "Hi 👋 How can I help you today?" },
   ]);
@@ -51,9 +50,6 @@ export default function PublicChatbot() {
     setAPIBase(base);
   }, []);
 
-  // ------------------------------
-  // LOAD CHATBOT CONFIG
-  // ------------------------------
   useEffect(() => {
     if (!API_BASE) return;
     fetchChatbot();
@@ -63,7 +59,6 @@ export default function PublicChatbot() {
     try {
       const res = await fetch(`${API_BASE}/api/embed/config/${id}`);
       const data = await res.json();
-
       if (!data.success) throw new Error("Chatbot not found");
       setChatbot(data.chatbot);
     } catch (err) {
@@ -73,14 +68,10 @@ export default function PublicChatbot() {
     }
   };
 
-  // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, streamedReply]);
 
-  // ------------------------------
-  // ✅ ✅ ✅ SEND MESSAGE (FINAL FIXED VERSION)
-  // ------------------------------
   const sendMessage = async () => {
     if (!input.trim() || isStreaming) return;
 
@@ -95,15 +86,13 @@ export default function PublicChatbot() {
     setIsStreaming(true);
 
     try {
-      const encodedMessages = encodeURIComponent(
-        JSON.stringify(newMessages)
-      );
+      const encodedMessages = encodeURIComponent(JSON.stringify(newMessages));
 
       const evtSource = new EventSource(
         `${API_BASE}/api/chatbot/preview-stream/${id}?messages=${encodedMessages}`
       );
 
-      let fullReply = ""; // ✅ local accumulator
+      let fullReply = "";
 
       evtSource.addEventListener("token", (e) => {
         const token = JSON.parse(e.data);
@@ -114,12 +103,8 @@ export default function PublicChatbot() {
       evtSource.addEventListener("done", () => {
         setMessages((prev) => [
           ...prev,
-          {
-            role: "assistant",
-            content: fullReply || "⚠️ No reply generated.",
-          },
+          { role: "assistant", content: fullReply || "⚠️ No reply generated." },
         ]);
-
         setStreamedReply("");
         setIsStreaming(false);
         evtSource.close();
@@ -136,10 +121,6 @@ export default function PublicChatbot() {
     } catch (err) {
       console.error("Stream error:", err);
       setIsStreaming(false);
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: "⚠️ Something went wrong." },
-      ]);
     }
   };
 
@@ -150,22 +131,13 @@ export default function PublicChatbot() {
     }
   };
 
-  // ------------------------------
-  // UI STATES
-  // ------------------------------
-  if (loading)
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-black text-white">
-        Loading Chatbot...
-      </div>
-    );
+  if (loading) {
+    return <div style={{ padding: 20 }}>Loading chatbot…</div>;
+  }
 
-  if (!chatbot)
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-black text-white">
-        Chatbot not found.
-      </div>
-    );
+  if (!chatbot) {
+    return <div style={{ padding: 20 }}>Chatbot not found.</div>;
+  }
 
   const theme = chatbot.themeColors || {
     background: "#0b0b1a",
@@ -177,21 +149,18 @@ export default function PublicChatbot() {
   return (
     <div
       style={{
+        width: "100%",
+        height: "100%",
         background: theme.background,
         color: theme.text,
-        height: "100vh",
-        padding: "0",
-        margin: "0",
-        fontFamily: "sans-serif",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
+        margin: 0,
+        padding: 0,
       }}
     >
       <div
         style={{
-          width: "400px",
-          height: "520px",
+          width: "100%",
+          height: "100%",
           background: "rgba(255,255,255,0.08)",
           backdropFilter: "blur(10px)",
           borderRadius: "16px",
@@ -212,6 +181,7 @@ export default function PublicChatbot() {
             justifyContent: "center",
             gap: "10px",
             color: "#fff",
+            flexShrink: 0,
           }}
         >
           {chatbot.logo_url && (
@@ -265,7 +235,6 @@ export default function PublicChatbot() {
             </div>
           ))}
 
-          {/* STREAMING */}
           {isStreaming && (
             <div style={{ display: "flex", justifyContent: "flex-start" }}>
               <div
@@ -274,18 +243,9 @@ export default function PublicChatbot() {
                   padding: "10px 14px",
                   borderRadius: "16px",
                   background: theme.botBubble,
-                  color: theme.text,
                 }}
               >
-                {streamedReply ? (
-                  renderMessageWithLinks(streamedReply)
-                ) : (
-                  <div style={{ display: "flex", gap: "5px" }}>
-                    <div style={dotStyle}></div>
-                    <div style={{ ...dotStyle, animationDelay: "0.2s" }}></div>
-                    <div style={{ ...dotStyle, animationDelay: "0.4s" }}></div>
-                  </div>
-                )}
+                {streamedReply || "Typing..."}
               </div>
             </div>
           )}
@@ -300,6 +260,7 @@ export default function PublicChatbot() {
             padding: "10px",
             borderTop: "1px solid rgba(255,255,255,0.1)",
             gap: "8px",
+            flexShrink: 0,
           }}
         >
           <textarea
@@ -337,12 +298,3 @@ export default function PublicChatbot() {
     </div>
   );
 }
-
-/* --- Typing Dots --- */
-const dotStyle = {
-  width: "6px",
-  height: "6px",
-  borderRadius: "50%",
-  background: "#fff",
-  animation: "bounce 1s infinite",
-};

@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Bot, Code2, Copy } from "lucide-react"; // ✅ Eye & Calendar removed
+import { Bot, Code2, Copy } from "lucide-react";
 
 import ColorSwatch from "./ColorSwatch";
 import ChatbotPreview from "@/components/ChatbotPreview.jsx";
@@ -27,12 +27,18 @@ export default function StudioTab({
   showEmbed,
   setShowEmbed,
 
-  calendlyLink, // still passed only to chatbot
+  calendlyLink,
 }) {
   const [copying, setCopying] = useState(false);
 
-  const SAFE_APP_BASE =
-    APP_BASE_URL || window?.location?.origin || "";
+  const SAFE_API_BASE =
+    API_BASE || window?.location?.origin || "";
+
+  /* ✅ CORRECT SCRIPT EMBED (FIXED DOT LAUNCHER) */
+  const scriptEmbed = useMemo(() => {
+    if (!SAFE_API_BASE || !chatbotId) return "";
+return `<script src="${SAFE_API_BASE.replace(/\/$/, "")}/api/embed/${chatbotId}.js" async></script>`;
+  }, [SAFE_API_BASE, chatbotId]);
 
   const handleLogoUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -57,11 +63,6 @@ export default function StudioTab({
       setTimeout(() => setCopying(false), 800);
     }
   };
-
-  const iframeEmbed = useMemo(() => {
-    if (!SAFE_APP_BASE || !chatbotId) return "";
-    return `<iframe src="${SAFE_APP_BASE}/public-chatbot/${chatbotId}" width="400" height="500" style="border:none; border-radius:16px;"></iframe>`;
-  }, [SAFE_APP_BASE, chatbotId]);
 
   return (
     <div className="space-y-10">
@@ -114,7 +115,9 @@ export default function StudioTab({
             <ColorSwatch
               label="Text"
               value={themeColors.text}
-              onChange={(v) => setThemeColors((p) => ({ ...p, text: v }))}
+              onChange={(v) =>
+                setThemeColors((p) => ({ ...p, text: v }))
+              }
             />
           </div>
 
@@ -173,24 +176,24 @@ export default function StudioTab({
         </Card>
       </div>
 
-      {/* EMBED CODE DRAWER (NO PREVIEW LINK NOW) */}
+      {/* ✅ CORRECT SCRIPT EMBED ONLY */}
       {showEmbed && isConfigSaved && chatbotId && (
         <Card className="bg-white/5 border border-white/10 p-6 rounded-3xl backdrop-blur-xl">
           <div className="flex items-center justify-between mb-3">
             <h4 className="font-semibold flex items-center gap-2">
-              <Code2 className="w-4 h-4" /> Embed Code
+              <Code2 className="w-4 h-4" /> Embed Code (Floating Button)
             </h4>
           </div>
 
           <textarea
             readOnly
             className="w-full h-28 bg-black/30 text-white/90 p-3 rounded-xl font-mono text-sm border border-white/10"
-            value={iframeEmbed}
+            value={scriptEmbed}
           />
 
           <div className="flex justify-between items-center mt-3 flex-wrap gap-3">
             <Button
-              onClick={() => copyEmbedCode(iframeEmbed)}
+              onClick={() => copyEmbedCode(scriptEmbed)}
               className="flex items-center gap-2 bg-gradient-to-r from-[#9b8cff] to-[#bfa7ff]"
             >
               {copying ? "Copied!" : <Copy className="w-4 h-4" />}
