@@ -37,7 +37,7 @@ export default function StudioTab({
   /* ✅ CORRECT SCRIPT EMBED (FIXED DOT LAUNCHER) */
   const scriptEmbed = useMemo(() => {
     if (!SAFE_API_BASE || !chatbotId) return "";
-return `<script src="${SAFE_API_BASE.replace(/\/$/, "")}/api/embed/${chatbotId}.js" async></script>`;
+return `<script src="${SAFE_API_BASE.replace(/\/$/, "")}/api/embed/${chatbotId}.js" async="true"></script>`;
   }, [SAFE_API_BASE, chatbotId]);
 
   const handleLogoUpload = async (e) => {
