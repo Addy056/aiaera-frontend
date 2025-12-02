@@ -139,12 +139,17 @@ export default function PublicChatbot() {
     return <div style={{ padding: 20 }}>Chatbot not found.</div>;
   }
 
-  const theme = chatbot.themeColors || {
+  /* ✅ READ FROM CONFIG SAFELY */
+  const config = chatbot.config || {};
+
+  const theme = config.themeColors || {
     background: "#0b0b1a",
     userBubble: "#7f5af0",
     botBubble: "#6b21a8",
     text: "#ffffff",
   };
+
+  const logoUrl = config.logo_url || null;
 
   return (
     <div
@@ -171,7 +176,7 @@ export default function PublicChatbot() {
           flexDirection: "column",
         }}
       >
-        {/* HEADER */}
+        {/* ✅ HEADER */}
         <div
           style={{
             padding: "12px",
@@ -184,9 +189,10 @@ export default function PublicChatbot() {
             flexShrink: 0,
           }}
         >
-          {chatbot.logo_url && (
+          {logoUrl && (
             <img
-              src={chatbot.logo_url}
+              src={logoUrl}
+              alt="Company Logo"
               style={{
                 width: "34px",
                 height: "34px",
@@ -198,7 +204,7 @@ export default function PublicChatbot() {
           <span style={{ fontWeight: "bold" }}>{chatbot.name}</span>
         </div>
 
-        {/* MESSAGES */}
+        {/* ✅ MESSAGES */}
         <div
           style={{
             flex: 1,
@@ -253,7 +259,7 @@ export default function PublicChatbot() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* INPUT */}
+        {/* ✅ INPUT */}
         <div
           style={{
             display: "flex",
