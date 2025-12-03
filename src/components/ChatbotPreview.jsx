@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 
 export default function ChatbotPreview({ chatbotConfig }) {
   const [messages, setMessages] = useState([
@@ -16,20 +16,16 @@ export default function ChatbotPreview({ chatbotConfig }) {
   const API_BASE =
     import.meta.env.VITE_API_URL || "https://aiaera-backend.onrender.com";
 
-  // ✅ BLACK & WHITE DEFAULT (HIGH CONTRAST)
-  const isUserCustomized =
-    chatbotConfig?.themeColors?.__custom === true;
-
-  const themeColors = isUserCustomized
-    ? chatbotConfig.themeColors
-    : {
-        background: "#0A0A0A",
-        userBubble: "#F2F2F2",
-        botBubble: "#1E1E1E",
-        userText: "#000000",
-        botText: "#FFFFFF",
-        accent: "#00EAFF",
-      };
+  // ✅ ALWAYS USE STUDIO COLORS (NO FALLBACK OVERRIDE)
+  const theme = useMemo(() => {
+    return {
+      background: chatbotConfig?.themeColors?.background || "#0b0b17",
+      userBubble: chatbotConfig?.themeColors?.userBubble || "#7f5af0",
+      botBubble: chatbotConfig?.themeColors?.botBubble || "#70e1ff",
+      text: chatbotConfig?.themeColors?.text || "#ffffff",
+      accent: "#00EAFF",
+    };
+  }, [chatbotConfig?.themeColors]);
 
   const calendlyLink = chatbotConfig?.calendlyLink;
 
@@ -43,7 +39,6 @@ export default function ChatbotPreview({ chatbotConfig }) {
     };
   }, []);
 
-  // ✅ Booking intent detection
   const isBookingIntent = (text) => {
     const t = text.toLowerCase();
     return (
@@ -109,7 +104,6 @@ export default function ChatbotPreview({ chatbotConfig }) {
         },
       ];
 
-      // ✅ AUTO ADD CLICKABLE CALENDLY LINK
       if (calendlyLink && isBookingIntent(userMessage)) {
         updatedMessages.push({
           role: "assistant",
@@ -143,14 +137,20 @@ export default function ChatbotPreview({ chatbotConfig }) {
   };
 
   return (
-    <div style={{ ...styles.wrapper, background: themeColors.background }}>
+    <div style={{ ...styles.wrapper, background: theme.background }}>
       <div style={styles.chatbotPreview}>
         {/* HEADER */}
-        <div style={{ ...styles.header, background: themeColors.userBubble }}>
+        <div
+          style={{
+            ...styles.header,
+            background: theme.userBubble,
+            color: theme.text,
+          }}
+        >
           {chatbotConfig?.logoUrl && (
             <img src={chatbotConfig.logoUrl} alt="Logo" style={styles.logo} />
           )}
-          <span style={{ fontWeight: "bold", color: themeColors.userText }}>
+          <span style={{ fontWeight: "bold" }}>
             {chatbotConfig?.name || "Business Assistant"}
           </span>
         </div>
@@ -172,12 +172,9 @@ export default function ChatbotPreview({ chatbotConfig }) {
                   ...styles.bubble,
                   backgroundColor:
                     msg.role === "user"
-                      ? themeColors.userBubble
-                      : themeColors.botBubble,
-                  color:
-                    msg.role === "user"
-                      ? themeColors.userText
-                      : themeColors.botText,
+                      ? theme.userBubble
+                      : theme.botBubble,
+                  color: theme.text,
                 }}
               >
                 {msg.isLink ? (
@@ -186,7 +183,7 @@ export default function ChatbotPreview({ chatbotConfig }) {
                     target="_blank"
                     rel="noreferrer"
                     style={{
-                      color: themeColors.accent,
+                      color: theme.accent,
                       textDecoration: "underline",
                       fontWeight: "bold",
                     }}
@@ -205,8 +202,8 @@ export default function ChatbotPreview({ chatbotConfig }) {
               <div
                 style={{
                   ...styles.bubble,
-                  backgroundColor: themeColors.botBubble,
-                  color: themeColors.botText,
+                  backgroundColor: theme.botBubble,
+                  color: theme.text,
                 }}
               >
                 {streamedReply || "Typing..."}
@@ -226,7 +223,7 @@ export default function ChatbotPreview({ chatbotConfig }) {
             placeholder="Ask something..."
             style={{
               ...styles.textarea,
-              color: themeColors.botText,
+              color: theme.text,
             }}
           />
           <button
@@ -234,8 +231,8 @@ export default function ChatbotPreview({ chatbotConfig }) {
             disabled={isStreaming}
             style={{
               ...styles.button,
-              background: themeColors.userBubble,
-              color: themeColors.userText,
+              background: theme.userBubble,
+              color: theme.text,
             }}
           >
             Send
