@@ -46,6 +46,7 @@ export default function StudioTab({
 
         <div className="rounded-2xl border border-white/10 bg-black/40 p-4">
           <ChatbotPreview
+            key={JSON.stringify(themeColors)}   // ✅ FORCE LIVE RE-RENDER
             chatbotId={chatbotId}
             themeColors={themeColors}
             logoUrl={logoUrl}

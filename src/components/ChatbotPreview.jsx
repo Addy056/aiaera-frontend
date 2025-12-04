@@ -1,6 +1,20 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect } from "react";
 
-export default function ChatbotPreview({ chatbotConfig }) {
+export default function ChatbotPreview({
+  chatbotId,
+  themeColors = {
+    background: "#0b0b17",
+    userBubble: "#7f5af0",
+    botBubble: "#70e1ff",
+    text: "#ffffff",
+  },
+  logoUrl,
+  businessName,
+  files = [],
+  user,
+  API_BASE,
+  calendlyLink,
+}) {
   const [messages, setMessages] = useState([
     { role: "assistant", content: "Hi 👋 How can we assist you today?" },
   ]);
@@ -13,21 +27,14 @@ export default function ChatbotPreview({ chatbotConfig }) {
   const eventSourceRef = useRef(null);
   const streamedRef = useRef("");
 
-  const API_BASE =
-    import.meta.env.VITE_API_URL || "https://aiaera-backend.onrender.com";
-
-  // ✅ ALWAYS USE STUDIO COLORS (NO FALLBACK OVERRIDE)
-  const theme = useMemo(() => {
-    return {
-      background: chatbotConfig?.themeColors?.background || "#0b0b17",
-      userBubble: chatbotConfig?.themeColors?.userBubble || "#7f5af0",
-      botBubble: chatbotConfig?.themeColors?.botBubble || "#70e1ff",
-      text: chatbotConfig?.themeColors?.text || "#ffffff",
-      accent: "#00EAFF",
-    };
-  }, [chatbotConfig?.themeColors]);
-
-  const calendlyLink = chatbotConfig?.calendlyLink;
+  // ✅ LIVE THEME (DIRECT FROM PROPS – FULLY REACTIVE)
+  const theme = {
+    background: themeColors.background,
+    userBubble: themeColors.userBubble,
+    botBubble: themeColors.botBubble,
+    text: themeColors.text,
+    accent: "#00EAFF",
+  };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -65,8 +72,6 @@ export default function ChatbotPreview({ chatbotConfig }) {
     setIsStreaming(true);
     setStreamedReply("");
     streamedRef.current = "";
-
-    const chatbotId = chatbotConfig?.id;
 
     if (!chatbotId) {
       setMessages((prev) => [
@@ -147,11 +152,11 @@ export default function ChatbotPreview({ chatbotConfig }) {
             color: theme.text,
           }}
         >
-          {chatbotConfig?.logoUrl && (
-            <img src={chatbotConfig.logoUrl} alt="Logo" style={styles.logo} />
+          {logoUrl && (
+            <img src={logoUrl} alt="Logo" style={styles.logo} />
           )}
           <span style={{ fontWeight: "bold" }}>
-            {chatbotConfig?.name || "Business Assistant"}
+            {businessName || "Business Assistant"}
           </span>
         </div>
 
