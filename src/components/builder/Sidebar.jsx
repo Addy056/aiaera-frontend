@@ -1,13 +1,12 @@
 // src/components/builder/Sidebar.jsx
 
-import { Building2, FileText, Globe, Palette } from "lucide-react";
+import { Building2, FileText, Globe } from "lucide-react";
 
 export default function Sidebar({ activeTab, setActiveTab }) {
   const tabs = [
     { id: "business", label: "Business", icon: Building2 },
     { id: "files", label: "Files", icon: FileText },
     { id: "website", label: "Website", icon: Globe },
-    { id: "studio", label: "Studio", icon: Palette },
   ];
 
   return (
