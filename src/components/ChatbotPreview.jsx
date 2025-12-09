@@ -27,7 +27,6 @@ export default function ChatbotPreview({
   const eventSourceRef = useRef(null);
   const streamedRef = useRef("");
 
-  // ✅ LIVE THEME (DIRECT FROM PROPS – FULLY REACTIVE)
   const theme = {
     background: themeColors.background,
     userBubble: themeColors.userBubble,
@@ -144,6 +143,7 @@ export default function ChatbotPreview({
   return (
     <div style={{ ...styles.wrapper, background: theme.background }}>
       <div style={styles.chatbotPreview}>
+
         {/* HEADER */}
         <div
           style={{
@@ -191,6 +191,8 @@ export default function ChatbotPreview({
                       color: theme.accent,
                       textDecoration: "underline",
                       fontWeight: "bold",
+                      wordBreak: "break-all",        // ✅ FIX
+                      overflowWrap: "anywhere",     // ✅ FIX
                     }}
                   >
                     📅 Book Your Meeting
@@ -291,7 +293,11 @@ const styles = {
   bubble: {
     padding: "10px 14px",
     borderRadius: "16px",
-    wordBreak: "break-word",
+
+    whiteSpace: "pre-wrap",      // ✅ FIX
+    wordBreak: "break-word",     // ✅ FIX
+    overflowWrap: "anywhere",    // ✅ FIX
+    maxWidth: "100%",            // ✅ FIX
   },
 
   inputArea: {
