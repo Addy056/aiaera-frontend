@@ -130,18 +130,18 @@ export default function ChatbotPreview({
     evtSource.addEventListener("done", () => {
       const finalText = streamedRef.current.trim();
 
+      const cleanedText = (finalText || "⚠️ No response generated.")
+        .replace(/https?:\/\/\S+/g, "")          // remove raw URLs
+        .replace(/book your call here:?/gi, "") // remove label
+        .replace(/✅/g, "")                      // remove stray check
+        .trim();
+
       const updatedMessages = [
         ...newMessages,
-        {
-          role: "assistant",
-          content: (finalText || "⚠️ No response generated.").replace(
-            /https?:\/\/\S+/g,
-            "" // ✅ REMOVE RAW CALENDLY URL FROM TEXT
-          ),
-        },
+        { role: "assistant", content: cleanedText },
       ];
 
-      // ✅ PUSH ONLY A CLEAN BUTTON (NO RAW LINK)
+      // ✅ PUSH ONLY A SINGLE CLEAN CTA BUTTON
       if (calendlyLink && isBookingIntent(userMessage)) {
         updatedMessages.push({
           role: "assistant",
@@ -222,12 +222,16 @@ export default function ChatbotPreview({
                     target="_blank"
                     rel="noreferrer"
                     style={{
-                      ...styles.link,
                       background: theme.userBubble,
                       color: "#fff",
-                      padding: "10px 14px",
-                      borderRadius: "12px",
+                      padding: "12px 18px",
+                      borderRadius: "14px",
                       textDecoration: "none",
+                      fontWeight: "bold",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      boxShadow: "0 6px 20px rgba(0,0,0,0.35)",
                     }}
                   >
                     ✅ Book Your Call
@@ -332,14 +336,6 @@ const styles = {
     wordBreak: "break-word",
     overflowWrap: "anywhere",
     maxWidth: "100%",
-  },
-
-  link: {
-    fontWeight: "bold",
-    display: "inline-block",
-    maxWidth: "100%",
-    wordBreak: "break-all",
-    overflowWrap: "anywhere",
   },
 
   inputArea: {
