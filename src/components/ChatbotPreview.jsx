@@ -1,5 +1,35 @@
 import { useState, useRef, useEffect } from "react";
 
+/* ✅ AUTO LINK DETECTION */
+const linkify = (text) => {
+  if (!text) return text;
+
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+
+  return text.split(urlRegex).map((part, i) => {
+    if (part.match(urlRegex)) {
+      return (
+        <a
+          key={i}
+          href={part}
+          target="_blank"
+          rel="noreferrer"
+          style={{
+            color: "#00EAFF",
+            fontWeight: "bold",
+            textDecoration: "underline",
+            wordBreak: "break-all",
+            overflowWrap: "anywhere",
+          }}
+        >
+          {part}
+        </a>
+      );
+    }
+    return part;
+  });
+};
+
 export default function ChatbotPreview({
   chatbotId,
   themeColors = {
@@ -189,10 +219,10 @@ export default function ChatbotPreview({
                     rel="noreferrer"
                     style={styles.link}
                   >
-                    📅 Book Your Meeting
+                    ✅ Book your call here
                   </a>
                 ) : (
-                  msg.content
+                  linkify(msg.content)
                 )}
               </div>
             </div>
@@ -207,7 +237,7 @@ export default function ChatbotPreview({
                   color: theme.text,
                 }}
               >
-                {streamedReply || "Typing..."}
+                {linkify(streamedReply) || "Typing..."}
               </div>
             </div>
           )}
