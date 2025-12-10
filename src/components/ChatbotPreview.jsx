@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 
-/* ✅ AUTO LINK DETECTION */
+/* ✅ AUTO LINK DETECTION (FOR NORMAL TEXT ONLY) */
 const linkify = (text) => {
   if (!text) return text;
 
@@ -134,15 +134,19 @@ export default function ChatbotPreview({
         ...newMessages,
         {
           role: "assistant",
-          content: finalText || "⚠️ No response generated.",
+          content: (finalText || "⚠️ No response generated.").replace(
+            /https?:\/\/\S+/g,
+            "" // ✅ REMOVE RAW CALENDLY URL FROM TEXT
+          ),
         },
       ];
 
+      // ✅ PUSH ONLY A CLEAN BUTTON (NO RAW LINK)
       if (calendlyLink && isBookingIntent(userMessage)) {
         updatedMessages.push({
           role: "assistant",
-          content: calendlyLink,
           isLink: true,
+          url: calendlyLink,
         });
       }
 
@@ -214,12 +218,19 @@ export default function ChatbotPreview({
               >
                 {msg.isLink ? (
                   <a
-                    href={msg.content}
+                    href={msg.url}
                     target="_blank"
                     rel="noreferrer"
-                    style={styles.link}
+                    style={{
+                      ...styles.link,
+                      background: theme.userBubble,
+                      color: "#fff",
+                      padding: "10px 14px",
+                      borderRadius: "12px",
+                      textDecoration: "none",
+                    }}
                   >
-                    ✅ Book your call here
+                    ✅ Book Your Call
                   </a>
                 ) : (
                   linkify(msg.content)
@@ -324,9 +335,7 @@ const styles = {
   },
 
   link: {
-    color: "#00EAFF",
     fontWeight: "bold",
-    textDecoration: "underline",
     display: "inline-block",
     maxWidth: "100%",
     wordBreak: "break-all",
