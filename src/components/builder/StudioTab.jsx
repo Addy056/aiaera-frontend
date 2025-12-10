@@ -22,8 +22,6 @@ export default function StudioTab({
   isConfigSaved = false,
   APP_BASE_URL,
   API_BASE,
-  showEmbed = false,
-  setShowEmbed = () => {},
   calendlyLink = "",
 }) {
   return (
@@ -34,6 +32,8 @@ export default function StudioTab({
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-bold">Live Preview</h2>
 
+          {/* ✅ EMBED BUTTON REMOVED */}
+          {/*
           {isConfigSaved && (
             <Button
               variant="secondary"
@@ -42,6 +42,7 @@ export default function StudioTab({
               {showEmbed ? "Hide Embed" : "Get Embed Code"}
             </Button>
           )}
+          */}
         </div>
 
         <div className="rounded-2xl border border-white/10 bg-black/40 p-4">
@@ -58,15 +59,7 @@ export default function StudioTab({
           />
         </div>
 
-        {/* ✅ EMBED CODE */}
-        {showEmbed && chatbotId && (
-          <div className="mt-4 rounded-xl bg-black/30 border border-white/10 p-4 text-sm text-gray-200">
-            <p className="mb-2">Embed this script on your website:</p>
-            <code className="block text-xs bg-black/50 p-3 rounded-lg overflow-x-auto">
-              {`<script src="${API_BASE}/api/embed/${chatbotId}.js" async></script>`}
-            </code>
-          </div>
-        )}
+        {/* ✅ EMBED CODE SECTION REMOVED COMPLETELY */}
       </div>
 
       {/* ✅ COLOR + LOGO SECTION */}

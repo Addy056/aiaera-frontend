@@ -187,13 +187,7 @@ export default function ChatbotPreview({
                     href={msg.content}
                     target="_blank"
                     rel="noreferrer"
-                    style={{
-                      color: theme.accent,
-                      textDecoration: "underline",
-                      fontWeight: "bold",
-                      wordBreak: "break-all",        // ✅ FIX
-                      overflowWrap: "anywhere",     // ✅ FIX
-                    }}
+                    style={styles.link}
                   >
                     📅 Book Your Meeting
                   </a>
@@ -293,11 +287,20 @@ const styles = {
   bubble: {
     padding: "10px 14px",
     borderRadius: "16px",
+    whiteSpace: "pre-wrap",
+    wordBreak: "break-word",
+    overflowWrap: "anywhere",
+    maxWidth: "100%",
+  },
 
-    whiteSpace: "pre-wrap",      // ✅ FIX
-    wordBreak: "break-word",     // ✅ FIX
-    overflowWrap: "anywhere",    // ✅ FIX
-    maxWidth: "100%",            // ✅ FIX
+  link: {
+    color: "#00EAFF",
+    fontWeight: "bold",
+    textDecoration: "underline",
+    display: "inline-block",
+    maxWidth: "100%",
+    wordBreak: "break-all",
+    overflowWrap: "anywhere",
   },
 
   inputArea: {
@@ -314,6 +317,7 @@ const styles = {
     background: "rgba(255,255,255,0.08)",
     border: "none",
     outline: "none",
+    resize: "none",
   },
 
   button: {

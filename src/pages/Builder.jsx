@@ -13,7 +13,7 @@ import AuroraLayer from "../components/builder/AuroraLayer";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Save } from "lucide-react";
+import { Save, Copy } from "lucide-react";
 
 export default function Builder() {
   const [activeTab, setActiveTab] = useState("business");
@@ -31,6 +31,9 @@ export default function Builder() {
   const API_BASE =
     import.meta.env.VITE_API_URL || "https://aiaera-backend.onrender.com";
 
+  const FRONTEND_URL =
+    import.meta.env.VITE_FRONTEND_URL || window.location.origin;
+
   const [chatbotId, setChatbotId] = useState(null);
   const [isConfigSaved, setIsConfigSaved] = useState(false);
 
@@ -44,7 +47,6 @@ export default function Builder() {
   const fileInputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
 
-  // ✅ SAFE DEFAULT THEME FOR STUDIO
   const [themeColors, setThemeColors] = useState({
     background: "#0b0b17",
     userBubble: "#7f5af0",
@@ -57,7 +59,8 @@ export default function Builder() {
   const [showEmbed, setShowEmbed] = useState(false);
   const [calendlyLink, setCalendlyLink] = useState("");
 
-  // ✅ INIT LOAD
+  /* ---------------- INIT LOAD ---------------- */
+
   useEffect(() => {
     let mounted = true;
 
@@ -101,6 +104,7 @@ export default function Builder() {
           setFiles(Array.isArray(cfg.files) ? cfg.files : []);
           if (cfg.themeColors) setThemeColors(cfg.themeColors);
           if (cfg.logo_url) setLogoUrl(cfg.logo_url);
+          if (cfg.calendlyLink) setCalendlyLink(cfg.calendlyLink);
 
           setIsConfigSaved(true);
         }
@@ -112,7 +116,8 @@ export default function Builder() {
     return () => (mounted = false);
   }, []);
 
-  // ✅ FILE UPLOAD
+  /* ---------------- FILE UPLOAD ---------------- */
+
   const uploadFileToStorage = async (file) => {
     if (!user) throw new Error("No User");
 
@@ -145,7 +150,8 @@ export default function Builder() {
     }
   };
 
-  // ✅ SAVE
+  /* ---------------- SAVE ---------------- */
+
   const saveConfigToSupabase = async () => {
     if (!user) return;
     setSaving(true);
@@ -191,6 +197,25 @@ export default function Builder() {
     alert("Saved!");
   };
 
+  /* ---------------- EMBED CODES ---------------- */
+
+  const scriptEmbed = chatbotId
+    ? `<script src="${API_BASE}/api/embed/${chatbotId}.js" async></script>`
+    : "";
+
+  const iframeEmbed = chatbotId
+    ? `<iframe src="${FRONTEND_URL}/public-chatbot/${chatbotId}" width="380" height="540" style="border:none;border-radius:16px;"></iframe>`
+    : "";
+
+  const directLink = chatbotId
+    ? `${FRONTEND_URL}/public-chatbot/${chatbotId}`
+    : "";
+
+  const copy = (text) => {
+    navigator.clipboard.writeText(text);
+    alert("Copied!");
+  };
+
   if (loadingInit) {
     return (
       <div className="h-screen flex items-center justify-center bg-[#0b0b17] text-white">
@@ -227,7 +252,6 @@ export default function Builder() {
             <motion.div key={activeTab} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <Card className="bg-white/5 border border-white/10 rounded-3xl p-6">
 
-                {/* ✅ BUSINESS + STUDIO */}
                 {activeTab === "business" && (
                   <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
 
@@ -286,6 +310,52 @@ export default function Builder() {
                     businessWebsite={businessWebsite}
                     setBusinessWebsite={setBusinessWebsite}
                   />
+                )}
+
+                {/* ✅ EMBED SECTION */}
+                {showEmbed && chatbotId && (
+                  <div className="mt-8 space-y-6">
+                    <h2 className="text-2xl font-bold">Embed Your Chatbot</h2>
+
+                    {/* Script */}
+                    <div className="bg-black/40 p-4 rounded-xl border border-white/10">
+                      <div className="flex justify-between mb-2">
+                        <span>Floating Widget (Recommended)</span>
+                        <Button size="sm" onClick={() => copy(scriptEmbed)}>
+                          <Copy className="w-4 h-4 mr-1" /> Copy
+                        </Button>
+                      </div>
+                      <pre className="text-xs text-gray-300 break-all overflow-x-auto">
+                        {scriptEmbed}
+                      </pre>
+                    </div>
+
+                    {/* Iframe */}
+                    <div className="bg-black/40 p-4 rounded-xl border border-white/10">
+                      <div className="flex justify-between mb-2">
+                        <span>Iframe Embed (No JavaScript)</span>
+                        <Button size="sm" onClick={() => copy(iframeEmbed)}>
+                          <Copy className="w-4 h-4 mr-1" /> Copy
+                        </Button>
+                      </div>
+                      <pre className="text-xs text-gray-300 break-all overflow-x-auto">
+                        {iframeEmbed}
+                      </pre>
+                    </div>
+
+                    {/* Direct Link */}
+                    <div className="bg-black/40 p-4 rounded-xl border border-white/10">
+                      <div className="flex justify-between mb-2">
+                        <span>Direct Chat Link (Always Works)</span>
+                        <Button size="sm" onClick={() => copy(directLink)}>
+                          <Copy className="w-4 h-4 mr-1" /> Copy
+                        </Button>
+                      </div>
+                      <pre className="text-xs text-gray-300 break-all overflow-x-auto">
+                        {directLink}
+                      </pre>
+                    </div>
+                  </div>
                 )}
 
               </Card>
