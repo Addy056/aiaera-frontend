@@ -1,9 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 
-/* ✅ AUTO LINK DETECTION (FOR NORMAL TEXT ONLY) */
+/* ✅ AUTO LINK DETECTION (NORMAL TEXT ONLY) */
 const linkify = (text) => {
   if (!text) return text;
-
   const urlRegex = /(https?:\/\/[^\s]+)/g;
 
   return text.split(urlRegex).map((part, i) => {
@@ -40,8 +39,6 @@ export default function ChatbotPreview({
   },
   logoUrl,
   businessName,
-  files = [],
-  user,
   API_BASE,
   calendlyLink,
 }) {
@@ -62,7 +59,6 @@ export default function ChatbotPreview({
     userBubble: themeColors.userBubble,
     botBubble: themeColors.botBubble,
     text: themeColors.text,
-    accent: "#00EAFF",
   };
 
   useEffect(() => {
@@ -75,6 +71,7 @@ export default function ChatbotPreview({
     };
   }, []);
 
+  // ✅ BOOKING INTENT
   const isBookingIntent = (text) => {
     const t = text.toLowerCase();
     return (
@@ -82,7 +79,21 @@ export default function ChatbotPreview({
       t.includes("meeting") ||
       t.includes("schedule") ||
       t.includes("appointment") ||
-      t.includes("call")
+      t.includes("call") ||
+      t.includes("proceed") ||
+      t.includes("yes")
+    );
+  };
+
+  // ✅ LOCATION INTENT
+  const isLocationIntent = (text) => {
+    const t = text.toLowerCase();
+    return (
+      t.includes("location") ||
+      t.includes("address") ||
+      t.includes("map") ||
+      t.includes("where") ||
+      t.includes("office")
     );
   };
 
@@ -131,22 +142,37 @@ export default function ChatbotPreview({
       const finalText = streamedRef.current.trim();
 
       const cleanedText = (finalText || "⚠️ No response generated.")
-        .replace(/https?:\/\/\S+/g, "")          // remove raw URLs
-        .replace(/book your call here:?/gi, "") // remove label
-        .replace(/✅/g, "")                      // remove stray check
+        .replace(/(https?:\/\/\S+)/g, "")
+        .replace(/✅/g, "")
         .trim();
+
+      const bookingNow = isBookingIntent(userMessage);
+      const locationNow = isLocationIntent(userMessage);
 
       const updatedMessages = [
         ...newMessages,
         { role: "assistant", content: cleanedText },
       ];
 
-      // ✅ PUSH ONLY A SINGLE CLEAN CTA BUTTON
-      if (calendlyLink && isBookingIntent(userMessage)) {
+      /* ✅ CALENDLY BUTTON */
+      if (bookingNow) {
         updatedMessages.push({
           role: "assistant",
           isLink: true,
-          url: calendlyLink,
+          type: "booking",
+          url: calendlyLink || "https://calendly.com/aiaera056/30min",
+        });
+      }
+
+      /* ✅ GOOGLE MAPS BUTTON */
+      if (locationNow) {
+        updatedMessages.push({
+          role: "assistant",
+          isLink: true,
+          type: "maps",
+          url:
+            "https://www.google.com/maps/search/?api=1&query=" +
+            encodeURIComponent(businessName || "business location"),
         });
       }
 
@@ -177,7 +203,6 @@ export default function ChatbotPreview({
   return (
     <div style={{ ...styles.wrapper, background: theme.background }}>
       <div style={styles.chatbotPreview}>
-
         {/* HEADER */}
         <div
           style={{
@@ -186,9 +211,7 @@ export default function ChatbotPreview({
             color: theme.text,
           }}
         >
-          {logoUrl && (
-            <img src={logoUrl} alt="Logo" style={styles.logo} />
-          )}
+          {logoUrl && <img src={logoUrl} alt="Logo" style={styles.logo} />}
           <span style={{ fontWeight: "bold" }}>
             {businessName || "Business Assistant"}
           </span>
@@ -222,7 +245,10 @@ export default function ChatbotPreview({
                     target="_blank"
                     rel="noreferrer"
                     style={{
-                      background: theme.userBubble,
+                      background:
+                        msg.type === "maps"
+                          ? "#2563eb"
+                          : theme.userBubble,
                       color: "#fff",
                       padding: "12px 18px",
                       borderRadius: "14px",
@@ -234,7 +260,9 @@ export default function ChatbotPreview({
                       boxShadow: "0 6px 20px rgba(0,0,0,0.35)",
                     }}
                   >
-                    ✅ Book Your Call
+                    {msg.type === "maps"
+                      ? "📍 View Location"
+                      : "✅ Book Your Call"}
                   </a>
                 ) : (
                   linkify(msg.content)
@@ -267,10 +295,7 @@ export default function ChatbotPreview({
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Ask something..."
-            style={{
-              ...styles.textarea,
-              color: theme.text,
-            }}
+            style={{ ...styles.textarea, color: theme.text }}
           />
           <button
             onClick={sendMessage}

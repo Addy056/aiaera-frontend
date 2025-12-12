@@ -1,7 +1,9 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 
-/* ✅ LINK PARSER */
+/* --------------------------------------------------- */
+/* ✅ RENDER TEXT + AUTO-LINK                            */
+/* --------------------------------------------------- */
 const renderMessageWithLinks = (text) => {
   if (!text) return null;
 
@@ -9,7 +11,7 @@ const renderMessageWithLinks = (text) => {
   const parts = text.split(urlRegex);
 
   return parts.map((part, index) => {
-    if (part.match(urlRegex)) {
+    if (urlRegex.test(part)) {
       return (
         <a
           key={index}
@@ -20,6 +22,7 @@ const renderMessageWithLinks = (text) => {
             color: "#00e5ff",
             textDecoration: "underline",
             fontWeight: "bold",
+            overflowWrap: "anywhere",
           }}
         >
           {part}
@@ -30,26 +33,40 @@ const renderMessageWithLinks = (text) => {
   });
 };
 
+/* --------------------------------------------------- */
+/* ⭐ MAIN PUBLIC CHATBOT (Inside Iframe)               */
+/* --------------------------------------------------- */
 export default function PublicChatbot() {
   const { id } = useParams();
+
   const [chatbot, setChatbot] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const [messages, setMessages] = useState([
     { role: "assistant", content: "Hi 👋 How can I help you today?" },
   ]);
+
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamedReply, setStreamedReply] = useState("");
 
   const messagesEndRef = useRef(null);
+  const scrollRef = useRef(null);
+  const evtSourceRef = useRef(null);
+
   const [API_BASE, setAPIBase] = useState("");
 
+  /* --------------------------------------------------- */
+  /* Load backend base URL                                */
+  /* --------------------------------------------------- */
   useEffect(() => {
     const base = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
     setAPIBase(base);
   }, []);
 
+  /* --------------------------------------------------- */
+  /* Fetch chatbot config                                 */
+  /* --------------------------------------------------- */
   useEffect(() => {
     if (!API_BASE) return;
     fetchChatbot();
@@ -59,7 +76,9 @@ export default function PublicChatbot() {
     try {
       const res = await fetch(`${API_BASE}/api/embed/config/${id}`);
       const data = await res.json();
+
       if (!data.success) throw new Error("Chatbot not found");
+
       setChatbot(data.chatbot);
     } catch (err) {
       console.error("Public chatbot load failed:", err);
@@ -68,16 +87,34 @@ export default function PublicChatbot() {
     }
   };
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, streamedReply]);
+  /* --------------------------------------------------- */
+  /* Auto-scroll (smart)                                  */
+  /* --------------------------------------------------- */
+  const scrollToBottom = (force = false) => {
+    const container = scrollRef.current;
+    if (!container) return;
 
+    const isNearBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight < 80;
+
+    if (force || isNearBottom) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
+  useEffect(() => scrollToBottom(), [messages, streamedReply]);
+
+  /* --------------------------------------------------- */
+  /* SSE Chat Streaming                                   */
+  /* --------------------------------------------------- */
   const sendMessage = async () => {
     if (!input.trim() || isStreaming) return;
 
+    const msg = input.trim();
+
     const newMessages = [
-      ...messages.slice(-6),
-      { role: "user", content: input },
+      ...messages.slice(-8), // Keep last 8 for optimal context
+      { role: "user", content: msg },
     ];
 
     setMessages(newMessages);
@@ -86,11 +123,13 @@ export default function PublicChatbot() {
     setIsStreaming(true);
 
     try {
-      const encodedMessages = encodeURIComponent(JSON.stringify(newMessages));
+      const encoded = encodeURIComponent(JSON.stringify(newMessages));
+      const url = `${API_BASE}/api/chatbot/preview-stream/${id}?messages=${encoded}`;
 
-      const evtSource = new EventSource(
-        `${API_BASE}/api/chatbot/preview-stream/${id}?messages=${encodedMessages}`
-      );
+      evtSourceRef.current?.close(); // cleanup if old one exists
+
+      const evtSource = new EventSource(url);
+      evtSourceRef.current = evtSource;
 
       let fullReply = "";
 
@@ -113,6 +152,7 @@ export default function PublicChatbot() {
       evtSource.onerror = () => {
         evtSource.close();
         setIsStreaming(false);
+
         setMessages((prev) => [
           ...prev,
           { role: "assistant", content: "⚠️ Connection lost." },
@@ -131,6 +171,9 @@ export default function PublicChatbot() {
     }
   };
 
+  /* --------------------------------------------------- */
+  /* RENDERING                                             */
+  /* --------------------------------------------------- */
   if (loading) {
     return <div style={{ padding: 20 }}>Loading chatbot…</div>;
   }
@@ -139,11 +182,10 @@ export default function PublicChatbot() {
     return <div style={{ padding: 20 }}>Chatbot not found.</div>;
   }
 
-  /* ✅ READ FROM CONFIG SAFELY */
   const config = chatbot.config || {};
 
   const theme = config.themeColors || {
-    background: "#0b0b1a",
+    background: "#0b0b17",
     userBubble: "#7f5af0",
     botBubble: "#6b21a8",
     text: "#ffffff",
@@ -158,148 +200,137 @@ export default function PublicChatbot() {
         height: "100%",
         background: theme.background,
         color: theme.text,
+        display: "flex",
+        flexDirection: "column",
         margin: 0,
         padding: 0,
       }}
     >
+      {/* HEADER */}
       <div
         style={{
-          width: "100%",
-          height: "100%",
-          background: "rgba(255,255,255,0.08)",
-          backdropFilter: "blur(10px)",
-          borderRadius: "16px",
-          overflow: "hidden",
-          border: "1px solid rgba(255,255,255,0.15)",
-          boxShadow: "0 0 25px rgba(0,0,0,0.3)",
+          padding: "12px",
+          background: theme.userBubble,
           display: "flex",
-          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "10px",
+          color: "#fff",
         }}
       >
-        {/* ✅ HEADER */}
-        <div
-          style={{
-            padding: "12px",
-            background: theme.userBubble,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "10px",
-            color: "#fff",
-            flexShrink: 0,
-          }}
-        >
-          {logoUrl && (
-            <img
-              src={logoUrl}
-              alt="Company Logo"
-              style={{
-                width: "34px",
-                height: "34px",
-                borderRadius: "8px",
-                objectFit: "cover",
-              }}
-            />
-          )}
-          <span style={{ fontWeight: "bold" }}>{chatbot.name}</span>
-        </div>
-
-        {/* ✅ MESSAGES */}
-        <div
-          style={{
-            flex: 1,
-            overflowY: "auto",
-            padding: "12px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "8px",
-          }}
-        >
-          {messages.map((msg, i) => (
-            <div
-              key={i}
-              style={{
-                display: "flex",
-                justifyContent:
-                  msg.role === "user" ? "flex-end" : "flex-start",
-              }}
-            >
-              <div
-                style={{
-                  maxWidth: "75%",
-                  padding: "10px 14px",
-                  borderRadius: "16px",
-                  background:
-                    msg.role === "user"
-                      ? theme.userBubble
-                      : theme.botBubble,
-                  color: theme.text,
-                }}
-              >
-                {renderMessageWithLinks(msg.content)}
-              </div>
-            </div>
-          ))}
-
-          {isStreaming && (
-            <div style={{ display: "flex", justifyContent: "flex-start" }}>
-              <div
-                style={{
-                  maxWidth: "75%",
-                  padding: "10px 14px",
-                  borderRadius: "16px",
-                  background: theme.botBubble,
-                }}
-              >
-                {streamedReply || "Typing..."}
-              </div>
-            </div>
-          )}
-
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* ✅ INPUT */}
-        <div
-          style={{
-            display: "flex",
-            padding: "10px",
-            borderTop: "1px solid rgba(255,255,255,0.1)",
-            gap: "8px",
-            flexShrink: 0,
-          }}
-        >
-          <textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Type your message..."
+        {logoUrl && (
+          <img
+            src={logoUrl}
+            alt="Company Logo"
             style={{
-              flex: 1,
-              padding: "10px",
-              background: "rgba(255,255,255,0.10)",
-              border: "none",
-              borderRadius: "12px",
-              color: theme.text,
-              resize: "none",
+              width: "34px",
+              height: "34px",
+              borderRadius: "8px",
             }}
           />
+        )}
+        <span style={{ fontWeight: "bold" }}>{chatbot.name}</span>
+      </div>
 
-          <button
-            onClick={sendMessage}
-            disabled={isStreaming}
+      {/* MESSAGES */}
+      <div
+        ref={scrollRef}
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          padding: "14px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "10px",
+        }}
+      >
+        {messages.map((msg, i) => (
+          <div
+            key={i}
             style={{
-              padding: "0 18px",
-              background: theme.userBubble,
-              border: "none",
-              borderRadius: "12px",
-              color: "#fff",
-              fontWeight: "bold",
+              display: "flex",
+              justifyContent:
+                msg.role === "user" ? "flex-end" : "flex-start",
             }}
           >
-            Send
-          </button>
-        </div>
+            <div
+              style={{
+                maxWidth: "75%",
+                padding: "10px 14px",
+                borderRadius: "16px",
+                background:
+                  msg.role === "user"
+                    ? theme.userBubble
+                    : theme.botBubble,
+                color: theme.text,
+                lineHeight: 1.4,
+                animation: "fadeIn 0.25s ease",
+              }}
+            >
+              {renderMessageWithLinks(msg.content)}
+            </div>
+          </div>
+        ))}
+
+        {/* STREAMING */}
+        {isStreaming && (
+          <div style={{ display: "flex", justifyContent: "flex-start" }}>
+            <div
+              style={{
+                maxWidth: "75%",
+                padding: "10px 14px",
+                borderRadius: "16px",
+                background: theme.botBubble,
+                opacity: 0.9,
+              }}
+            >
+              {streamedReply || "Typing..."}
+            </div>
+          </div>
+        )}
+
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* INPUT */}
+      <div
+        style={{
+          display: "flex",
+          padding: "10px",
+          borderTop: "1px solid rgba(255,255,255,0.15)",
+          gap: "8px",
+        }}
+      >
+        <textarea
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Type your message..."
+          style={{
+            flex: 1,
+            padding: "10px",
+            background: "rgba(255,255,255,0.12)",
+            borderRadius: "12px",
+            color: theme.text,
+            border: "none",
+            resize: "none",
+          }}
+        />
+
+        <button
+          onClick={sendMessage}
+          disabled={isStreaming}
+          style={{
+            padding: "0 18px",
+            background: theme.userBubble,
+            borderRadius: "12px",
+            color: "#fff",
+            fontWeight: "bold",
+            border: "none",
+          }}
+        >
+          Send
+        </button>
       </div>
     </div>
   );

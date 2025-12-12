@@ -20,6 +20,10 @@ const PublicChatbot = lazy(() =>
   import("./pages/public-chatbot/PublicChatbot.jsx")
 );
 
+const EmbedCode = lazy(() =>
+  import("./components/builder/EmbedCode.jsx")
+);
+
 // Components
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import MainLayout from "./components/MainLayout.jsx";
@@ -53,7 +57,7 @@ export default function AppRoutes() {
     >
       <Routes>
         {/* ----------------------------- */}
-        {/* PUBLIC AUTH ROUTES            */}
+        {/* PUBLIC AUTH ROUTES           */}
         {/* ----------------------------- */}
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
@@ -61,12 +65,12 @@ export default function AppRoutes() {
         <Route path="/update-password" element={<UpdatePassword />} />
 
         {/* ----------------------------- */}
-        {/* ✅ PUBLIC CHATBOT (IFRAME)    */}
+        {/* PUBLIC CHATBOT (IFRAME)      */}
         {/* ----------------------------- */}
         <Route path="/public-chatbot/:id" element={<PublicChatbot />} />
 
         {/* ----------------------------- */}
-        {/* PROTECTED MAIN APP ROUTES     */}
+        {/* PROTECTED MAIN APP ROUTES    */}
         {/* ----------------------------- */}
         <Route
           path="/"
@@ -79,6 +83,7 @@ export default function AppRoutes() {
           }
         />
 
+        {/* ⭐ Builder (General) */}
         <Route
           path="/builder"
           element={
@@ -90,6 +95,31 @@ export default function AppRoutes() {
           }
         />
 
+        {/* ⭐ Builder (Per Chatbot) */}
+        <Route
+          path="/builder/:id"
+          element={
+            <ProtectedRoute>
+              <MainLayout>
+                <Builder />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ⭐ Embed Code Page */}
+        <Route
+          path="/builder/:id/embed-code"
+          element={
+            <ProtectedRoute>
+              <MainLayout>
+                <EmbedCode />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Leads */}
         <Route
           path="/leads"
           element={
@@ -101,6 +131,7 @@ export default function AppRoutes() {
           }
         />
 
+        {/* Appointments */}
         <Route
           path="/appointments"
           element={
@@ -112,6 +143,7 @@ export default function AppRoutes() {
           }
         />
 
+        {/* Integrations */}
         <Route
           path="/integrations"
           element={
@@ -123,6 +155,7 @@ export default function AppRoutes() {
           }
         />
 
+        {/* Settings */}
         <Route
           path="/settings"
           element={
@@ -135,12 +168,12 @@ export default function AppRoutes() {
         />
 
         {/* ----------------------------- */}
-        {/* PUBLIC PRICING PAGE           */}
+        {/* PUBLIC PRICING PAGE          */}
         {/* ----------------------------- */}
         <Route path="/pricing" element={<Pricing />} />
 
         {/* ----------------------------- */}
-        {/* 404 FALLBACK                  */}
+        {/* 404 FALLBACK                 */}
         {/* ----------------------------- */}
         <Route path="*" element={<NotFound />} />
       </Routes>
