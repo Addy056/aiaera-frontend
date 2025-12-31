@@ -1,9 +1,9 @@
 // src/components/ProtectedRoute.jsx
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 
-export default function ProtectedRoute({ children }) {
+export default function ProtectedRoute() {
   const [loading, setLoading] = useState(true);
   const [sessionUser, setSessionUser] = useState(null);
   const [plan, setPlan] = useState("free");
@@ -45,18 +45,19 @@ export default function ProtectedRoute({ children }) {
 
       setPlan(sub.plan);
 
-      const expired = !sub.expires_at || new Date(sub.expires_at) < new Date();
-      setSubscriptionActive(!expired);
+      const expired =
+        !sub.expires_at || new Date(sub.expires_at) < new Date();
 
+      setSubscriptionActive(!expired);
       setLoading(false);
     }
 
     init();
 
-    // Supabase auth listener
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSessionUser(newSession?.user || null);
-    });
+    const { data: listener } =
+      supabase.auth.onAuthStateChange((_event, newSession) => {
+        setSessionUser(newSession?.user || null);
+      });
 
     return () => {
       mounted = false;
@@ -65,7 +66,7 @@ export default function ProtectedRoute({ children }) {
   }, []);
 
   // -------------------------
-  // Loading state
+  // Loading
   // -------------------------
   if (loading) {
     return (
@@ -76,22 +77,32 @@ export default function ProtectedRoute({ children }) {
   }
 
   // -------------------------
-  // User not logged in
+  // Not authenticated
   // -------------------------
   if (!sessionUser) {
     return <Navigate to="/login" replace />;
   }
 
   // -------------------------
-  // Premium route access check
+  // Premium access control
   // -------------------------
-  const premiumPages = ["/builder", "/leads", "/appointments", "/integrations"];
+  const premiumRoutes = [
+    "/app/builder",
+    "/app/leads",
+    "/app/appointments",
+    "/app/integrations",
+  ];
 
-  // only block PAID users who have expired subscriptions
-  if (plan !== "free" && !subscriptionActive && premiumPages.includes(location.pathname)) {
+  const isPremiumRoute = premiumRoutes.some((route) =>
+    location.pathname.startsWith(route)
+  );
+
+  if (plan !== "free" && !subscriptionActive && isPremiumRoute) {
     return <Navigate to="/pricing" replace />;
   }
 
-  // Authenticated + allowed
-  return children;
+  // -------------------------
+  // Authenticated & allowed
+  // -------------------------
+  return <Outlet />;
 }

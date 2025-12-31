@@ -1,10 +1,11 @@
 // src/components/MainLayout.jsx
 import { useEffect, useState } from "react";
+import { Outlet } from "react-router-dom";
 import FloatingMenu from "./FloatingMenu";
 import LanguageSelector from "./LanguageSelector";
 import { supabase } from "../supabaseClient";
 
-export default function MainLayout({ children }) {
+export default function MainLayout() {
   const [userEmail, setUserEmail] = useState("");
   const [showLangModal, setShowLangModal] = useState(false);
 
@@ -42,7 +43,7 @@ export default function MainLayout({ children }) {
       <FloatingMenu userEmail={userEmail} />
 
       <div className="flex-1 p-4 md:p-8 md:ml-32">
-        {children}
+        <Outlet />
       </div>
 
       {showLangModal && (
