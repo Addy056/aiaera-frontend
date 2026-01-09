@@ -1,6 +1,6 @@
 // src/router.jsx
 
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import React, { Suspense, lazy } from "react";
 
 // -----------------------------
@@ -80,6 +80,21 @@ export default function AppRoutes() {
         <Route path="/update-password" element={<UpdatePassword />} />
 
         <Route path="/public-chatbot/:id" element={<PublicChatbot />} />
+
+        {/* ----------------------------- */}
+        {/* LEGACY REDIRECTS (IMPORTANT) */}
+        {/* ----------------------------- */}
+        <Route path="/builder" element={<Navigate to="/app/builder" replace />} />
+        <Route path="/dashboard" element={<Navigate to="/app" replace />} />
+        <Route path="/leads" element={<Navigate to="/app/leads" replace />} />
+        <Route
+          path="/appointments"
+          element={<Navigate to="/app/appointments" replace />}
+        />
+        <Route
+          path="/integrations"
+          element={<Navigate to="/app/integrations" replace />}
+        />
 
         {/* ----------------------------- */}
         {/* PROTECTED APP ROUTES         */}
