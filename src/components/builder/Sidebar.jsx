@@ -10,7 +10,7 @@ export default function Sidebar({ activeTab, setActiveTab }) {
   ];
 
   return (
-    <div className="col-span-12 lg:col-span-3">
+    <div className="space-y-2">
       {tabs.map(({ id, label, icon: Icon }) => {
         const isActive = activeTab === id;
 
@@ -18,17 +18,22 @@ export default function Sidebar({ activeTab, setActiveTab }) {
           <button
             key={id}
             onClick={() => setActiveTab(id)}
-            className={`w-full flex items-center gap-3 px-4 py-3 mb-3 
-              rounded-2xl transition-all border
-              ${
-                isActive
-                  ? "bg-white/[0.14] border-white/20 text-[#e6deff] shadow-[0_8px_30px_rgba(127,90,240,0.25)]"
-                  : "bg-white/[0.08] border-white/10 text-gray-300 hover:bg-white/[0.12]"
-              }
-            `}
+            className={`w-full flex items-center gap-3
+                        rounded-xl px-4 py-3
+                        text-sm font-medium
+                        border transition
+                        ${
+                          isActive
+                            ? "bg-[#11111b] border-purple-400/30 text-white shadow-[0_8px_30px_rgba(127,90,240,0.25)]"
+                            : "bg-[#0f0f1a] border-white/10 text-gray-400 hover:border-white/20 hover:text-gray-200"
+                        }`}
           >
-            <Icon className="w-5 h-5 text-[#bfa7ff]" />
-            <span className="font-medium">{label}</span>
+            <Icon
+              className={`w-4 h-4 ${
+                isActive ? "text-purple-300" : "text-gray-500"
+              }`}
+            />
+            <span>{label}</span>
           </button>
         );
       })}

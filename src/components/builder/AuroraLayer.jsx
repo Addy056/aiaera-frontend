@@ -5,19 +5,23 @@ import { motion } from "framer-motion";
 export default function AuroraLayer() {
   return (
     <motion.div
+      aria-hidden
       animate={{
-        opacity: [0.35, 0.6, 0.35],
-        scale: [1, 1.06, 1],
+        opacity: [0.18, 0.28, 0.18],
+        scale: [1, 1.03, 1],
       }}
       transition={{
         repeat: Infinity,
-        duration: 16,
+        duration: 22,
         ease: "easeInOut",
       }}
-      className="pointer-events-none absolute -top-52 -left-48 w-[620px] h-[620px] rounded-full blur-[140px]"
+      className="pointer-events-none absolute -top-64 -left-64
+                 w-[560px] h-[560px]
+                 rounded-full
+                 blur-[180px]"
       style={{
         background:
-          "radial-gradient(circle at 30% 30%, rgba(191,167,255,0.25), rgba(127,90,240,0.18), rgba(0,234,255,0.14))",
+          "radial-gradient(circle at 30% 30%, rgba(127,90,240,0.22), rgba(127,90,240,0.12), transparent 70%)",
       }}
     />
   );

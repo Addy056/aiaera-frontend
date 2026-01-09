@@ -1,7 +1,7 @@
 // src/components/builder/FilesTab.jsx
 
 import { Button } from "@/components/ui/button";
-import { Upload, Trash2 } from "lucide-react";
+import { Upload, Trash2, FileText } from "lucide-react";
 
 export default function FilesTab({
   files,
@@ -11,9 +11,18 @@ export default function FilesTab({
   fileInputRef,
 }) {
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold tracking-tight">Files</h2>
+    <div className="space-y-8">
+      {/* Header */}
+      <div>
+        <h2 className="text-xl font-semibold text-white tracking-tight">
+          Knowledge Files
+        </h2>
+        <p className="mt-1 text-sm text-gray-400">
+          Upload documents to train your AI assistant.
+        </p>
+      </div>
 
+      {/* Upload action */}
       <div className="flex items-center gap-3">
         <input
           ref={fileInputRef}
@@ -27,40 +36,57 @@ export default function FilesTab({
         <Button
           onClick={() => fileInputRef.current?.click()}
           className="flex items-center gap-2"
+          disabled={uploading}
         >
           <Upload className="w-4 h-4" />
-          {uploading ? "Uploading..." : "Upload Files"}
+          {uploading ? "Uploading…" : "Upload Files"}
         </Button>
       </div>
 
-      <div className="grid sm:grid-cols-2 gap-3">
-        {files.length > 0 ? (
-          files.map((file) => (
+      {/* Files list */}
+      {files.length > 0 ? (
+        <div className="grid sm:grid-cols-2 gap-3">
+          {files.map((file) => (
             <div
               key={file.url}
-              className="flex items-center justify-between bg-white/5 border border-white/10 rounded-2xl px-4 py-3 shadow-lg"
+              className="flex items-center justify-between
+                         rounded-xl
+                         bg-[#0f0f1a]
+                         border border-white/10
+                         px-4 py-3
+                         shadow-[0_10px_35px_rgba(0,0,0,0.5)]"
             >
-              <div className="truncate text-sm text-white">{file.name}</div>
+              <div className="flex items-center gap-3 min-w-0">
+                <FileText className="w-4 h-4 text-purple-400 shrink-0" />
+                <span className="truncate text-sm text-white">
+                  {file.name}
+                </span>
+              </div>
 
               <Button
                 variant="ghost"
-                className="text-red-300 hover:text-red-200"
                 onClick={() =>
-                  setFiles((prev) => prev.filter((f) => f.url !== file.url))
+                  setFiles((prev) =>
+                    prev.filter((f) => f.url !== file.url)
+                  )
                 }
+                className="text-red-400 hover:text-red-300"
               >
                 <Trash2 className="w-4 h-4" />
               </Button>
             </div>
-          ))
-        ) : (
-          <p className="text-gray-400 text-sm">No files uploaded yet.</p>
-        )}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-sm text-gray-400">
+          No files uploaded yet.
+        </p>
+      )}
 
-      <p className="text-xs text-gray-400 mt-2">
-        You can upload PDF, CSV, TXT, and Markdown files.  
-        Your AI assistant will automatically learn from them.
+      {/* Helper text */}
+      <p className="text-xs text-gray-400">
+        Supported formats: PDF, CSV, TXT, and Markdown.  
+        Your AI assistant will automatically learn from the content.
       </p>
     </div>
   );

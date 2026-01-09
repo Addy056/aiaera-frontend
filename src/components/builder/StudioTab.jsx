@@ -1,7 +1,11 @@
+// src/components/builder/StudioTab.jsx
+
 import { useState } from "react";
 import ChatbotPreview from "../ChatbotPreview";
 import ColorSwatch from "./ColorSwatch";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { X, Copy, Check } from "lucide-react";
 
 export default function StudioTab({
   themeColors = {
@@ -26,36 +30,35 @@ export default function StudioTab({
   calendlyLink = "",
 }) {
   const [showEmbed, setShowEmbed] = useState(false);
-  const [copyStatus, setCopyStatus] = useState("");
+  const [copied, setCopied] = useState(false);
 
-  const safeApiBase = API_BASE || "";
   const embedCode =
-    chatbotId && safeApiBase
-      ? `<script src="${safeApiBase}/embed/${chatbotId}.js"></script>`
+    chatbotId && API_BASE
+      ? `<script src="${API_BASE}/embed/${chatbotId}.js"></script>`
       : "";
 
   const handleCopy = async () => {
     if (!embedCode) return;
-
-    try {
-      await navigator.clipboard.writeText(embedCode);
-      setCopyStatus("✅ Copied!");
-      setTimeout(() => setCopyStatus(""), 2000);
-    } catch (err) {
-      console.error("Copy failed:", err);
-      setCopyStatus("❌ Copy failed");
-      setTimeout(() => setCopyStatus(""), 2000);
-    }
+    await navigator.clipboard.writeText(embedCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
   };
 
   return (
-    <div className="flex flex-col gap-8">
-      {/* ✅ PREVIEW SECTION */}
-      <div className="w-full">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold">Live Preview</h2>
+    <div className="space-y-10">
 
-          {/* ✅ SAFE EMBED BUTTON */}
+      {/* LIVE PREVIEW */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-white tracking-tight">
+              Live Preview
+            </h2>
+            <p className="text-sm text-gray-400">
+              See exactly how your chatbot will look to users.
+            </p>
+          </div>
+
           <Button
             variant="secondary"
             disabled={!isConfigSaved || !chatbotId}
@@ -65,7 +68,7 @@ export default function StudioTab({
           </Button>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-black/40 p-4">
+        <Card className="p-4">
           <ChatbotPreview
             key={JSON.stringify(themeColors)}
             chatbotId={chatbotId}
@@ -77,92 +80,45 @@ export default function StudioTab({
             API_BASE={API_BASE}
             calendlyLink={calendlyLink}
           />
-        </div>
+        </Card>
       </div>
 
-      {/* ✅ SECURE EMBED MODAL */}
-      {showEmbed && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-[#0b0b17] w-full max-w-xl rounded-2xl p-6 border border-white/10 shadow-2xl relative">
-            
-            {/* CLOSE */}
-            <button
-              onClick={() => setShowEmbed(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-white text-xl"
-            >
-              ✕
-            </button>
-
-            <h3 className="text-lg font-semibold mb-2">Embed Your Chatbot</h3>
-
-            <p className="text-sm text-gray-400 mb-4">
-              Paste this script before closing{" "}
-              <code className="text-purple-400">&lt;/body&gt;</code> on your
-              website.
-            </p>
-
-            {/* CODE BOX */}
-            <textarea
-              readOnly
-              value={embedCode || "Save your chatbot to generate embed code."}
-              className="w-full h-28 bg-black/50 border border-white/10 rounded-lg p-3 text-sm text-green-400"
-            />
-
-            {/* ACTIONS */}
-            <div className="mt-4 flex items-center gap-3">
-              <Button
-                className="flex-1"
-                disabled={!embedCode}
-                onClick={handleCopy}
-              >
-                Copy Embed Code
-              </Button>
-
-              <Button
-                variant="outline"
-                className="border-white/20"
-                onClick={() => setShowEmbed(false)}
-              >
-                Close
-              </Button>
-            </div>
-
-            {copyStatus && (
-              <p className="mt-2 text-sm text-center text-gray-400">
-                {copyStatus}
-              </p>
-            )}
-          </div>
+      {/* APPEARANCE & BRANDING */}
+      <Card className="space-y-8">
+        <div>
+          <h3 className="text-lg font-semibold text-white">
+            Appearance & Branding
+          </h3>
+          <p className="text-sm text-gray-400">
+            Customize colors and branding to match your business.
+          </p>
         </div>
-      )}
-
-      {/* ✅ COLOR + LOGO SECTION */}
-      <div className="w-full border border-white/10 rounded-2xl bg-white/5 p-6">
-        <h3 className="text-lg font-semibold mb-4">Appearance & Branding</h3>
 
         {/* PRESET THEMES */}
-        <div className="mb-6">
-          <p className="text-sm text-gray-300 mb-2">Preset Themes</p>
-          <div className="flex flex-wrap gap-3">
+        <div className="space-y-2">
+          <p className="text-sm text-gray-300">Preset Themes</p>
+          <div className="flex flex-wrap gap-2">
             {Object.keys(presetThemes || {}).length > 0 ? (
               Object.keys(presetThemes).map((key) => (
                 <Button
                   key={key}
-                  variant="outline"
                   size="sm"
+                  variant="secondary"
                   onClick={() => setThemeColors(presetThemes[key])}
                 >
                   {key}
                 </Button>
               ))
             ) : (
-              <p className="text-xs text-gray-400">No presets available</p>
+              <p className="text-xs text-gray-500">
+                No presets available
+              </p>
             )}
           </div>
         </div>
 
         {/* CUSTOM COLORS */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <ColorSwatch
             label="Background"
             color={themeColors.background}
@@ -194,25 +150,19 @@ export default function StudioTab({
         </div>
 
         {/* LOGO UPLOAD */}
-        <div>
-          <p className="text-sm text-gray-300 mb-2">Bot Logo</p>
+        <div className="space-y-2">
+          <p className="text-sm text-gray-300">Bot Logo</p>
 
           <input
-            type="file"
             ref={logoInputRef}
+            type="file"
             accept="image/*"
             onChange={async (e) => {
               const file = e.target.files?.[0];
               if (!file) return;
 
-              try {
-                const uploaded = await uploadFileToStorage(file);
-                if (uploaded?.url) {
-                  setLogoUrl(uploaded.url);
-                }
-              } catch (err) {
-                console.error("Logo upload failed:", err);
-              }
+              const uploaded = await uploadFileToStorage(file);
+              if (uploaded?.url) setLogoUrl(uploaded.url);
             }}
           />
 
@@ -220,11 +170,65 @@ export default function StudioTab({
             <img
               src={logoUrl}
               alt="Bot Logo"
-              className="mt-3 w-16 h-16 object-contain rounded-xl border border-white/10"
+              className="mt-2 w-16 h-16 object-contain
+                         rounded-xl border border-white/10"
             />
           )}
         </div>
-      </div>
+      </Card>
+
+      {/* EMBED MODAL */}
+      {showEmbed && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+          <Card className="relative w-full max-w-xl p-6">
+            <button
+              onClick={() => setShowEmbed(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <h3 className="text-lg font-semibold text-white">
+              Embed Your Chatbot
+            </h3>
+            <p className="text-sm text-gray-400 mt-1">
+              Paste this before the closing <code>&lt;/body&gt;</code> tag.
+            </p>
+
+            <div className="mt-4 rounded-xl bg-[#0f0f1a]
+                            border border-white/10 p-4">
+              <code className="text-xs text-gray-200 whitespace-pre-wrap">
+                {embedCode || "Save your chatbot to generate embed code."}
+              </code>
+            </div>
+
+            <div className="mt-4 flex gap-3">
+              <Button
+                className="flex items-center gap-2"
+                disabled={!embedCode}
+                onClick={handleCopy}
+              >
+                {copied ? (
+                  <>
+                    <Check className="w-4 h-4" /> Copied
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4" /> Copy Embed Code
+                  </>
+                )}
+              </Button>
+
+              <Button
+                variant="secondary"
+                onClick={() => setShowEmbed(false)}
+              >
+                Close
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

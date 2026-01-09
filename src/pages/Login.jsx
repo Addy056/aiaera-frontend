@@ -1,5 +1,5 @@
 // src/pages/Login.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
 import { motion } from "framer-motion";
 import { useNavigate, Link } from "react-router-dom";
@@ -16,42 +16,38 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [remember, setRemember] = useState(false);
+  const [remember, setRemember] = useState(false); // UI only
   const [error, setError] = useState("");
+
+  // ✅ Guard: if already logged in, go to app
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) {
+        navigate("/app/builder", { replace: true });
+      }
+    });
+  }, [navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
-    try {
-      const {
-        data: { session },
-        error: loginError,
-      } = await supabase.auth.signInWithPassword({
+    const { error: loginError } =
+      await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      setLoading(false);
+    setLoading(false);
 
-      if (loginError) {
-        setError(loginError.message);
-        return;
-      }
-
-      // Remember Me → persist session
-      if (remember) {
-        await supabase.auth.setSession(session);
-      }
-
-      // Redirect after login
-     navigate("/");
-    } catch (err) {
-      console.error(err);
-      setLoading(false);
-      setError("Something went wrong. Try again.");
+    if (loginError) {
+      setError(loginError.message);
+      return;
     }
+
+    // ✅ ALWAYS redirect into the app
+    navigate("/app/builder", { replace: true });
   };
 
   return (
@@ -127,12 +123,12 @@ export default function Login() {
               </button>
             </div>
 
-            {/* Error */}
             {error && (
-              <div className="text-red-400 text-sm text-center">{error}</div>
+              <div className="text-red-400 text-sm text-center">
+                {error}
+              </div>
             )}
 
-            {/* Login Button */}
             <button
               type="submit"
               disabled={loading}
@@ -141,15 +137,9 @@ export default function Login() {
               {loading ? "Signing in..." : "Log In"}
             </button>
 
-            {/* Remember + Forgot */}
             <div className="flex justify-between text-sm text-gray-300">
               <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={remember}
-                  onChange={() => setRemember(!remember)}
-                  className="w-4 h-4 rounded bg-black"
-                />
+                <input type="checkbox" checked={remember} readOnly />
                 Remember Me
               </label>
 
@@ -161,7 +151,6 @@ export default function Login() {
               </Link>
             </div>
 
-            {/* Signup link */}
             <p className="text-center text-xs text-gray-400 mt-3">
               Don't have an account?{" "}
               <Link to="/signup" className="text-[#00eaff] font-medium">

@@ -1,4 +1,5 @@
 // src/components/ProtectedRoute.jsx
+
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
@@ -11,31 +12,32 @@ export default function ProtectedRoute() {
 
   const location = useLocation();
 
+  // -------------------------
+  // Init + Auth Sync
+  // -------------------------
   useEffect(() => {
     let mounted = true;
 
-    async function init() {
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (!mounted) return;
-
-      if (!session?.user) {
+    async function loadSessionAndSubscription(user) {
+      if (!user) {
         setSessionUser(null);
+        setPlan("free");
+        setSubscriptionActive(true);
         setLoading(false);
         return;
       }
 
-      setSessionUser(session.user);
+      setSessionUser(user);
 
       const { data: sub } = await supabase
         .from("user_subscriptions")
         .select("plan, expires_at")
-        .eq("user_id", session.user.id)
+        .eq("user_id", user.id)
         .maybeSingle();
 
       if (!mounted) return;
 
-      // FREE plan = always active
+      // Free plan = always active
       if (!sub || sub.plan === "free") {
         setPlan("free");
         setSubscriptionActive(true);
@@ -52,11 +54,23 @@ export default function ProtectedRoute() {
       setLoading(false);
     }
 
+    async function init() {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!mounted) return;
+
+      await loadSessionAndSubscription(session?.user || null);
+    }
+
     init();
 
+    // 🔑 KEEP AUTH + SUBSCRIPTION STATE IN SYNC
     const { data: listener } =
-      supabase.auth.onAuthStateChange((_event, newSession) => {
-        setSessionUser(newSession?.user || null);
+      supabase.auth.onAuthStateChange(async (_event, session) => {
+        setLoading(true);
+        await loadSessionAndSubscription(session?.user || null);
       });
 
     return () => {
@@ -66,12 +80,12 @@ export default function ProtectedRoute() {
   }, []);
 
   // -------------------------
-  // Loading
+  // Loading state
   // -------------------------
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-white text-lg">
-        Loading...
+        Loading…
       </div>
     );
   }
@@ -87,7 +101,6 @@ export default function ProtectedRoute() {
   // Premium access control
   // -------------------------
   const premiumRoutes = [
-    "/app/builder",
     "/app/leads",
     "/app/appointments",
     "/app/integrations",
