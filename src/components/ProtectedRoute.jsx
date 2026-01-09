@@ -12,14 +12,12 @@ export default function ProtectedRoute() {
 
   const location = useLocation();
 
-  // -------------------------
-  // Init + Auth Sync
-  // -------------------------
   useEffect(() => {
     let mounted = true;
 
-    async function loadSessionAndSubscription(user) {
+    async function loadUser(user) {
       if (!user) {
+        if (!mounted) return;
         setSessionUser(null);
         setPlan("free");
         setSubscriptionActive(true);
@@ -37,7 +35,6 @@ export default function ProtectedRoute() {
 
       if (!mounted) return;
 
-      // Free plan = always active
       if (!sub || sub.plan === "free") {
         setPlan("free");
         setSubscriptionActive(true);
@@ -45,60 +42,49 @@ export default function ProtectedRoute() {
         return;
       }
 
-      setPlan(sub.plan);
-
       const expired =
         !sub.expires_at || new Date(sub.expires_at) < new Date();
 
+      setPlan(sub.plan);
       setSubscriptionActive(!expired);
       setLoading(false);
     }
 
-    async function init() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+    supabase.auth.getSession().then(({ data }) => {
+      loadUser(data.session?.user || null);
+    });
 
-      if (!mounted) return;
-
-      await loadSessionAndSubscription(session?.user || null);
-    }
-
-    init();
-
-    // 🔑 KEEP AUTH + SUBSCRIPTION STATE IN SYNC
-    const { data: listener } =
-      supabase.auth.onAuthStateChange(async (_event, session) => {
-        setLoading(true);
-        await loadSessionAndSubscription(session?.user || null);
-      });
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      setLoading(true);
+      loadUser(session?.user || null);
+    });
 
     return () => {
       mounted = false;
-      listener.subscription.unsubscribe();
+      data.subscription.unsubscribe();
     };
   }, []);
 
   // -------------------------
-  // Loading state
+  // Loading
   // -------------------------
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-white text-lg">
-        Loading…
+      <div className="min-h-screen flex items-center justify-center text-white">
+        Checking authentication…
       </div>
     );
   }
 
   // -------------------------
-  // Not authenticated
+  // Not logged in → Login page
   // -------------------------
   if (!sessionUser) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/" replace />;
   }
 
   // -------------------------
-  // Premium access control
+  // Premium route guard
   // -------------------------
   const premiumRoutes = [
     "/app/leads",
@@ -106,8 +92,8 @@ export default function ProtectedRoute() {
     "/app/integrations",
   ];
 
-  const isPremiumRoute = premiumRoutes.some((route) =>
-    location.pathname.startsWith(route)
+  const isPremiumRoute = premiumRoutes.some((r) =>
+    location.pathname.startsWith(r)
   );
 
   if (plan !== "free" && !subscriptionActive && isPremiumRoute) {
@@ -115,7 +101,7 @@ export default function ProtectedRoute() {
   }
 
   // -------------------------
-  // Authenticated & allowed
+  // Allowed
   // -------------------------
   return <Outlet />;
 }

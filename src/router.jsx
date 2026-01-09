@@ -1,4 +1,5 @@
 // src/router.jsx
+
 import { Routes, Route } from "react-router-dom";
 import React, { Suspense, lazy } from "react";
 
@@ -83,18 +84,22 @@ export default function AppRoutes() {
         {/* ----------------------------- */}
         {/* PROTECTED APP ROUTES         */}
         {/* ----------------------------- */}
-        <Route
-          path="/app"
-          element={<ProtectedRoute />}
-        >
+        <Route path="/app" element={<ProtectedRoute />}>
           <Route element={<MainLayout />}>
+            {/* /app */}
             <Route index element={<Dashboard />} />
+
+            {/* /app/builder */}
             <Route path="builder" element={<Builder />} />
             <Route path="builder/:id" element={<Builder />} />
             <Route path="builder/:id/embed-code" element={<EmbedCode />} />
+
+            {/* Premium */}
             <Route path="leads" element={<Leads />} />
             <Route path="appointments" element={<Appointments />} />
             <Route path="integrations" element={<Integrations />} />
+
+            {/* Settings */}
             <Route path="settings" element={<Settings />} />
           </Route>
         </Route>
