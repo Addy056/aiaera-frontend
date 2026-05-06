@@ -1,48 +1,38 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 
-export default function ProtectedRoute() {
+export default function ProtectedRoute({ children }) {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
-  const [isExpired, setIsExpired] = useState(false);
 
   useEffect(() => {
     const checkAccess = async () => {
       try {
-        const { data } = await supabase.auth.getSession();
-        const session = data.session;
+        // 🔥 GET CURRENT SESSION
+        const { data, error } = await supabase.auth.getSession();
 
+        if (error) {
+          console.error("Session Error:", error);
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+
+        const session = data?.session;
+
+        // ❌ NOT LOGGED IN
         if (!session) {
           setUser(null);
           setLoading(false);
           return;
         }
 
-        const currentUser = session.user;
-        setUser(currentUser);
-
-        // 🔥 FETCH SUBSCRIPTION
-        const { data: sub, error } = await supabase
-          .from("user_subscriptions")
-          .select("expires_at")
-          .eq("user_id", currentUser.id)
-          .maybeSingle();
-
-        if (error) {
-          console.error("Subscription fetch error:", error);
-        }
-
-        // ✅ NO SUBSCRIPTION → allow (first time user)
-        if (!sub || !sub.expires_at) {
-          setIsExpired(false);
-        } else {
-          const expired = new Date(sub.expires_at) < new Date();
-          setIsExpired(expired);
-        }
+        // ✅ USER LOGGED IN
+        setUser(session.user);
 
       } catch (err) {
-        console.error("Auth error:", err);
+        console.error("Protected Route Error:", err);
         setUser(null);
       } finally {
         setLoading(false);
@@ -51,36 +41,53 @@ export default function ProtectedRoute() {
 
     checkAccess();
 
-    // 🔥 LISTEN TO AUTH CHANGES (IMPORTANT)
-    const { data: listener } = supabase.auth.onAuthStateChange(() => {
+    // 🔥 AUTH LISTENER
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => {
       checkAccess();
     });
 
     return () => {
-      listener.subscription.unsubscribe();
+      subscription?.unsubscribe();
     };
 
   }, []);
 
-  // ⏳ Loading
+  // ⏳ LOADING SCREEN
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen text-gray-400">
-        Loading...
+      <div className="min-h-screen bg-[#060816] flex items-center justify-center overflow-hidden relative">
+
+        {/* GLOW EFFECTS */}
+        <div className="absolute top-[-120px] left-[-120px] w-[300px] h-[300px] bg-purple-600/20 blur-[120px] rounded-full"></div>
+
+        <div className="absolute bottom-[-120px] right-[-120px] w-[300px] h-[300px] bg-blue-600/20 blur-[120px] rounded-full"></div>
+
+        {/* LOADER */}
+        <div className="relative z-10 flex flex-col items-center">
+
+          <div className="w-14 h-14 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin mb-5"></div>
+
+          <h2 className="text-white text-xl font-semibold">
+            Loading AIAERA...
+          </h2>
+
+          <p className="text-gray-400 text-sm mt-2">
+            Verifying your session
+          </p>
+
+        </div>
+
       </div>
     );
   }
 
-  // 🔐 Not logged in
+  // 🔐 LOGIN REQUIRED
   if (!user) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" replace />;
   }
 
-  // ❌ Subscription expired → go to app pricing (WITH SIDEBAR)
-  if (isExpired) {
-    return <Navigate to="/app/pricing" />;
-  }
-
-  // ✅ Render nested routes
-  return <Outlet />;
+  // ✅ ALLOW ACCESS
+  return children;
 }
