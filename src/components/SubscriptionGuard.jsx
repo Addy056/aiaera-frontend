@@ -12,6 +12,15 @@ export default function SubscriptionGuard({ children }) {
         data: { user },
       } = await supabase.auth.getUser();
 
+      // ✅ YOUR ADMIN EMAILS
+      const ADMIN_EMAILS = ["dhawaleaditya077@gmail.com"];
+
+      // ✅ BYPASS SUBSCRIPTION FOR ADMIN
+      if (user && ADMIN_EMAILS.includes(user.email)) {
+        setAllowed(true);
+        return;
+      }
+
       const { data } = await supabase
         .from("user_subscriptions")
         .select("*")
@@ -26,9 +35,11 @@ export default function SubscriptionGuard({ children }) {
     };
 
     check();
-  }, []);
+  }, [navigate]);
 
-  if (!allowed) return <div className="p-10">Checking subscription...</div>;
+  if (!allowed) {
+    return <div className="p-10">Checking subscription...</div>;
+  }
 
   return children;
 }

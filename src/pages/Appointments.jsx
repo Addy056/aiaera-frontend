@@ -1,171 +1,451 @@
-import { useEffect, useState, useContext } from "react";
+import {
+  useEffect,
+  useState,
+  useContext,
+} from "react";
+
+import {
+  Calendar,
+  Crown,
+  Loader2,
+  Sparkles,
+  ExternalLink,
+  Users,
+} from "lucide-react";
+
 import { supabase } from "../lib/supabase";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 export default function Appointments() {
-  const { user, loading: authLoading } = useContext(AuthContext);
+
+  const {
+    user,
+    loading: authLoading,
+  } = useContext(AuthContext);
+
   const navigate = useNavigate();
 
-  const [appointments, setAppointments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [isSubscribed, setIsSubscribed] = useState(true);
+  // ✅ ADMIN EMAILS
+  const ADMIN_EMAILS = [
+    "dhawaleaditya077@gmail.com",
+  ];
+
+  const isAdmin =
+    user &&
+    ADMIN_EMAILS.includes(user.email);
+
+  const [appointments, setAppointments] =
+    useState([]);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [isSubscribed, setIsSubscribed] =
+    useState(true);
 
   // =============================
   // INIT
   // =============================
   useEffect(() => {
+
     if (!user) return;
+
     init();
+
   }, [user]);
 
   const init = async () => {
-    try {
-      // CHECK SUBSCRIPTION
-      const { data: sub } = await supabase
-        .from("user_subscriptions")
-        .select("*")
-        .eq("user_id", user.id)
-        .single();
 
-      if (!sub || new Date(sub.expires_at) < new Date()) {
-        setIsSubscribed(false);
-      } else {
+    try {
+
+      // =============================
+      // CHECK SUBSCRIPTION
+      // =============================
+      const { data: sub } =
+        await supabase
+          .from("user_subscriptions")
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+      // ✅ ADMIN BYPASS
+      if (isAdmin) {
+
         setIsSubscribed(true);
+
+      } else if (
+        !sub ||
+        !sub.expires_at ||
+        new Date(sub.expires_at) <
+          new Date()
+      ) {
+
+        setIsSubscribed(false);
+
+      } else {
+
+        setIsSubscribed(true);
+
       }
 
+      // =============================
       // FETCH APPOINTMENTS
-      const { data, error } = await supabase
+      // =============================
+      const {
+        data,
+        error,
+      } = await supabase
         .from("appointments")
         .select("*")
         .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+        .order("created_at", {
+          ascending: false,
+        });
 
       if (error) throw error;
 
       setAppointments(data || []);
+
     } catch (err) {
+
       console.error(err);
+
     } finally {
+
       setLoading(false);
+
     }
   };
 
   // =============================
   // LOADING
   // =============================
-  if (authLoading || loading) {
+  if (
+    authLoading ||
+    loading
+  ) {
+
     return (
-      <div className="p-10 text-center text-gray-400">
-        Loading appointments...
+      <div className="min-h-[70vh] flex items-center justify-center">
+
+        <div className="flex flex-col items-center">
+
+          <Loader2
+            className="animate-spin text-purple-500 mb-4"
+            size={34}
+          />
+
+          <p className="text-sm text-gray-400">
+            Loading appointments...
+          </p>
+
+        </div>
+
       </div>
     );
   }
 
   return (
-    <div>
+    <div className="space-y-6 text-white">
+
+      {/* HEADER */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+
+        <div>
+
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.03] border border-white/5 mb-3">
+
+            <Sparkles
+              size={12}
+              className="text-purple-400"
+            />
+
+            <span className="text-[11px] text-gray-300">
+              AI Appointment Manager
+            </span>
+
+          </div>
+
+          <h1 className="text-3xl font-bold mb-1">
+            Appointments
+          </h1>
+
+          <p className="text-gray-400 text-sm">
+            Manage all meetings booked
+            through your AI chatbot.
+          </p>
+
+        </div>
+
+        <div className="rounded-2xl border border-white/5 bg-white/[0.03] px-5 py-4 flex items-center gap-3">
+
+          <div className="w-11 h-11 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400">
+
+            <Calendar size={20} />
+
+          </div>
+
+          <div>
+
+            <h3 className="text-xl font-bold">
+              {appointments.length}
+            </h3>
+
+            <p className="text-xs text-gray-400">
+              Total Appointments
+            </p>
+
+          </div>
+
+        </div>
+
+      </div>
 
       {/* 🔴 UPGRADE BANNER */}
       {!isSubscribed && (
-        <div className="mb-6 p-4 rounded-xl bg-red-500/20 border border-red-500/30 flex justify-between items-center">
-          <p className="text-sm text-red-300">
-            Upgrade your plan to view and manage appointments
-          </p>
+
+        <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 flex items-center justify-between gap-4">
+
+          <div className="flex items-center gap-3">
+
+            <div className="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center">
+
+              <Crown
+                size={18}
+                className="text-red-400"
+              />
+
+            </div>
+
+            <div>
+
+              <h3 className="font-semibold">
+                Subscription Required
+              </h3>
+
+              <p className="text-sm text-red-200/70">
+                Upgrade your plan to
+                manage appointments.
+              </p>
+
+            </div>
+
+          </div>
+
           <button
-            onClick={() => navigate("/pricing")}
-            className="bg-red-500 px-4 py-2 rounded-lg text-sm"
+            onClick={() =>
+              navigate("/pricing")
+            }
+            className="px-4 h-10 rounded-xl bg-red-500 hover:bg-red-600 transition-all text-sm font-medium"
           >
+
             Upgrade
+
           </button>
+
         </div>
+
       )}
 
-      {/* HEADER */}
-      <div className="mb-10">
-        <h2 className="text-3xl font-bold">Appointments</h2>
-        <p className="text-gray-400 mt-2">
-          All booked meetings from your chatbot
-        </p>
-      </div>
+      {/* TABLE */}
+      <div className="rounded-3xl border border-white/5 bg-white/[0.03] backdrop-blur-xl overflow-hidden">
 
-      {/* TABLE CARD */}
-      <div className="bg-white/10 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden">
+        {/* TOP */}
+        <div className="flex items-center justify-between p-6 border-b border-white/5">
 
-        {/* TOP BAR */}
-        <div className="flex justify-between items-center p-6 border-b border-white/10">
-          <h3 className="text-lg font-semibold">All Appointments</h3>
+          <div>
 
-          <span className="text-sm text-gray-400">
+            <h2 className="text-lg font-semibold mb-1">
+              All Appointments
+            </h2>
+
+            <p className="text-sm text-gray-400">
+              View and manage customer
+              meetings.
+            </p>
+
+          </div>
+
+          <div className="flex items-center gap-2 text-sm text-gray-400">
+
+            <Users size={15} />
+
             {appointments.length} total
-          </span>
+
+          </div>
+
         </div>
 
-        {/* LOCKED STATE */}
+        {/* LOCKED */}
         {!isSubscribed ? (
-          <div className="p-20 text-center text-gray-400">
-            🔒 Upgrade to access appointments
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
 
-              <thead className="text-gray-400 text-sm border-b border-white/10">
+          <div className="p-20 text-center">
+
+            <div className="w-14 h-14 rounded-2xl bg-red-500/10 flex items-center justify-center mx-auto mb-4">
+
+              <Crown
+                className="text-red-400"
+                size={24}
+              />
+
+            </div>
+
+            <h3 className="text-xl font-bold mb-2">
+              Appointments Locked
+            </h3>
+
+            <p className="text-gray-400 text-sm">
+              Upgrade your subscription
+              to access appointments.
+            </p>
+
+          </div>
+
+        ) : (
+
+          <div className="overflow-x-auto">
+
+            <table className="w-full">
+
+              <thead className="border-b border-white/5 text-left text-xs text-gray-400">
+
                 <tr>
-                  <th className="p-4">Customer</th>
-                  <th className="p-4">Email</th>
-                  <th className="p-4">Meeting</th>
-                  <th className="p-4">Date</th>
+
+                  <th className="px-6 py-4">
+                    Customer
+                  </th>
+
+                  <th className="px-6 py-4">
+                    Email
+                  </th>
+
+                  <th className="px-6 py-4">
+                    Meeting
+                  </th>
+
+                  <th className="px-6 py-4">
+                    Date
+                  </th>
+
                 </tr>
+
               </thead>
 
               <tbody>
-                {appointments.length > 0 ? (
-                  appointments.map((appt) => (
-                    <tr
-                      key={appt.id}
-                      className="border-t border-white/5 hover:bg-white/5 transition"
-                    >
-                      <td className="p-4 font-medium">
-                        {appt.customer_name || "Unknown"}
-                      </td>
 
-                      <td className="p-4 text-gray-300">
-                        {appt.customer_email || "-"}
-                      </td>
+                {appointments.length >
+                0 ? (
 
-                      <td className="p-4">
-                        {appt.calendly_event_link ? (
-                          <a
-                            href={appt.calendly_event_link}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-purple-400 hover:underline font-medium"
-                          >
-                            View Meeting
-                          </a>
-                        ) : (
-                          <span className="text-gray-400 text-sm">
-                            Not available
-                          </span>
-                        )}
-                      </td>
+                  appointments.map(
+                    (appt) => (
 
-                      <td className="p-4 text-gray-400 text-sm">
-                        {new Date(appt.created_at).toLocaleString()}
-                      </td>
-                    </tr>
-                  ))
+                      <tr
+                        key={appt.id}
+                        className="border-t border-white/5 hover:bg-white/[0.03] transition-all"
+                      >
+
+                        <td className="px-6 py-5 font-medium">
+
+                          {appt.customer_name ||
+                            "Unknown"}
+
+                        </td>
+
+                        <td className="px-6 py-5 text-gray-300 text-sm">
+
+                          {appt.customer_email ||
+                            "-"}
+
+                        </td>
+
+                        <td className="px-6 py-5">
+
+                          {appt.calendly_event_link ? (
+
+                            <a
+                              href={
+                                appt.calendly_event_link
+                              }
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-2 text-purple-400 hover:text-purple-300 transition-all text-sm font-medium"
+                            >
+
+                              View Meeting
+
+                              <ExternalLink
+                                size={14}
+                              />
+
+                            </a>
+
+                          ) : (
+
+                            <span className="text-gray-500 text-sm">
+                              Not Available
+                            </span>
+
+                          )}
+
+                        </td>
+
+                        <td className="px-6 py-5 text-gray-400 text-sm">
+
+                          {new Date(
+                            appt.created_at
+                          ).toLocaleString()}
+
+                        </td>
+
+                      </tr>
+
+                    )
+                  )
+
                 ) : (
+
                   <tr>
-                    <td colSpan="4" className="p-10 text-center text-gray-400">
-                      No appointments yet
+
+                    <td
+                      colSpan="4"
+                      className="p-16 text-center"
+                    >
+
+                      <div className="flex flex-col items-center">
+
+                        <div className="w-14 h-14 rounded-2xl bg-white/[0.03] flex items-center justify-center mb-4">
+
+                          <Calendar
+                            size={24}
+                            className="text-gray-400"
+                          />
+
+                        </div>
+
+                        <h3 className="text-xl font-bold mb-2">
+                          No Appointments
+                        </h3>
+
+                        <p className="text-gray-400 text-sm">
+                          Booked meetings will
+                          appear here.
+                        </p>
+
+                      </div>
+
                     </td>
+
                   </tr>
+
                 )}
+
               </tbody>
 
             </table>
+
           </div>
+
         )}
 
       </div>

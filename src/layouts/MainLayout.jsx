@@ -6,7 +6,6 @@ import {
   Plug,
   CreditCard,
   LogOut,
-  Sparkles,
   Menu,
   X,
 } from "lucide-react";
@@ -14,14 +13,15 @@ import {
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useEffect, useState } from "react";
-import logo from "../assets/aiaera-logo.png";
+import logo from "../assets/logo.png";
+
 export default function MainLayout() {
   const navigate = useNavigate();
 
   const [userEmail, setUserEmail] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // 🔥 GET USER
+  // GET USER
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) {
@@ -30,14 +30,14 @@ export default function MainLayout() {
     });
   }, []);
 
-  // 🔥 LOGOUT
+  // LOGOUT
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/login");
   };
 
-  // 🔥 SIDEBAR LINKS
-  const links = [
+  // LINKS
+  const workspaceLinks = [
     {
       name: "Dashboard",
       icon: LayoutDashboard,
@@ -58,6 +58,9 @@ export default function MainLayout() {
       icon: Calendar,
       path: "/app/appointments",
     },
+  ];
+
+  const settingsLinks = [
     {
       name: "Integrations",
       icon: Plug,
@@ -71,25 +74,31 @@ export default function MainLayout() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#060816] text-white flex overflow-hidden relative">
+    <div className="min-h-screen bg-[#081120] text-white flex overflow-hidden">
 
-      {/* 🔥 MOBILE TOPBAR */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-20 z-50 bg-[#060816]/80 backdrop-blur-2xl border-b border-white/10 flex items-center justify-between px-5">
+      {/* MOBILE TOPBAR */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 z-50 bg-[#081120]/95 backdrop-blur-xl border-b border-white/5 flex items-center justify-between px-4">
 
-        {/* LOGO */}
+        {/* MOBILE LOGO */}
         <div className="flex items-center gap-3">
 
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center shadow-lg shadow-purple-500/20">
-            <Sparkles size={20} />
+          <div className="w-10 h-10 rounded-2xl overflow-hidden bg-white/5 border border-white/10 shadow-[0_0_30px_rgba(127,90,240,0.35)]">
+
+            <img
+              src={logo}
+              alt="AIAERA Logo"
+              className="w-full h-full object-cover"
+            />
+
           </div>
 
           <div>
-            <h1 className="text-xl font-black">
+            <h1 className="text-lg font-bold tracking-tight text-white">
               AIAERA
             </h1>
 
             <p className="text-[10px] text-gray-400">
-              AI Chatbot Builder
+              AI Workspace
             </p>
           </div>
 
@@ -98,99 +107,164 @@ export default function MainLayout() {
         {/* MENU BUTTON */}
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center"
+          className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/5 flex items-center justify-center"
         >
-          {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+          {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
         </button>
 
       </div>
 
-      {/* 🔥 SIDEBAR OVERLAY */}
+      {/* MOBILE OVERLAY */}
       {sidebarOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/50 z-40"
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
-      {/* 🔥 SIDEBAR */}
+      {/* SIDEBAR */}
       <aside
         className={`
-          fixed top-0 left-0 z-50 h-screen w-[280px]
-          bg-white/5 backdrop-blur-2xl border-r border-white/10
-          p-6 flex flex-col justify-between
+          fixed top-0 left-0 z-50 h-screen w-[255px]
+          bg-[#0B1120]
+          border-r border-white/5
+          flex flex-col
           transition-all duration-300
-          
+
           ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
           lg:translate-x-0
         `}
       >
 
-        {/* TOP */}
-        <div>
+        {/* TOP AREA */}
+        <div className="px-5 pt-6">
 
-          {/* LOGO */}
-          <div className="hidden lg:flex items-center gap-3 mb-10">
+          {/* DESKTOP LOGO */}
+          <div className="flex items-center gap-3 mb-10">
 
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center shadow-lg shadow-purple-500/20">
-              <Sparkles />
+            <div className="w-12 h-12 rounded-2xl overflow-hidden bg-white/5 border border-white/10 shadow-[0_0_30px_rgba(127,90,240,0.35)]">
+
+              <img
+                src={logo}
+                alt="AIAERA Logo"
+                className="w-full h-full object-cover"
+              />
+
             </div>
 
             <div>
-              <h1 className="text-2xl font-black">
+              <h1 className="text-xl font-bold tracking-tight text-white">
                 AIAERA
               </h1>
 
               <p className="text-xs text-gray-400">
-                AI Chatbot Builder
+                AI Workspace
               </p>
             </div>
 
           </div>
 
-          {/* NAVIGATION */}
-          <nav className="space-y-3 mt-20 lg:mt-0">
+          {/* WORKSPACE */}
+          <div className="mb-8">
 
-            {links.map((link) => {
-              const Icon = link.icon;
+            <p className="text-[10px] uppercase tracking-[0.25em] text-gray-600 mb-3 px-3">
+              Workspace
+            </p>
 
-              return (
-                <NavLink
-                  key={link.path}
-                  to={link.path}
-                  onClick={() => setSidebarOpen(false)}
-                  className={({ isActive }) =>
-                    `flex items-center gap-4 px-4 py-4 rounded-2xl transition-all duration-300 ${
-                      isActive
-                        ? "bg-gradient-to-r from-purple-600 to-blue-600 shadow-lg shadow-purple-500/20"
-                        : "hover:bg-white/10 text-gray-300 hover:text-white"
-                    }`
-                  }
-                >
-                  <Icon size={20} />
+            <nav className="space-y-1">
 
-                  <span className="font-medium">
-                    {link.name}
-                  </span>
-                </NavLink>
-              );
-            })}
+              {workspaceLinks.map((link) => {
+                const Icon = link.icon;
 
-          </nav>
+                return (
+                  <NavLink
+                    key={link.path}
+                    to={link.path}
+                    onClick={() => setSidebarOpen(false)}
+                    className={({ isActive }) =>
+                      `group flex items-center gap-3 px-3 py-3 rounded-2xl transition-all duration-200 ${
+                        isActive
+                          ? "bg-gradient-to-r from-[#7f5af0] to-[#6c63ff] text-white shadow-lg shadow-purple-500/20"
+                          : "text-gray-400 hover:bg-white/[0.04] hover:text-white"
+                      }`
+                    }
+                  >
+
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-white/[0.04] group-hover:bg-white/[0.07] transition-all">
+
+                      <Icon size={17} />
+
+                    </div>
+
+                    <span className="text-sm font-medium">
+                      {link.name}
+                    </span>
+
+                  </NavLink>
+                );
+              })}
+
+            </nav>
+
+          </div>
+
+          {/* SETTINGS */}
+          <div>
+
+            <p className="text-[10px] uppercase tracking-[0.25em] text-gray-600 mb-3 px-3">
+              Settings
+            </p>
+
+            <nav className="space-y-1">
+
+              {settingsLinks.map((link) => {
+                const Icon = link.icon;
+
+                return (
+                  <NavLink
+                    key={link.path}
+                    to={link.path}
+                    onClick={() => setSidebarOpen(false)}
+                    className={({ isActive }) =>
+                      `group flex items-center gap-3 px-3 py-3 rounded-2xl transition-all duration-200 ${
+                        isActive
+                          ? "bg-gradient-to-r from-[#7f5af0] to-[#6c63ff] text-white shadow-lg shadow-purple-500/20"
+                          : "text-gray-400 hover:bg-white/[0.04] hover:text-white"
+                      }`
+                    }
+                  >
+
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-white/[0.04] group-hover:bg-white/[0.07] transition-all">
+
+                      <Icon size={17} />
+
+                    </div>
+
+                    <span className="text-sm font-medium">
+                      {link.name}
+                    </span>
+
+                  </NavLink>
+                );
+              })}
+
+            </nav>
+
+          </div>
 
         </div>
 
         {/* BOTTOM */}
-        <div>
+        <div className="p-5 mt-auto border-t border-white/5">
 
           {/* USER CARD */}
-          <div className="p-4 rounded-2xl bg-white/5 border border-white/10 mb-4">
+          <div className="rounded-2xl bg-white/[0.03] border border-white/5 p-4 mb-3 backdrop-blur-xl">
 
-            <p className="text-xs text-gray-400 mb-1">
+            <p className="text-[11px] text-gray-500 mb-1">
               Logged in as
             </p>
 
-            <p className="text-sm font-medium truncate">
+            <p className="text-sm font-medium truncate text-gray-200">
               {userEmail || "Loading..."}
             </p>
 
@@ -199,28 +273,32 @@ export default function MainLayout() {
           {/* LOGOUT */}
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 bg-red-500/10 border border-red-500/20 py-3 rounded-2xl text-red-300 hover:bg-red-500/20 transition-all duration-300"
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-white/[0.03] border border-white/5 text-gray-300 hover:bg-red-500/10 hover:border-red-500/20 hover:text-red-300 transition-all duration-200"
           >
-            <LogOut size={18} />
+
+            <LogOut size={17} />
 
             Logout
+
           </button>
 
         </div>
 
       </aside>
 
-      {/* 🔥 MAIN CONTENT */}
-      <main className="flex-1 lg:ml-[280px] pt-24 lg:pt-8 p-5 lg:p-8 overflow-y-auto">
+      {/* MAIN CONTENT */}
+      <main className="flex-1 lg:ml-[255px] min-h-screen bg-[#0F172A] overflow-y-auto">
 
-        {/* BACKGROUND GLOW */}
-        <div className="fixed top-[-150px] left-[-100px] w-[350px] h-[350px] bg-purple-600/20 blur-[140px] rounded-full pointer-events-none"></div>
+        {/* SOFT BACKGROUND */}
+        <div className="fixed top-[-200px] right-[-100px] w-[350px] h-[350px] bg-purple-600/10 blur-[140px] rounded-full pointer-events-none"></div>
 
-        <div className="fixed bottom-[-150px] right-[-100px] w-[350px] h-[350px] bg-blue-600/20 blur-[140px] rounded-full pointer-events-none"></div>
+        <div className="fixed bottom-[-200px] left-[-100px] w-[300px] h-[300px] bg-blue-600/10 blur-[120px] rounded-full pointer-events-none"></div>
 
-        {/* PAGE */}
-        <div className="relative z-10">
+        {/* CONTENT */}
+        <div className="relative z-10 max-w-7xl mx-auto p-5 lg:p-8 pt-24 lg:pt-8">
+
           <Outlet />
+
         </div>
 
       </main>

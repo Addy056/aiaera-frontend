@@ -10,156 +10,395 @@ import {
   RefreshCw,
   Eye,
   X,
+  Trash2,
+  Phone,
 } from "lucide-react";
 
-import { useEffect, useState, useContext } from "react";
+import {
+  useEffect,
+  useState,
+  useContext,
+} from "react";
+
 import { supabase } from "../lib/supabase";
+
 import { AuthContext } from "../context/AuthContext";
+
 import { useNavigate } from "react-router-dom";
 
 export default function Leads() {
 
-  const { user, loading: authLoading } = useContext(AuthContext);
+  const {
+    user,
+    loading: authLoading,
+  } = useContext(
+    AuthContext
+  );
 
-  const navigate = useNavigate();
+  const navigate =
+    useNavigate();
 
-  const [leads, setLeads] = useState([]);
-  const [filteredLeads, setFilteredLeads] = useState([]);
+  /*
+  ========================================
+  ADMIN BYPASS
+  ========================================
+  */
+  const ADMIN_EMAILS = [
+    "dhawaleaditya077@gmail.com",
+  ];
 
-  const [loading, setLoading] = useState(true);
+  const isAdmin =
+    user &&
+    ADMIN_EMAILS.includes(
+      user.email
+    );
 
-  const [isSubscribed, setIsSubscribed] = useState(true);
+  /*
+  ========================================
+  STATES
+  ========================================
+  */
+  const [leads, setLeads] =
+    useState([]);
 
-  const [search, setSearch] = useState("");
+  const [
+    filteredLeads,
+    setFilteredLeads,
+  ] = useState([]);
 
-  const [selectedLead, setSelectedLead] = useState(null);
+  const [loading, setLoading] =
+    useState(true);
 
-  // 🔥 INIT
+  const [
+    isSubscribed,
+    setIsSubscribed,
+  ] = useState(true);
+
+  const [search, setSearch] =
+    useState("");
+
+  const [
+    selectedLead,
+    setSelectedLead,
+  ] = useState(null);
+
+  /*
+  ========================================
+  INIT
+  ========================================
+  */
   useEffect(() => {
+
     if (!user) return;
 
     fetchLeads();
 
-    // 🔥 REALTIME
-    const channel = supabase
-      .channel("realtime-leads")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "leads",
-        },
-        () => {
-          fetchLeads();
-        }
-      )
-      .subscribe();
+    /*
+    ========================================
+    REALTIME SUBSCRIPTION
+    ========================================
+    */
+    const channel =
+      supabase
+        .channel(
+          "realtime-leads"
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema:
+              "public",
+            table:
+              "leads",
+          },
+          () => {
+            fetchLeads();
+          }
+        )
+        .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+
+      supabase.removeChannel(
+        channel
+      );
     };
 
   }, [user]);
 
-  // 🔥 SEARCH FILTER
+  /*
+  ========================================
+  SEARCH FILTER
+  ========================================
+  */
   useEffect(() => {
 
-    const filtered = leads.filter((lead) =>
-      `${lead.name} ${lead.email} ${lead.message}`
-        .toLowerCase()
-        .includes(search.toLowerCase())
-    );
+    const filtered =
+      leads.filter((lead) =>
+        `
+${lead.name}
+${lead.email}
+${lead.phone}
+${lead.message}
+`
+          .toLowerCase()
+          .includes(
+            search.toLowerCase()
+          )
+      );
 
-    setFilteredLeads(filtered);
+    setFilteredLeads(
+      filtered
+    );
 
   }, [search, leads]);
 
-  // 🔥 FETCH
-  const fetchLeads = async () => {
+  /*
+  ========================================
+  FETCH LEADS
+  ========================================
+  */
+  const fetchLeads =
+    async () => {
 
-    try {
+      try {
 
-      setLoading(true);
+        setLoading(true);
 
-      // 🔥 CHECK SUB
-      const { data: sub } = await supabase
-        .from("user_subscriptions")
-        .select("expires_at")
-        .eq("user_id", user.id)
-        .maybeSingle();
+        /*
+        ========================================
+        CHECK SUBSCRIPTION
+        ========================================
+        */
+        const {
+          data: sub,
+        } = await supabase
+          .from(
+            "user_subscriptions"
+          )
+          .select(
+            "expires_at"
+          )
+          .eq(
+            "user_id",
+            user.id
+          )
+          .maybeSingle();
+
+        /*
+        ========================================
+        ADMIN ACCESS
+        ========================================
+        */
+        if (isAdmin) {
+
+          setIsSubscribed(
+            true
+          );
+
+        } else if (
+          sub?.expires_at &&
+          new Date(
+            sub.expires_at
+          ) <
+            new Date()
+        ) {
+
+          setIsSubscribed(
+            false
+          );
+
+        } else {
+
+          setIsSubscribed(
+            true
+          );
+        }
+
+        /*
+        ========================================
+        FETCH LEADS
+        ========================================
+        */
+        const {
+          data,
+          error,
+        } = await supabase
+          .from("leads")
+          .select("*")
+          .eq(
+            "user_id",
+            user.id
+          )
+          .order(
+            "created_at",
+            {
+              ascending:
+                false,
+            }
+          );
+
+        if (error) {
+          throw error;
+        }
+
+        setLeads(
+          data || []
+        );
+
+        setFilteredLeads(
+          data || []
+        );
+
+      } catch (err) {
+
+        console.error(
+          "LEADS ERROR:",
+          err
+        );
+
+      } finally {
+
+        setLoading(false);
+      }
+    };
+
+  /*
+  ========================================
+  DELETE LEAD
+  ========================================
+  */
+  const deleteLead =
+    async (id) => {
+
+      const confirmDelete =
+        window.confirm(
+          "Delete this lead?"
+        );
 
       if (
-        sub?.expires_at &&
-        new Date(sub.expires_at) < new Date()
+        !confirmDelete
       ) {
-        setIsSubscribed(false);
-      } else {
-        setIsSubscribed(true);
+        return;
       }
 
-      // 🔥 FETCH LEADS
-      const { data, error } = await supabase
-        .from("leads")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+      try {
 
-      if (error) throw error;
+        const { error } =
+          await supabase
+            .from("leads")
+            .delete()
+            .eq("id", id);
 
-      setLeads(data || []);
-      setFilteredLeads(data || []);
+        if (error) {
+          throw error;
+        }
 
-    } catch (err) {
-      console.error("Leads Error:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+        fetchLeads();
 
-  // 🔥 CSV EXPORT
-  const exportCSV = () => {
+      } catch (err) {
 
-    if (!isSubscribed || filteredLeads.length === 0) return;
+        console.error(
+          "DELETE ERROR:",
+          err
+        );
+      }
+    };
 
-    const headers = ["Name", "Email", "Message", "Date"];
+  /*
+  ========================================
+  EXPORT CSV
+  ========================================
+  */
+  const exportCSV =
+    () => {
 
-    const rows = filteredLeads.map((lead) => [
-      lead.name || "",
-      lead.email || "",
-      lead.message || "",
-      new Date(lead.created_at).toLocaleString(),
-    ]);
+      if (
+        !isSubscribed ||
+        filteredLeads.length === 0
+      ) {
+        return;
+      }
 
-    const csvContent =
-      "data:text/csv;charset=utf-8," +
-      [headers, ...rows]
-        .map((e) => e.join(","))
-        .join("\n");
+      const headers = [
+        "Name",
+        "Email",
+        "Phone",
+        "Message",
+        "Date",
+      ];
 
-    const encodedUri = encodeURI(csvContent);
+      const rows =
+        filteredLeads.map(
+          (lead) => [
+            lead.name ||
+              "",
+            lead.email ||
+              "",
+            lead.phone ||
+              "",
+            lead.message ||
+              "",
+            new Date(
+              lead.created_at
+            ).toLocaleString(),
+          ]
+        );
 
-    const link = document.createElement("a");
+      const csvContent =
+        "data:text/csv;charset=utf-8," +
+        [headers, ...rows]
+          .map((e) =>
+            e.join(",")
+          )
+          .join("\n");
 
-    link.setAttribute("href", encodedUri);
+      const encodedUri =
+        encodeURI(
+          csvContent
+        );
 
-    link.setAttribute("download", "aiaera-leads.csv");
+      const link =
+        document.createElement(
+          "a"
+        );
 
-    document.body.appendChild(link);
+      link.setAttribute(
+        "href",
+        encodedUri
+      );
 
-    link.click();
-  };
+      link.setAttribute(
+        "download",
+        "aiaera-leads.csv"
+      );
 
-  // 🔥 LOADING
-  if (authLoading || loading) {
+      document.body.appendChild(
+        link
+      );
+
+      link.click();
+    };
+
+  /*
+  ========================================
+  LOADING
+  ========================================
+  */
+  if (
+    authLoading ||
+    loading
+  ) {
+
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-[70vh] flex items-center justify-center">
 
         <div className="flex flex-col items-center">
 
-          <div className="w-14 h-14 rounded-full border-4 border-purple-500/20 border-t-purple-500 animate-spin mb-5"></div>
+          <div className="w-10 h-10 rounded-full border-4 border-purple-500/20 border-t-purple-500 animate-spin mb-4"></div>
 
-          <p className="text-gray-400">
+          <p className="text-gray-400 text-sm">
             Loading leads...
           </p>
 
@@ -170,62 +409,69 @@ export default function Leads() {
   }
 
   return (
-    <div className="text-white min-h-screen relative">
-
-      {/* BG GLOW */}
-      <div className="fixed top-[-120px] left-[-120px] w-[300px] h-[300px] bg-purple-600/20 blur-[140px] rounded-full pointer-events-none"></div>
-
-      <div className="fixed bottom-[-120px] right-[-120px] w-[300px] h-[300px] bg-blue-600/20 blur-[140px] rounded-full pointer-events-none"></div>
+    <div className="space-y-4 text-white">
 
       {/* HEADER */}
-      <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-6 mb-10">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
 
         <div>
 
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/5 backdrop-blur-xl mb-5">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.03] border border-white/5 mb-2">
 
-            <Sparkles className="w-4 h-4 text-purple-400" />
+            <Sparkles
+              size={12}
+              className="text-purple-400"
+            />
 
-            <span className="text-sm text-gray-300">
+            <span className="text-[11px] text-gray-300">
               AI Lead Management
             </span>
 
           </div>
 
-          <h1 className="text-5xl font-black mb-3">
-            Leads Dashboard
+          <h1 className="text-3xl font-bold tracking-tight mb-1">
+            Leads
           </h1>
 
-          <p className="text-gray-400 text-lg">
-            Manage and monitor all captured customer leads.
+          <p className="text-gray-400 text-sm">
+            Manage all captured customer leads.
           </p>
 
         </div>
 
-        <div className="flex flex-wrap gap-4">
+        {/* ACTIONS */}
+        <div className="flex items-center gap-3">
 
           <button
-            onClick={fetchLeads}
-            className="h-[56px] px-6 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition-all flex items-center gap-3"
+            onClick={
+              fetchLeads
+            }
+            className="h-11 px-4 rounded-xl border border-white/5 bg-white/[0.03] hover:bg-white/[0.05] transition-all flex items-center gap-2 text-sm"
           >
 
-            <RefreshCw size={18} />
+            <RefreshCw size={15} />
 
             Refresh
 
           </button>
 
           <button
-            onClick={exportCSV}
-            disabled={!isSubscribed || filteredLeads.length === 0}
-            className={`h-[56px] px-7 rounded-2xl font-semibold flex items-center gap-3 transition-all ${
+            onClick={
+              exportCSV
+            }
+            disabled={
+              !isSubscribed ||
+              filteredLeads.length ===
+                0
+            }
+            className={`h-11 px-4 rounded-xl flex items-center gap-2 text-sm font-medium transition-all ${
               isSubscribed
-                ? "bg-gradient-to-r from-purple-600 to-blue-600 hover:scale-[1.03] shadow-lg shadow-purple-500/20"
+                ? "bg-[#7f5af0] hover:opacity-90"
                 : "bg-gray-600 cursor-not-allowed"
             }`}
           >
 
-            <Download size={18} />
+            <Download size={15} />
 
             Export CSV
 
@@ -238,22 +484,27 @@ export default function Leads() {
       {/* SUB WARNING */}
       {!isSubscribed && (
 
-        <div className="mb-8 p-6 rounded-[28px] border border-red-500/20 bg-red-500/10 backdrop-blur-2xl flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+        <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 flex items-center justify-between gap-4">
 
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-3">
 
-            <div className="w-16 h-16 rounded-2xl bg-red-500/20 flex items-center justify-center">
-              <Crown className="text-red-400" />
+            <div className="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center">
+
+              <Crown
+                size={18}
+                className="text-red-400"
+              />
+
             </div>
 
             <div>
 
-              <h3 className="text-2xl font-bold mb-2">
+              <h3 className="font-semibold">
                 Subscription Required
               </h3>
 
-              <p className="text-red-200/80">
-                Upgrade your plan to unlock lead management and exports.
+              <p className="text-sm text-red-200/70">
+                Upgrade to access leads.
               </p>
 
             </div>
@@ -261,10 +512,16 @@ export default function Leads() {
           </div>
 
           <button
-            onClick={() => navigate("/app/pricing")}
-            className="px-7 py-4 rounded-2xl bg-red-500 hover:bg-red-600 transition-all font-semibold"
+            onClick={() =>
+              navigate(
+                "/app/pricing"
+              )
+            }
+            className="h-10 px-4 rounded-xl bg-red-500 hover:bg-red-600 transition-all text-sm font-medium"
           >
-            Upgrade Plan
+
+            Upgrade
+
           </button>
 
         </div>
@@ -272,109 +529,146 @@ export default function Leads() {
       )}
 
       {/* STATS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
 
         <StatCard
-          icon={<Users />}
           title="Total Leads"
-          value={filteredLeads.length}
-          color="from-purple-600 to-indigo-600"
-        />
-
-        <StatCard
-          icon={<Mail />}
-          title="Emails Collected"
           value={
-            filteredLeads.filter((l) => l.email).length
+            filteredLeads.length
           }
-          color="from-blue-600 to-cyan-600"
+          icon={
+            <Users size={16} />
+          }
         />
 
         <StatCard
-          icon={<MessageSquare />}
+          title="Emails"
+          value={
+            filteredLeads.filter(
+              (l) => l.email
+            ).length
+          }
+          icon={
+            <Mail size={16} />
+          }
+        />
+
+        <StatCard
+          title="Phones"
+          value={
+            filteredLeads.filter(
+              (l) => l.phone
+            ).length
+          }
+          icon={
+            <Phone size={16} />
+          }
+        />
+
+        <StatCard
           title="Messages"
           value={
-            filteredLeads.filter((l) => l.message).length
+            filteredLeads.filter(
+              (l) =>
+                l.message
+            ).length
           }
-          color="from-pink-600 to-red-600"
+          icon={
+            <MessageSquare size={16} />
+          }
         />
 
       </div>
 
       {/* SEARCH */}
-      <div className="mb-8">
+      <div className="relative">
 
-        <div className="relative">
+        <Search
+          className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
+          size={16}
+        />
 
-          <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500" size={20} />
-
-          <input
-            type="text"
-            placeholder="Search leads..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-[64px] rounded-3xl bg-white/5 border border-white/10 pl-14 pr-6 text-white placeholder-gray-500 outline-none focus:border-purple-500 backdrop-blur-2xl"
-          />
-
-        </div>
+        <input
+          type="text"
+          placeholder="Search leads..."
+          value={search}
+          onChange={(e) =>
+            setSearch(
+              e.target.value
+            )
+          }
+          className="w-full h-12 rounded-2xl bg-white/[0.03] border border-white/5 pl-11 pr-4 text-sm text-white placeholder-gray-500 outline-none focus:border-purple-500"
+        />
 
       </div>
 
       {/* TABLE */}
-      <div className="rounded-[32px] border border-white/10 bg-white/5 backdrop-blur-3xl overflow-hidden">
+      <div className="rounded-2xl border border-white/5 bg-white/[0.03] overflow-hidden">
 
-        <div className="flex items-center justify-between p-8 border-b border-white/10">
+        {/* HEADER */}
+        <div className="flex items-center justify-between p-4 border-b border-white/5">
 
           <div>
 
-            <h2 className="text-2xl font-black mb-2">
+            <h2 className="text-base font-semibold mb-1">
               All Leads
             </h2>
 
-            <p className="text-gray-400">
-              {filteredLeads.length} total leads found
+            <p className="text-xs text-gray-400">
+              {
+                filteredLeads.length
+              }{" "}
+              leads found
             </p>
 
           </div>
 
         </div>
 
+        {/* EMPTY */}
         {!isSubscribed ? (
 
-          <div className="p-24 text-center">
+          <div className="p-16 text-center">
 
-            <div className="w-20 h-20 rounded-3xl bg-red-500/10 flex items-center justify-center mx-auto mb-6">
+            <div className="w-14 h-14 rounded-2xl bg-red-500/10 flex items-center justify-center mx-auto mb-4">
 
-              <Crown className="text-red-400" size={32} />
+              <Crown
+                className="text-red-400"
+                size={24}
+              />
 
             </div>
 
-            <h3 className="text-3xl font-black mb-3">
+            <h3 className="text-xl font-bold mb-2">
               Leads Locked
             </h3>
 
-            <p className="text-gray-400 mb-8">
-              Upgrade your subscription to access customer leads.
+            <p className="text-gray-400 text-sm">
+              Upgrade your subscription.
             </p>
 
           </div>
 
-        ) : filteredLeads.length === 0 ? (
+        ) : filteredLeads.length ===
+          0 ? (
 
-          <div className="p-24 text-center">
+          <div className="p-16 text-center">
 
-            <div className="w-20 h-20 rounded-3xl bg-white/5 flex items-center justify-center mx-auto mb-6">
+            <div className="w-14 h-14 rounded-2xl bg-white/[0.03] flex items-center justify-center mx-auto mb-4">
 
-              <Users className="text-gray-400" size={32} />
+              <Users
+                className="text-gray-400"
+                size={24}
+              />
 
             </div>
 
-            <h3 className="text-3xl font-black mb-3">
+            <h3 className="text-xl font-bold mb-2">
               No Leads Yet
             </h3>
 
-            <p className="text-gray-400">
-              Leads captured by your chatbot will appear here.
+            <p className="text-gray-400 text-sm">
+              Captured leads will appear here.
             </p>
 
           </div>
@@ -385,19 +679,33 @@ export default function Leads() {
 
             <table className="w-full">
 
-              <thead className="border-b border-white/10">
+              <thead className="border-b border-white/5">
 
-                <tr className="text-left text-gray-400 text-sm">
+                <tr className="text-left text-gray-400 text-xs">
 
-                  <th className="p-6">Name</th>
+                  <th className="px-4 py-3">
+                    Name
+                  </th>
 
-                  <th className="p-6">Email</th>
+                  <th className="px-4 py-3">
+                    Email
+                  </th>
 
-                  <th className="p-6">Message</th>
+                  <th className="px-4 py-3">
+                    Phone
+                  </th>
 
-                  <th className="p-6">Date</th>
+                  <th className="px-4 py-3">
+                    Message
+                  </th>
 
-                  <th className="p-6">Action</th>
+                  <th className="px-4 py-3">
+                    Date
+                  </th>
+
+                  <th className="px-4 py-3">
+                    Actions
+                  </th>
 
                 </tr>
 
@@ -405,45 +713,79 @@ export default function Leads() {
 
               <tbody>
 
-                {filteredLeads.map((lead) => (
+                {filteredLeads.map(
+                  (lead) => (
 
-                  <tr
-                    key={lead.id}
-                    className="border-t border-white/5 hover:bg-white/5 transition-all"
-                  >
+                    <tr
+                      key={
+                        lead.id
+                      }
+                      className="border-t border-white/5 hover:bg-white/[0.03] transition-all"
+                    >
 
-                    <td className="p-6 font-semibold">
-                      {lead.name || "Unknown"}
-                    </td>
+                      <td className="px-4 py-4 font-medium text-sm">
+                        {lead.name ||
+                          "Unknown"}
+                      </td>
 
-                    <td className="p-6 text-gray-300">
-                      {lead.email || "-"}
-                    </td>
+                      <td className="px-4 py-4 text-sm text-gray-300">
+                        {lead.email ||
+                          "-"}
+                      </td>
 
-                    <td className="p-6 text-gray-400 max-w-[300px] truncate">
-                      {lead.message || "-"}
-                    </td>
+                      <td className="px-4 py-4 text-sm text-gray-300">
+                        {lead.phone ||
+                          "-"}
+                      </td>
 
-                    <td className="p-6 text-gray-500 text-sm">
-                      {new Date(lead.created_at).toLocaleString()}
-                    </td>
+                      <td className="px-4 py-4 text-sm text-gray-400 max-w-[240px] truncate">
+                        {lead.message ||
+                          "-"}
+                      </td>
 
-                    <td className="p-6">
+                      <td className="px-4 py-4 text-xs text-gray-500">
+                        {new Date(
+                          lead.created_at
+                        ).toLocaleDateString()}
+                      </td>
 
-                      <button
-                        onClick={() => setSelectedLead(lead)}
-                        className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all flex items-center justify-center"
-                      >
+                      <td className="px-4 py-4">
 
-                        <Eye size={18} />
+                        <div className="flex items-center gap-2">
 
-                      </button>
+                          <button
+                            onClick={() =>
+                              setSelectedLead(
+                                lead
+                              )
+                            }
+                            className="w-9 h-9 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.05] transition-all flex items-center justify-center"
+                          >
 
-                    </td>
+                            <Eye size={15} />
 
-                  </tr>
+                          </button>
 
-                ))}
+                          <button
+                            onClick={() =>
+                              deleteLead(
+                                lead.id
+                              )
+                            }
+                            className="w-9 h-9 rounded-xl bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition-all flex items-center justify-center text-red-400"
+                          >
+
+                            <Trash2 size={15} />
+
+                          </button>
+
+                        </div>
+
+                      </td>
+
+                    </tr>
+                  )
+                )}
 
               </tbody>
 
@@ -458,45 +800,73 @@ export default function Leads() {
       {/* MODAL */}
       {selectedLead && (
 
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
 
-          <div className="w-full max-w-2xl rounded-[32px] border border-white/10 bg-[#0B1020] p-8 relative">
+          <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-[#0F172A] p-6 relative">
 
             <button
-              onClick={() => setSelectedLead(null)}
-              className="absolute top-5 right-5 w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center"
+              onClick={() =>
+                setSelectedLead(
+                  null
+                )
+              }
+              className="absolute top-4 right-4 w-9 h-9 rounded-xl bg-white/[0.03] hover:bg-white/[0.05] flex items-center justify-center"
             >
 
-              <X size={18} />
+              <X size={16} />
 
             </button>
 
-            <h2 className="text-3xl font-black mb-8">
+            <h2 className="text-xl font-bold mb-6">
               Lead Details
             </h2>
 
-            <div className="space-y-6">
+            <div className="space-y-4">
 
               <DetailItem
-                icon={<Users />}
+                icon={
+                  <Users size={15} />
+                }
                 label="Name"
-                value={selectedLead.name}
+                value={
+                  selectedLead.name
+                }
               />
 
               <DetailItem
-                icon={<Mail />}
+                icon={
+                  <Mail size={15} />
+                }
                 label="Email"
-                value={selectedLead.email}
+                value={
+                  selectedLead.email
+                }
               />
 
               <DetailItem
-                icon={<MessageSquare />}
+                icon={
+                  <Phone size={15} />
+                }
+                label="Phone"
+                value={
+                  selectedLead.phone
+                }
+              />
+
+              <DetailItem
+                icon={
+                  <MessageSquare size={15} />
+                }
                 label="Message"
-                value={selectedLead.message}
+                value={
+                  selectedLead.message
+                }
               />
 
               <DetailItem
-                icon={<Calendar />}
+                icon={
+                  <Calendar size={15} />
+                }
                 label="Created"
                 value={new Date(
                   selectedLead.created_at
@@ -515,57 +885,71 @@ export default function Leads() {
   );
 }
 
-/* 🔥 STAT CARD */
-function StatCard({ icon, title, value, color }) {
+/*
+========================================
+STAT CARD
+========================================
+*/
+function StatCard({
+  icon,
+  title,
+  value,
+}) {
 
   return (
-    <div className={`relative overflow-hidden rounded-[30px] p-7 bg-gradient-to-br ${color} shadow-xl`}>
+    <div className="rounded-2xl border border-white/5 bg-white/[0.03] p-4">
 
-      <div className="absolute top-[-40px] right-[-40px] w-32 h-32 bg-white/10 rounded-full"></div>
+      <div className="flex items-center justify-between mb-4">
 
-      <div className="relative z-10 flex items-start justify-between">
+        <div className="w-10 h-10 rounded-xl bg-white/[0.04] flex items-center justify-center">
 
-        <div>
-
-          <p className="text-white/70 text-sm mb-3">
-            {title}
-          </p>
-
-          <h2 className="text-5xl font-black mb-2">
-            {value}
-          </h2>
-
-        </div>
-
-        <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-xl">
           {icon}
+
         </div>
 
       </div>
+
+      <h2 className="text-2xl font-bold mb-1">
+        {value}
+      </h2>
+
+      <p className="text-sm text-gray-400">
+        {title}
+      </p>
 
     </div>
   );
 }
 
-/* 🔥 DETAIL ITEM */
-function DetailItem({ icon, label, value }) {
+/*
+========================================
+DETAIL ITEM
+========================================
+*/
+function DetailItem({
+  icon,
+  label,
+  value,
+}) {
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+    <div className="rounded-2xl border border-white/5 bg-white/[0.03] p-4">
 
-      <div className="flex items-center gap-4 mb-3">
+      <div className="flex items-start gap-3">
 
-        <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
+        <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400">
+
           {icon}
+
         </div>
 
         <div>
 
-          <p className="text-gray-400 text-sm">
+          <p className="text-xs text-gray-400 mb-1">
             {label}
           </p>
 
-          <h3 className="font-semibold text-lg">
+          <h3 className="font-medium text-sm break-words">
             {value || "-"}
           </h3>
 

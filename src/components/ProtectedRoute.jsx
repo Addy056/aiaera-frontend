@@ -1,75 +1,205 @@
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
+
+import {
+  Navigate,
+  useLocation,
+} from "react-router-dom";
+
 import { supabase } from "../lib/supabase";
-import { Navigate } from "react-router-dom";
 
-export default function ProtectedRoute({ children }) {
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null);
+/*
+========================================
+PROTECTED ROUTE
+========================================
+Protects dashboard routes
+from unauthorized access
+========================================
+*/
 
+export default function ProtectedRoute({
+  children,
+}) {
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [user, setUser] =
+    useState(null);
+
+  const location =
+    useLocation();
+
+  /*
+  ========================================
+  CHECK AUTH SESSION
+  ========================================
+  */
   useEffect(() => {
-    const checkAccess = async () => {
-      try {
-        // 🔥 GET CURRENT SESSION
-        const { data, error } = await supabase.auth.getSession();
 
-        if (error) {
-          console.error("Session Error:", error);
-          setUser(null);
-          setLoading(false);
-          return;
+    let mounted = true;
+
+    /*
+    ========================================
+    LOAD SESSION
+    ========================================
+    */
+    const loadSession =
+      async () => {
+
+        try {
+
+          const {
+            data,
+            error,
+          } = await supabase.auth.getSession();
+
+          if (error) {
+            console.error(
+              "SESSION ERROR:",
+              error
+            );
+
+            if (mounted) {
+              setUser(null);
+            }
+
+            return;
+          }
+
+          const session =
+            data?.session;
+
+          /*
+          ========================================
+          USER FOUND
+          ========================================
+          */
+          if (
+            session?.user
+          ) {
+
+            if (mounted) {
+              setUser(
+                session.user
+              );
+            }
+
+          } else {
+
+            if (mounted) {
+              setUser(null);
+            }
+          }
+
+        } catch (err) {
+
+          console.error(
+            "PROTECTED ROUTE ERROR:",
+            err
+          );
+
+          if (mounted) {
+            setUser(null);
+          }
+
+        } finally {
+
+          if (mounted) {
+            setLoading(false);
+          }
         }
+      };
 
-        const session = data?.session;
+    /*
+    ========================================
+    INITIAL LOAD
+    ========================================
+    */
+    loadSession();
 
-        // ❌ NOT LOGGED IN
-        if (!session) {
-          setUser(null);
-          setLoading(false);
-          return;
-        }
-
-        // ✅ USER LOGGED IN
-        setUser(session.user);
-
-      } catch (err) {
-        console.error("Protected Route Error:", err);
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkAccess();
-
-    // 🔥 AUTH LISTENER
+    /*
+    ========================================
+    AUTH LISTENER
+    ========================================
+    */
     const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(() => {
-      checkAccess();
-    });
+      data: {
+        subscription,
+      },
+    } =
+      supabase.auth.onAuthStateChange(
+        async (
+          event,
+          session
+        ) => {
 
+          if (!mounted) return;
+
+          /*
+          ========================================
+          SIGNED OUT
+          ========================================
+          */
+          if (
+            event ===
+            "SIGNED_OUT"
+          ) {
+
+            setUser(null);
+
+            return;
+          }
+
+          /*
+          ========================================
+          SESSION ACTIVE
+          ========================================
+          */
+          setUser(
+            session?.user ||
+              null
+          );
+        }
+      );
+
+    /*
+    ========================================
+    CLEANUP
+    ========================================
+    */
     return () => {
+
+      mounted = false;
+
       subscription?.unsubscribe();
     };
 
   }, []);
 
-  // ⏳ LOADING SCREEN
+  /*
+  ========================================
+  LOADING UI
+  ========================================
+  */
   if (loading) {
+
     return (
       <div className="min-h-screen bg-[#060816] flex items-center justify-center overflow-hidden relative">
 
-        {/* GLOW EFFECTS */}
-        <div className="absolute top-[-120px] left-[-120px] w-[300px] h-[300px] bg-purple-600/20 blur-[120px] rounded-full"></div>
+        {/* BACKGROUND GLOW */}
+        <div className="absolute top-[-120px] left-[-120px] w-[320px] h-[320px] bg-purple-600/20 blur-[140px] rounded-full"></div>
 
-        <div className="absolute bottom-[-120px] right-[-120px] w-[300px] h-[300px] bg-blue-600/20 blur-[120px] rounded-full"></div>
+        <div className="absolute bottom-[-120px] right-[-120px] w-[320px] h-[320px] bg-blue-600/20 blur-[140px] rounded-full"></div>
 
-        {/* LOADER */}
+        {/* CONTENT */}
         <div className="relative z-10 flex flex-col items-center">
 
-          <div className="w-14 h-14 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin mb-5"></div>
+          <div className="w-16 h-16 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin mb-6"></div>
 
-          <h2 className="text-white text-xl font-semibold">
+          <h2 className="text-white text-2xl font-bold">
             Loading AIAERA...
           </h2>
 
@@ -83,11 +213,29 @@ export default function ProtectedRoute({ children }) {
     );
   }
 
-  // 🔐 LOGIN REQUIRED
+  /*
+  ========================================
+  NOT AUTHENTICATED
+  ========================================
+  */
   if (!user) {
-    return <Navigate to="/login" replace />;
+
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{
+          from:
+            location.pathname,
+        }}
+      />
+    );
   }
 
-  // ✅ ALLOW ACCESS
+  /*
+  ========================================
+  AUTHORIZED
+  ========================================
+  */
   return children;
 }

@@ -1,158 +1,432 @@
-import { useState, useEffect, useRef } from "react";
-import { useParams } from "react-router-dom";
+import {
+  useState,
+  useEffect,
+  useRef,
+} from "react";
 
-const API_URL = import.meta.env.VITE_API_URL;
+import {
+  useParams,
+} from "react-router-dom";
+
+const API_URL =
+  import.meta.env.VITE_API_URL;
 
 export default function PublicChatbot() {
-  const { id } = useParams();
 
-  const [messages, setMessages] = useState([
-    { role: "bot", text: "Hi! How can I help you?" }
-  ]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
+  const { id } =
+    useParams();
 
-  const [theme, setTheme] = useState({
-    botName: "AI Assistant",
-    chatBg: "#1f1b2e",
-    botBubble: "#2a2540",
-    userBubble: "#7f5af0",
-    textColor: "#ffffff",
-    radius: "lg"
-  });
+  /*
+  ========================================
+  STATES
+  ========================================
+  */
+  const [messages, setMessages] =
+    useState([
+      {
+        role: "bot",
+        text:
+          "Hi 👋 How can I help you today?",
+      },
+    ]);
 
-  const chatEndRef = useRef(null);
+  const [input, setInput] =
+    useState("");
 
-  // 🔥 SESSION ID (IMPORTANT)
-  const sessionId = useRef(
-    localStorage.getItem("chat_session") ||
-    crypto.randomUUID()
-  );
+  const [loading, setLoading] =
+    useState(false);
 
+  const [chatbot, setChatbot] =
+    useState(null);
+
+  const [theme, setTheme] =
+    useState({
+      botName:
+        "AI Assistant",
+
+      chatBg:
+        "#1f1b2e",
+
+      botBubble:
+        "#2a2540",
+
+      userBubble:
+        "#7f5af0",
+
+      textColor:
+        "#ffffff",
+
+      radius:
+        "lg",
+    });
+
+  /*
+  ========================================
+  REFS
+  ========================================
+  */
+  const chatEndRef =
+    useRef(null);
+
+  /*
+  ========================================
+  SESSION ID
+  ========================================
+  */
+  const sessionId =
+    useRef(
+      localStorage.getItem(
+        "chat_session"
+      ) ||
+        crypto.randomUUID()
+    );
+
+  /*
+  ========================================
+  SAVE SESSION
+  ========================================
+  */
   useEffect(() => {
-    localStorage.setItem("chat_session", sessionId.current);
+
+    localStorage.setItem(
+      "chat_session",
+      sessionId.current
+    );
+
   }, []);
 
-  // 🔥 AUTO SCROLL
+  /*
+  ========================================
+  AUTO SCROLL
+  ========================================
+  */
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+
+    chatEndRef.current
+      ?.scrollIntoView({
+        behavior: "smooth",
+      });
+
   }, [messages]);
 
-  // 🔥 LOAD BOT CONFIG + THEME
+  /*
+  ========================================
+  LOAD CHATBOT
+  ========================================
+  */
   useEffect(() => {
-    const fetchBot = async () => {
-      try {
-        const res = await fetch(`${API_URL}/api/embed/chatbot/${id}`);
-        const data = await res.json();
 
+    fetchChatbot();
+
+  }, [id]);
+
+  const fetchChatbot =
+    async () => {
+
+      try {
+
+        const res =
+          await fetch(
+            `${API_URL}/api/public/chatbot/${id}`
+          );
+
+        const data =
+          await res.json();
+
+        /*
+        ========================================
+        SAVE CHATBOT
+        ========================================
+        */
+        setChatbot(data);
+
+        /*
+        ========================================
+        LOAD THEME
+        ========================================
+        */
         if (data?.theme) {
-          setTheme(data.theme);
+
+          setTheme({
+            botName:
+              data.name ||
+              "AI Assistant",
+
+            chatBg:
+              data.theme
+                ?.chatBg ||
+              "#1f1b2e",
+
+            botBubble:
+              data.theme
+                ?.botBubble ||
+              "#2a2540",
+
+            userBubble:
+              data.theme
+                ?.userBubble ||
+              "#7f5af0",
+
+            textColor:
+              data.theme
+                ?.textColor ||
+              "#ffffff",
+
+            radius:
+              data.theme
+                ?.radius ||
+              "lg",
+          });
         }
 
-      } catch {
-        console.log("Failed to load chatbot");
+      } catch (err) {
+
+        console.error(
+          "LOAD CHATBOT ERROR:",
+          err
+        );
       }
     };
 
-    fetchBot();
-  }, [id]);
+  /*
+  ========================================
+  SEND MESSAGE
+  ========================================
+  */
+  const sendMessage =
+    async () => {
 
-  // 🔥 SEND MESSAGE
-  const sendMessage = async () => {
-    if (!input || loading) return;
+      if (
+        !input.trim() ||
+        loading
+      ) {
+        return;
+      }
 
-    const msg = input;
+      const msg =
+        input;
 
-    setMessages(prev => [...prev, { role: "user", text: msg }]);
-    setInput("");
-    setLoading(true);
+      /*
+      ========================================
+      USER MESSAGE
+      ========================================
+      */
+      setMessages(
+        (prev) => [
+          ...prev,
+          {
+            role: "user",
+            text: msg,
+          },
+        ]
+      );
 
-    try {
-      const res = await fetch(`${API_URL}/api/chatbot/chat`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          message: msg,
-          chatbot_id: id, // ✅ FIXED
-          session_id: sessionId.current // ✅ IMPORTANT
-        })
-      });
+      setInput("");
+      setLoading(true);
 
-      const data = await res.json();
+      try {
 
-      setMessages(prev => [
-        ...prev,
-        { role: "bot", text: data.reply }
-      ]);
+        const res =
+          await fetch(
+            `${API_URL}/api/chatbot/chat`,
+            {
+              method:
+                "POST",
 
-    } catch {
-      setMessages(prev => [
-        ...prev,
-        { role: "bot", text: "Server error" }
-      ]);
-    }
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
 
-    setLoading(false);
-  };
+              body:
+                JSON.stringify({
+                  message:
+                    msg,
+
+                  chatbot_id:
+                    id,
+
+                  session_id:
+                    sessionId.current,
+                }),
+            }
+          );
+
+        const data =
+          await res.json();
+
+        /*
+        ========================================
+        BOT MESSAGE
+        ========================================
+        */
+        setMessages(
+          (prev) => [
+            ...prev,
+            {
+              role: "bot",
+              text:
+                data.reply ||
+                "No response",
+            },
+          ]
+        );
+
+      } catch (err) {
+
+        console.error(
+          "CHAT ERROR:",
+          err
+        );
+
+        setMessages(
+          (prev) => [
+            ...prev,
+            {
+              role: "bot",
+              text:
+                "Server error",
+            },
+          ]
+        );
+      }
+
+      setLoading(false);
+    };
+
+  /*
+  ========================================
+  LOADING
+  ========================================
+  */
+  if (!chatbot) {
+
+    return (
+      <div className="h-screen flex items-center justify-center bg-black text-white">
+        Loading chatbot...
+      </div>
+    );
+  }
 
   return (
     <div
       className="flex flex-col h-screen"
-      style={{ background: theme.chatBg, color: theme.textColor }}
+      style={{
+        background:
+          theme.chatBg,
+
+        color:
+          theme.textColor,
+      }}
     >
 
       {/* HEADER */}
-      <div className="p-4 border-b border-white/10">
-        <h3>{theme.botName}</h3>
+      <div className="p-4 border-b border-white/10 flex items-center justify-between backdrop-blur-xl">
+
+        <div>
+          <h2 className="font-bold text-lg">
+            {theme.botName}
+          </h2>
+
+          <p className="text-xs opacity-70">
+            AI Assistant
+          </p>
+        </div>
+
+        <div className="w-3 h-3 rounded-full bg-green-400" />
+
       </div>
 
-      {/* CHAT */}
-      <div className="flex-1 p-4 overflow-y-auto space-y-3">
+      {/* CHAT AREA */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
 
-        {messages.map((msg, i) => (
-          <div
-            key={i}
-            className={`flex ${msg.role === "user" ? "justify-end" : ""}`}
-          >
+        {messages.map(
+          (
+            msg,
+            index
+          ) => (
+
             <div
-              style={{
-                background:
-                  msg.role === "user"
-                    ? theme.userBubble
-                    : theme.botBubble,
-                color: theme.textColor,
-                borderRadius:
-                  theme.radius === "full" ? "999px" : "12px"
-              }}
-              className="px-4 py-2 max-w-xs"
+              key={index}
+              className={`flex ${
+                msg.role ===
+                "user"
+                  ? "justify-end"
+                  : "justify-start"
+              }`}
             >
-              {msg.text}
-            </div>
-          </div>
-        ))}
 
-        {loading && <div className="text-sm opacity-70">Typing...</div>}
+              <div
+                style={{
+                  background:
+                    msg.role ===
+                    "user"
+                      ? theme.userBubble
+                      : theme.botBubble,
+
+                  color:
+                    theme.textColor,
+
+                  borderRadius:
+                    theme.radius ===
+                    "full"
+                      ? "999px"
+                      : "18px",
+                }}
+                className="px-4 py-3 max-w-[80%] text-sm shadow-lg"
+              >
+                {msg.text}
+              </div>
+
+            </div>
+          )
+        )}
+
+        {loading && (
+          <div className="text-sm opacity-70">
+            Typing...
+          </div>
+        )}
 
         <div ref={chatEndRef} />
+
       </div>
 
       {/* INPUT */}
-      <div className="p-4 flex gap-2 border-t border-white/10">
+      <div className="p-4 border-t border-white/10 backdrop-blur-xl flex gap-3">
+
         <input
-          className="flex-1 p-2 rounded-lg bg-white/10"
+          type="text"
+          placeholder="Type your message..."
           value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+          onChange={(e) =>
+            setInput(
+              e.target.value
+            )
+          }
+          onKeyDown={(e) => {
+            if (
+              e.key ===
+              "Enter"
+            ) {
+              sendMessage();
+            }
+          }}
+          className="flex-1 px-4 py-3 rounded-xl bg-white/10 outline-none border border-white/10"
         />
+
         <button
           onClick={sendMessage}
-          style={{ background: theme.userBubble }}
-          className="px-4 rounded-lg"
+          disabled={loading}
+          style={{
+            background:
+              theme.userBubble,
+          }}
+          className="px-5 rounded-xl font-semibold text-white"
         >
           Send
         </button>
+
       </div>
 
     </div>
