@@ -345,7 +345,7 @@ export default function Builder() {
         ...theme,
 
         logo:
-          `${publicData.publicUrl}?t=${Date.now()}`,
+  publicData.publicUrl
       };
 
       setTheme(
