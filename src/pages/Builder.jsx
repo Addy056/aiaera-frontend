@@ -683,10 +683,13 @@ export default function Builder() {
                   {theme.logo ? (
 
                     <img
-                      src={theme.logo}
-                      alt="logo"
-                      className="w-full h-full object-contain p-2"
-                    />
+  src={theme.logo}
+  alt="logo"
+  onError={(e) => {
+    e.target.style.display = "none";
+  }}
+  className="w-full h-full object-contain p-2"
+/>
 
                   ) : (
 
@@ -1030,7 +1033,8 @@ export default function Builder() {
 
         </div>
                 <div
-          className="rounded-[32px] overflow-hidden border border-white/5 flex flex-col"
+         
+  className="w-[380px] h-[700px] mx-auto rounded-[32px] overflow-hidden border border-white/5 flex flex-col shadow-[0_20px_80px_rgba(0,0,0,0.45)]"
           style={{
             background:
               theme.chatBg,
@@ -1046,10 +1050,13 @@ export default function Builder() {
                 {theme.logo ? (
 
                   <img
-                    src={theme.logo}
-                    alt="logo"
-                    className="w-full h-full object-contain p-2"
-                  />
+  src={theme.logo}
+  alt="logo"
+  onError={(e) => {
+    e.target.style.display = "none";
+  }}
+  className="w-full h-full object-contain p-2"
+/>
 
                 ) : (
 
@@ -1144,7 +1151,7 @@ export default function Builder() {
 
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+         <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-purple-500/30">
 
             {messages.map(
               (
@@ -1162,7 +1169,7 @@ export default function Builder() {
                 >
 
                   <div
-                    className="max-w-[75%] px-4 py-3 text-sm leading-relaxed break-words whitespace-pre-wrap"
+                    className="max-w-[85%] px-4 py-3 text-sm leading-relaxed break-words whitespace-pre-wrap"
                     style={{
                       background:
                         msg.role === "user"
@@ -1259,7 +1266,7 @@ export default function Builder() {
                     sendMessage();
                   }
                 }}
-                className="flex-1 h-12 rounded-2xl bg-white/[0.03] border border-white/5 px-4 outline-none text-sm"
+                className="flex-1 h-14 rounded-2xl bg-white/[0.03] border border-white/5 px-4 outline-none text-sm"
               />
 
               <button

@@ -31,11 +31,10 @@ export default function MainLayout() {
   }, []);
 
   // LOGOUT
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/login");
-  };
-
+ const handleLogout = async () => {
+  await supabase.auth.signOut();
+  navigate("/");
+};
   // LINKS
   const workspaceLinks = [
     {

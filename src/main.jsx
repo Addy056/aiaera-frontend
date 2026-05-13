@@ -1,21 +1,37 @@
-import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 import "./index.css";
 import App from "./App.jsx";
 
-/* 🔥 AUTH CONTEXT */
+/*
+========================================
+AUTH CONTEXT
+========================================
+*/
 import AuthProvider from "./context/AuthContext";
 
-/* 🔥 ROOT RENDER */
-createRoot(document.getElementById("root")).render(
-  <StrictMode>
+/*
+========================================
+ROOT RENDER
+========================================
 
-    <AuthProvider>
+Removed React.StrictMode
+because it causes:
+- duplicate widget injection
+- duplicate API calls
+- Supabase lock errors
+- double useEffect execution
+- multiple chatbot renders
 
-      <App />
+========================================
+*/
+createRoot(
+  document.getElementById("root")
+).render(
 
-    </AuthProvider>
+  <AuthProvider>
 
-  </StrictMode>
+    <App />
+
+  </AuthProvider>
 );
