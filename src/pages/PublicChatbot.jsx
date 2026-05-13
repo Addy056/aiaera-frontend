@@ -51,6 +51,12 @@ export default function PublicChatbot() {
   const [fetching, setFetching] =
     useState(true);
 
+  const [integrations, setIntegrations] =
+    useState({
+      calendly: "",
+      maps: "",
+    });
+
   const [theme, setTheme] =
     useState({
       botName:
@@ -130,6 +136,7 @@ export default function PublicChatbot() {
     if (!id) return;
 
     fetchChatbot();
+    fetchIntegrations();
 
   }, [id]);
 
@@ -213,6 +220,101 @@ export default function PublicChatbot() {
 
         setFetching(false);
       }
+    };
+
+  /*
+  ========================================
+  FETCH PUBLIC INTEGRATIONS
+  ========================================
+  */
+  const fetchIntegrations =
+    async () => {
+
+      try {
+
+        const response =
+          await fetch(
+            `${API_URL}/api/integrations/public/${id}`
+          );
+
+        const data =
+          await response.json();
+
+        if (
+          data.success
+        ) {
+
+          setIntegrations({
+            calendly:
+              data.integrations
+                ?.calendly || "",
+
+            maps:
+              data.integrations
+                ?.maps || "",
+          });
+        }
+
+      } catch (err) {
+
+        console.error(
+          "INTEGRATIONS ERROR:",
+          err
+        );
+      }
+    };
+
+  /*
+  ========================================
+  QUICK BUTTON ACTION
+  ========================================
+  */
+  const handleQuickAction =
+    (
+      type,
+      label
+    ) => {
+
+      let response =
+        "";
+
+      if (
+        type ===
+        "calendly"
+      ) {
+
+        response =
+          integrations.calendly
+            ? `📅 Book your appointment here:\n${integrations.calendly}`
+            : "Booking link not configured yet.";
+      }
+
+      if (
+        type ===
+        "maps"
+      ) {
+
+        response =
+          integrations.maps
+            ? `📍 Visit our office:\n${integrations.maps}`
+            : "Office location not configured yet.";
+      }
+
+      setMessages(
+        (prev) => [
+          ...prev,
+
+          {
+            role: "user",
+            text: label,
+          },
+
+          {
+            role: "bot",
+            text: response,
+          },
+        ]
+      );
     };
 
   /*
@@ -367,7 +469,7 @@ export default function PublicChatbot() {
         ${
           isEmbedded
             ? ""
-            : "max-w-[420px] mx-auto rounded-[28px] shadow-2xl"
+            : "max-w-[400px] h-[700px] mx-auto mt-6 rounded-[28px] shadow-2xl border border-white/10"
         }
       `}
       style={{
@@ -380,7 +482,7 @@ export default function PublicChatbot() {
     >
 
       {/* HEADER */}
-      <div className="h-[68px] px-4 border-b border-white/10 flex items-center justify-between bg-[#151226] shrink-0">
+      <div className="h-[72px] min-h-[72px] px-4 border-b border-white/10 flex items-center justify-between bg-[#151226]">
 
         <div className="flex items-center gap-3 min-w-0">
 
@@ -388,22 +490,17 @@ export default function PublicChatbot() {
             <img
               src={theme.logo}
               alt="logo"
-              onError={(e) => {
-
-                e.currentTarget.style.display =
-                  "none";
-              }}
-              className="w-10 h-10 rounded-xl object-cover border border-white/10 bg-[#1c1830] shrink-0"
+              className="w-11 h-11 rounded-2xl object-cover border border-white/10 bg-[#1c1830] shrink-0"
             />
           ) : (
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white font-bold shrink-0">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white font-bold shrink-0">
               AI
             </div>
           )}
 
           <div className="min-w-0">
 
-            <h2 className="text-sm font-semibold truncate">
+            <h2 className="text-[15px] font-semibold truncate">
               {theme.botName}
             </h2>
 
@@ -415,12 +512,41 @@ export default function PublicChatbot() {
 
         </div>
 
-        <div className="w-3 h-3 rounded-full bg-green-400 shrink-0"></div>
+        <div className="w-3 h-3 rounded-full bg-green-400 shadow-[0_0_12px_rgba(74,222,128,0.8)]"></div>
+
+      </div>
+
+      {/* QUICK ACTIONS */}
+      <div className="px-3 py-3 border-b border-white/10 bg-[#120f20] flex flex-wrap gap-2 shrink-0">
+
+        <button
+          onClick={() =>
+            handleQuickAction(
+              "calendly",
+              "Book Appointment"
+            )
+          }
+          className="px-4 h-10 rounded-full bg-[#7f5af0]/15 border border-purple-500/20 text-xs text-purple-300 hover:bg-[#7f5af0]/25 transition-all"
+        >
+          📅 Book Appointment
+        </button>
+
+        <button
+          onClick={() =>
+            handleQuickAction(
+              "maps",
+              "Visit Office"
+            )
+          }
+          className="px-4 h-10 rounded-full bg-[#7f5af0]/15 border border-purple-500/20 text-xs text-purple-300 hover:bg-[#7f5af0]/25 transition-all"
+        >
+          📍 Visit Office
+        </button>
 
       </div>
 
       {/* CHAT AREA */}
-      <div className="flex-1 overflow-y-auto px-3 py-4">
+      <div className="flex-1 overflow-y-auto px-3 py-4 min-h-0">
 
         <div className="flex flex-col gap-3">
 
