@@ -9,7 +9,8 @@ import {
 } from "react-router-dom";
 
 const API_URL =
-  import.meta.env.VITE_API_URL;
+  import.meta.env.VITE_API_URL ||
+  "http://localhost:5000";
 
 export default function PublicChatbot() {
 
@@ -87,7 +88,7 @@ export default function PublicChatbot() {
 
   /*
   ========================================
-  SESSION
+  SESSION ID
   ========================================
   */
   const sessionId =
@@ -128,7 +129,7 @@ export default function PublicChatbot() {
 
   /*
   ========================================
-  LOAD CHATBOT
+  LOAD DATA
   ========================================
   */
   useEffect(() => {
@@ -224,7 +225,7 @@ export default function PublicChatbot() {
 
   /*
   ========================================
-  FETCH PUBLIC INTEGRATIONS
+  FETCH INTEGRATIONS
   ========================================
   */
   const fetchIntegrations =
@@ -237,12 +238,14 @@ export default function PublicChatbot() {
             `${API_URL}/api/integrations/public/${id}`
           );
 
+        if (!response.ok) {
+          return;
+        }
+
         const data =
           await response.json();
 
-        if (
-          data.success
-        ) {
+        if (data.success) {
 
           setIntegrations({
             calendly:
@@ -266,7 +269,7 @@ export default function PublicChatbot() {
 
   /*
   ========================================
-  QUICK BUTTON ACTION
+  QUICK ACTIONS
   ========================================
   */
   const handleQuickAction =
@@ -275,12 +278,10 @@ export default function PublicChatbot() {
       label
     ) => {
 
-      let response =
-        "";
+      let response = "";
 
       if (
-        type ===
-        "calendly"
+        type === "calendly"
       ) {
 
         response =
@@ -290,8 +291,7 @@ export default function PublicChatbot() {
       }
 
       if (
-        type ===
-        "maps"
+        type === "maps"
       ) {
 
         response =
@@ -354,8 +354,7 @@ export default function PublicChatbot() {
           await fetch(
             `${API_URL}/api/chatbot/chat`,
             {
-              method:
-                "POST",
+              method: "POST",
 
               headers: {
                 "Content-Type":
@@ -364,24 +363,13 @@ export default function PublicChatbot() {
 
               body:
                 JSON.stringify({
-                  chatbot_id:
-                    id,
-
+                  chatbot_id: id,
                   session_id:
                     sessionId.current,
-
-                  message:
-                    msg,
+                  message: msg,
                 }),
             }
           );
-
-        if (!response.ok) {
-
-          throw new Error(
-            "Failed to send message"
-          );
-        }
 
         const data =
           await response.json();
@@ -430,16 +418,8 @@ export default function PublicChatbot() {
   if (fetching) {
 
     return (
-      <div className="w-full h-full flex items-center justify-center bg-[#0B1120] text-white">
-        <div className="flex flex-col items-center gap-3">
-
-          <div className="w-10 h-10 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin"></div>
-
-          <p className="text-sm text-gray-400">
-            Loading AI Assistant...
-          </p>
-
-        </div>
+      <div className="w-full h-full flex items-center justify-center bg-[#0B1120] text-white overflow-hidden">
+        Loading...
       </div>
     );
   }
@@ -452,7 +432,7 @@ export default function PublicChatbot() {
   if (!chatbot) {
 
     return (
-      <div className="w-full h-full flex items-center justify-center bg-[#0B1120] text-white">
+      <div className="w-full h-full flex items-center justify-center bg-[#0B1120] text-white overflow-hidden">
         Chatbot not found
       </div>
     );
@@ -460,175 +440,183 @@ export default function PublicChatbot() {
 
   return (
     <div
-      className={`
-        w-full
-        h-full
-        flex
-        flex-col
-        overflow-hidden
-        ${
-          isEmbedded
-            ? ""
-            : "max-w-[400px] h-[700px] mx-auto mt-6 rounded-[28px] shadow-2xl border border-white/10"
-        }
-      `}
-      style={{
-        background:
-          `linear-gradient(to bottom, ${theme.chatBg}, #0B1120)`,
-
-        color:
-          theme.textColor,
-      }}
+      className={
+        isEmbedded
+          ? "w-full h-full overflow-hidden"
+          : "w-full min-h-screen flex items-center justify-center bg-[#0B1120] p-4 overflow-hidden"
+      }
     >
 
-      {/* HEADER */}
-      <div className="h-[72px] min-h-[72px] px-4 border-b border-white/10 flex items-center justify-between bg-[#151226]">
+      <div
+        className={`
+          w-full
+          flex
+          flex-col
+          overflow-hidden
+          border
+          border-white/10
+          bg-[#0B1120]
+          shadow-2xl
+          ${
+            isEmbedded
+              ? "h-full rounded-none"
+              : "max-w-[420px] h-[720px] rounded-[28px]"
+          }
+        `}
+        style={{
+          background:
+            `linear-gradient(to bottom, ${theme.chatBg}, #0B1120)`,
 
-        <div className="flex items-center gap-3 min-w-0">
+          color:
+            theme.textColor,
+        }}
+      >
 
-          {theme.logo ? (
-            <img
-              src={theme.logo}
-              alt="logo"
-              className="w-11 h-11 rounded-2xl object-cover border border-white/10 bg-[#1c1830] shrink-0"
-            />
-          ) : (
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white font-bold shrink-0">
-              AI
+        {/* HEADER */}
+        <div className="h-[72px] min-h-[72px] px-4 border-b border-white/10 flex items-center bg-[#151226] shrink-0">
+
+          <div className="flex items-center gap-3 min-w-0">
+
+            {theme.logo ? (
+              <img
+                src={theme.logo}
+                alt="logo"
+                className="w-11 h-11 rounded-2xl object-cover border border-white/10"
+              />
+            ) : (
+              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white font-bold">
+                AI
+              </div>
+            )}
+
+            <div className="min-w-0">
+
+              <h2 className="text-[15px] font-semibold truncate">
+                {theme.botName}
+              </h2>
+
+              <p className="text-green-400 text-xs">
+                ● Online
+              </p>
+
             </div>
-          )}
-
-          <div className="min-w-0">
-
-            <h2 className="text-[15px] font-semibold truncate">
-              {theme.botName}
-            </h2>
-
-            <p className="text-green-400 text-xs mt-1">
-              ● Online
-            </p>
 
           </div>
 
         </div>
 
-        <div className="w-3 h-3 rounded-full bg-green-400 shadow-[0_0_12px_rgba(74,222,128,0.8)]"></div>
+        {/* QUICK ACTIONS */}
+        <div className="px-3 py-3 border-b border-white/10 bg-[#120f20] flex flex-wrap gap-2 shrink-0">
 
-      </div>
+          <button
+            onClick={() =>
+              handleQuickAction(
+                "calendly",
+                "Book Appointment"
+              )
+            }
+            className="px-4 h-10 rounded-full bg-[#7f5af0]/15 border border-purple-500/20 text-xs text-purple-300"
+          >
+            📅 Book Appointment
+          </button>
 
-      {/* QUICK ACTIONS */}
-      <div className="px-3 py-3 border-b border-white/10 bg-[#120f20] flex flex-wrap gap-2 shrink-0">
-
-        <button
-          onClick={() =>
-            handleQuickAction(
-              "calendly",
-              "Book Appointment"
-            )
-          }
-          className="px-4 h-10 rounded-full bg-[#7f5af0]/15 border border-purple-500/20 text-xs text-purple-300 hover:bg-[#7f5af0]/25 transition-all"
-        >
-          📅 Book Appointment
-        </button>
-
-        <button
-          onClick={() =>
-            handleQuickAction(
-              "maps",
-              "Visit Office"
-            )
-          }
-          className="px-4 h-10 rounded-full bg-[#7f5af0]/15 border border-purple-500/20 text-xs text-purple-300 hover:bg-[#7f5af0]/25 transition-all"
-        >
-          📍 Visit Office
-        </button>
-
-      </div>
-
-      {/* CHAT AREA */}
-      <div className="flex-1 overflow-y-auto px-3 py-4 min-h-0 flex flex-col">
-
-        <div className="flex flex-col gap-3 min-h-full">
-
-          {messages.map(
-            (
-              msg,
-              index
-            ) => (
-
-              <div
-                key={index}
-                className={`flex ${
-                  msg.role ===
-                  "user"
-                    ? "justify-end"
-                    : "justify-start"
-                }`}
-              >
-
-                <div
-                  style={{
-                    background:
-                      msg.role ===
-                      "user"
-                        ? `linear-gradient(135deg, ${theme.userBubble}, #5b8cff)`
-                        : theme.botBubble,
-                  }}
-                  className="max-w-[82%] px-4 py-3 rounded-2xl text-sm leading-relaxed text-white border border-white/5 backdrop-blur-xl shadow-lg whitespace-pre-wrap break-words"
-                >
-                  {msg.text}
-                </div>
-
-              </div>
-            )
-          )}
-
-          {loading && (
-            <div className="text-xs text-gray-400 px-2 animate-pulse">
-              AI is typing...
-            </div>
-          )}
-
-          <div ref={chatEndRef} />
+          <button
+            onClick={() =>
+              handleQuickAction(
+                "maps",
+                "Visit Office"
+              )
+            }
+            className="px-4 h-10 rounded-full bg-[#7f5af0]/15 border border-purple-500/20 text-xs text-purple-300"
+          >
+            📍 Visit Office
+          </button>
 
         </div>
 
-      </div>
+        {/* CHAT */}
+        <div className="flex-1 overflow-y-auto px-3 py-4 min-h-0">
 
-      {/* INPUT */}
-      <div className="p-3 border-t border-white/10 bg-[#151226] shrink-0">
+          <div className="flex flex-col gap-3">
 
-        <div className="flex items-center gap-2">
+            {messages.map(
+              (
+                msg,
+                index
+              ) => (
 
-          <input
-            type="text"
-            placeholder="Type your message..."
-            value={input}
-            onChange={(e) =>
-              setInput(
-                e.target.value
+                <div
+                  key={index}
+                  className={`flex ${
+                    msg.role === "user"
+                      ? "justify-end"
+                      : "justify-start"
+                  }`}
+                >
+
+                  <div
+                    style={{
+                      background:
+                        msg.role === "user"
+                          ? `linear-gradient(135deg, ${theme.userBubble}, #5b8cff)`
+                          : theme.botBubble,
+                    }}
+                    className="max-w-[82%] px-4 py-3 rounded-2xl text-sm text-white border border-white/5 whitespace-pre-wrap break-words"
+                  >
+                    {msg.text}
+                  </div>
+
+                </div>
               )
-            }
-            onKeyDown={(e) => {
+            )}
 
-              if (
-                e.key ===
-                "Enter"
-              ) {
+            {loading && (
+              <div className="text-xs text-gray-400 px-2">
+                AI is typing...
+              </div>
+            )}
 
-                sendMessage();
+            <div ref={chatEndRef} />
+
+          </div>
+
+        </div>
+
+        {/* INPUT */}
+        <div className="p-3 border-t border-white/10 bg-[#151226] shrink-0">
+
+          <div className="flex items-center gap-2">
+
+            <input
+              type="text"
+              placeholder="Type your message..."
+              value={input}
+              onChange={(e) =>
+                setInput(
+                  e.target.value
+                )
               }
-            }}
-            className="flex-1 h-11 px-4 rounded-xl bg-white/10 border border-white/10 outline-none text-sm text-white placeholder:text-gray-400"
-          />
+              onKeyDown={(e) => {
 
-          <button
-            onClick={sendMessage}
-            disabled={loading}
-            className="h-11 px-5 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 text-white font-medium text-sm hover:opacity-90 transition-all disabled:opacity-60"
-          >
-            Send
-          </button>
+                if (
+                  e.key === "Enter"
+                ) {
+
+                  sendMessage();
+                }
+              }}
+              className="flex-1 h-11 px-4 rounded-xl bg-white/10 border border-white/10 outline-none text-sm text-white placeholder:text-gray-400"
+            />
+
+            <button
+              onClick={sendMessage}
+              disabled={loading}
+              className="h-11 px-5 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 text-white font-medium text-sm disabled:opacity-50"
+            >
+              Send
+            </button>
+
+          </div>
 
         </div>
 

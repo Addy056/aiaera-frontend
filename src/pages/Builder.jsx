@@ -291,67 +291,124 @@ export default function Builder() {
 
   const uploadLogo = async (e) => {
 
-    try {
+  try {
 
-      const file =
-        e.target.files[0];
+    const file =
+      e.target.files?.[0];
 
-      if (!file) return;
+    if (!file) return;
 
-      const fileExt =
-        file.name
-          .split(".")
-          .pop();
+    /*
+    ========================================
+    FILE VALIDATION
+    ========================================
+    */
+    if (
+      !file.type.startsWith(
+        "image/"
+      )
+    ) {
 
-      const fileName =
-        `${Date.now()}.${fileExt}`;
-
-      const filePath =
-        `${user.id}/${fileName}`;
-
-      const {
-        error: uploadError,
-      } = await supabase.storage
-        .from("chatbot-files")
-        .upload(
-          filePath,
-          file,
-          {
-            cacheControl:
-              "3600",
-
-            upsert: true,
-          }
-        );
-
-      if (uploadError) {
-
-        console.error(
-          uploadError
-        );
-
-        return;
-      }
-
-      const {
-        data: publicData,
-      } = supabase.storage
-        .from("chatbot-files")
-        .getPublicUrl(
-          filePath
-        );
-
-      const updatedTheme = {
-        ...theme,
-
-        logo:
-  publicData.publicUrl
-      };
-
-      setTheme(
-        updatedTheme
+      alert(
+        "Please upload an image file"
       );
 
+      return;
+    }
+
+    /*
+    ========================================
+    UNIQUE FILE NAME
+    ========================================
+    */
+    const fileExt =
+      file.name
+        .split(".")
+        .pop();
+
+    const fileName =
+      `${Date.now()}-${Math.random()
+        .toString(36)
+        .substring(2)}.${fileExt}`;
+
+    const filePath =
+      `${user.id}/${fileName}`;
+
+    /*
+    ========================================
+    UPLOAD FILE
+    ========================================
+    */
+    const {
+      error: uploadError,
+    } = await supabase.storage
+      .from("chatbot-files")
+      .upload(
+        filePath,
+        file,
+        {
+          cacheControl:
+            "0",
+
+          upsert: true,
+        }
+      );
+
+    if (uploadError) {
+
+      console.error(
+        "UPLOAD ERROR:",
+        uploadError
+      );
+
+      alert(
+        "Logo upload failed"
+      );
+
+      return;
+    }
+
+    /*
+    ========================================
+    GET PUBLIC URL
+    ========================================
+    */
+    const {
+      data: publicData,
+    } = supabase.storage
+      .from("chatbot-files")
+      .getPublicUrl(
+        filePath
+      );
+
+    /*
+    ========================================
+    CACHE BUSTING
+    ========================================
+    */
+    const logoUrl =
+      `${publicData.publicUrl}?t=${Date.now()}`;
+
+    /*
+    ========================================
+    UPDATE THEME
+    ========================================
+    */
+    const updatedTheme = {
+      ...theme,
+      logo: logoUrl,
+    };
+
+    setTheme(
+      updatedTheme
+    );
+
+    /*
+    ========================================
+    SAVE TO DATABASE
+    ========================================
+    */
+    const { error } =
       await supabase
         .from("chatbots")
         .update({
@@ -363,12 +420,32 @@ export default function Builder() {
           chatbotId
         );
 
-    } catch (err) {
+    if (error) {
 
-      console.error(err);
+      console.error(
+        "DB UPDATE ERROR:",
+        error
+      );
 
+      alert(
+        "Failed to save logo"
+      );
+
+      return;
     }
-  };
+
+  } catch (err) {
+
+    console.error(
+      "LOGO ERROR:",
+      err
+    );
+
+    alert(
+      "Something went wrong"
+    );
+  }
+};
     const sendMessage = async () => {
 
     if (
@@ -692,7 +769,7 @@ export default function Builder() {
   onError={(e) => {
     e.target.style.display = "none";
   }}
-  className="w-full h-full object-contain p-2"
+  className="w-full h-full object-cover"
 />
 
                   ) : (
@@ -1062,7 +1139,7 @@ export default function Builder() {
   onError={(e) => {
     e.target.style.display = "none";
   }}
-  className="w-full h-full object-contain p-2"
+  className="w-full h-full object-cover"
 />
 
                 ) : (

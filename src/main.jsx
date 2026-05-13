@@ -12,22 +12,83 @@ import AuthProvider from "./context/AuthContext";
 
 /*
 ========================================
+GLOBAL ERROR STYLES
+========================================
+*/
+import "./styles/global.css";
+
+/*
+========================================
+ROOT ELEMENT
+========================================
+*/
+const rootElement =
+  document.getElementById("root");
+
+/*
+========================================
+SAFETY CHECK
+========================================
+*/
+if (!rootElement) {
+
+  throw new Error(
+    "Root element not found"
+  );
+}
+
+/*
+========================================
+CREATE ROOT
+========================================
+*/
+const root =
+  createRoot(rootElement);
+
+/*
+========================================
+REMOVE DUPLICATE CHATBOT
+========================================
+*/
+const existingWidget =
+  document.getElementById(
+    "aiaera-chatbot-widget"
+  );
+
+if (existingWidget) {
+
+  existingWidget.remove();
+}
+
+const existingButton =
+  document.getElementById(
+    "aiaera-chatbot-button"
+  );
+
+if (existingButton) {
+
+  existingButton.remove();
+}
+
+/*
+========================================
 ROOT RENDER
 ========================================
 
-Removed React.StrictMode
+React.StrictMode intentionally removed
 because it causes:
+
 - duplicate widget injection
 - duplicate API calls
-- Supabase lock errors
-- double useEffect execution
+- Supabase auth lock errors
+- duplicate useEffect execution
 - multiple chatbot renders
+- iframe duplication
+- chatbot flashing issue
 
 ========================================
 */
-createRoot(
-  document.getElementById("root")
-).render(
+root.render(
 
   <AuthProvider>
 
