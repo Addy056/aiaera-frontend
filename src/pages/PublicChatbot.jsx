@@ -18,6 +18,15 @@ export default function PublicChatbot() {
 
   /*
   ========================================
+  DETECT EMBED MODE
+  ========================================
+  */
+  const isEmbedded =
+    window.self !==
+    window.top;
+
+  /*
+  ========================================
   STATES
   ========================================
   */
@@ -78,7 +87,7 @@ export default function PublicChatbot() {
   const sessionId =
     useRef(
       sessionStorage.getItem(
-        "chat_session"
+        `chat_session_${id}`
       ) ||
         crypto.randomUUID()
     );
@@ -91,11 +100,11 @@ export default function PublicChatbot() {
   useEffect(() => {
 
     sessionStorage.setItem(
-      "chat_session",
+      `chat_session_${id}`,
       sessionId.current
     );
 
-  }, []);
+  }, [id]);
 
   /*
   ========================================
@@ -151,11 +160,6 @@ export default function PublicChatbot() {
         const data =
           await response.json();
 
-        console.log(
-          "PUBLIC CHATBOT:",
-          data
-        );
-
         if (
           !data.success ||
           !data.chatbot
@@ -171,27 +175,12 @@ export default function PublicChatbot() {
 
         setChatbot(bot);
 
-        /*
-        ========================================
-        APPLY THEME
-        ========================================
-        */
         setTheme({
-          /*
-          ========================================
-          FIX BOT NAME
-          ========================================
-          */
           botName:
             bot.theme?.botName ||
             bot.bot_name ||
             "AI Assistant",
 
-          /*
-          ========================================
-          FIX LOGO
-          ========================================
-          */
           logo:
             bot.theme?.logo ||
             "",
@@ -244,11 +233,6 @@ export default function PublicChatbot() {
       const msg =
         input.trim();
 
-      /*
-      ========================================
-      USER MESSAGE
-      ========================================
-      */
       setMessages(
         (prev) => [
           ...prev,
@@ -344,7 +328,7 @@ export default function PublicChatbot() {
   if (fetching) {
 
     return (
-      <div className="absolute inset-0 flex items-center justify-center bg-[#0B1120] text-white">
+      <div className="w-full h-full flex items-center justify-center bg-[#0B1120] text-white">
         <div className="flex flex-col items-center gap-3">
 
           <div className="w-10 h-10 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin"></div>
@@ -366,7 +350,7 @@ export default function PublicChatbot() {
   if (!chatbot) {
 
     return (
-      <div className="absolute inset-0 flex items-center justify-center bg-[#0B1120] text-white">
+      <div className="w-full h-full flex items-center justify-center bg-[#0B1120] text-white">
         Chatbot not found
       </div>
     );
@@ -374,7 +358,18 @@ export default function PublicChatbot() {
 
   return (
     <div
-      className="absolute inset-0 flex flex-col overflow-hidden"
+      className={`
+        w-full
+        h-full
+        flex
+        flex-col
+        overflow-hidden
+        ${
+          isEmbedded
+            ? ""
+            : "max-w-[420px] mx-auto rounded-[28px] shadow-2xl"
+        }
+      `}
       style={{
         background:
           `linear-gradient(to bottom, ${theme.chatBg}, #0B1120)`,
