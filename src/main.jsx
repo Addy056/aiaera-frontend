@@ -12,13 +12,6 @@ import AuthProvider from "./context/AuthContext";
 
 /*
 ========================================
-GLOBAL ERROR STYLES
-========================================
-*/
-import "./styles/global.css";
-
-/*
-========================================
 ROOT ELEMENT
 ========================================
 */
