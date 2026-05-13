@@ -277,7 +277,39 @@ export default function Builder() {
           theme,
         })
         .eq("id", chatbotId);
+/*
+========================================
+SAVE INTEGRATIONS
+========================================
+*/
+const token =
+  (
+    await supabase.auth.getSession()
+  ).data.session
+    ?.access_token;
 
+await fetch(
+  `${API_URL}/api/integrations`,
+  {
+    method: "POST",
+
+    headers: {
+      "Content-Type":
+        "application/json",
+
+      Authorization:
+        `Bearer ${token}`,
+    },
+
+    body: JSON.stringify({
+      calendly:
+        integrations.calendly_link,
+
+      maps:
+        integrations.maps_link,
+    }),
+  }
+);
     } catch (err) {
 
       console.error(err);
@@ -857,7 +889,49 @@ export default function Builder() {
                 />
 
               </div>
+              <div className="space-y-2">
 
+  <label className="text-sm text-gray-300">
+    Calendly Link
+  </label>
+
+  <input
+    type="text"
+    placeholder="https://calendly.com/..."
+    value={integrations.calendly_link}
+    onChange={(e) =>
+      setIntegrations({
+        ...integrations,
+        calendly_link:
+          e.target.value,
+      })
+    }
+    className="w-full h-11 rounded-2xl bg-white/[0.03] border border-white/5 px-4 outline-none text-sm"
+  />
+
+</div>
+
+<div className="space-y-2">
+
+  <label className="text-sm text-gray-300">
+    Google Maps Link
+  </label>
+
+  <input
+    type="text"
+    placeholder="https://maps.google.com/..."
+    value={integrations.maps_link}
+    onChange={(e) =>
+      setIntegrations({
+        ...integrations,
+        maps_link:
+          e.target.value,
+      })
+    }
+    className="w-full h-11 rounded-2xl bg-white/[0.03] border border-white/5 px-4 outline-none text-sm"
+  />
+
+</div>
             </div>
           )}
 
