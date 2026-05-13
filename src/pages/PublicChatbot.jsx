@@ -9,8 +9,7 @@ import {
 } from "react-router-dom";
 
 const API_URL =
-  import.meta.env.VITE_API_URL ||
-  "http://localhost:5000";
+  import.meta.env.VITE_API_URL;
 
 export default function PublicChatbot() {
 
@@ -19,7 +18,7 @@ export default function PublicChatbot() {
 
   /*
   ========================================
-  DETECT EMBED MODE
+  EMBED MODE
   ========================================
   */
   const isEmbedded =
@@ -88,7 +87,7 @@ export default function PublicChatbot() {
 
   /*
   ========================================
-  SESSION ID
+  SESSION
   ========================================
   */
   const sessionId =
@@ -278,7 +277,8 @@ export default function PublicChatbot() {
       label
     ) => {
 
-      let response = "";
+      let response =
+        "";
 
       if (
         type === "calendly"
@@ -363,10 +363,14 @@ export default function PublicChatbot() {
 
               body:
                 JSON.stringify({
-                  chatbot_id: id,
+                  chatbot_id:
+                    id,
+
                   session_id:
                     sessionId.current,
-                  message: msg,
+
+                  message:
+                    msg,
                 }),
             }
           );
@@ -418,7 +422,7 @@ export default function PublicChatbot() {
   if (fetching) {
 
     return (
-      <div className="w-full h-full flex items-center justify-center bg-[#0B1120] text-white overflow-hidden">
+      <div className="w-screen h-screen flex items-center justify-center bg-[#0B1120] text-white">
         Loading...
       </div>
     );
@@ -432,7 +436,7 @@ export default function PublicChatbot() {
   if (!chatbot) {
 
     return (
-      <div className="w-full h-full flex items-center justify-center bg-[#0B1120] text-white overflow-hidden">
+      <div className="w-screen h-screen flex items-center justify-center bg-[#0B1120] text-white">
         Chatbot not found
       </div>
     );
@@ -442,14 +446,13 @@ export default function PublicChatbot() {
     <div
       className={
         isEmbedded
-          ? "w-full h-full overflow-hidden"
-          : "w-full min-h-screen flex items-center justify-center bg-[#0B1120] p-4 overflow-hidden"
+          ? "w-screen h-screen overflow-hidden bg-[#0B1120]"
+          : "w-full min-h-screen flex items-center justify-center bg-[#0B1120] p-4"
       }
     >
 
       <div
         className={`
-          w-full
           flex
           flex-col
           overflow-hidden
@@ -459,8 +462,8 @@ export default function PublicChatbot() {
           shadow-2xl
           ${
             isEmbedded
-              ? "h-full rounded-none"
-              : "max-w-[420px] h-[720px] rounded-[28px]"
+              ? "w-screen h-screen rounded-none"
+              : "w-full max-w-[420px] h-[720px] rounded-[28px]"
           }
         `}
         style={{

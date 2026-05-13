@@ -1,6 +1,57 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/*
+========================================
+GLOBAL RESET
+========================================
+*/
+* {
+  box-sizing: border-box;
+}
+
+/*
+========================================
+FULL HEIGHT FIX
+========================================
+*/
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/*
+========================================
+BODY
+========================================
+*/
+body {
+  overflow: hidden;
+  background: #0B1120;
+  font-family:
+    Inter,
+    sans-serif;
+}
+
+/*
+========================================
+IFRAME FIX
+========================================
+*/
+iframe {
+  border: none;
+}
+
+/*
+========================================
+INPUT STYLE
+========================================
+*/
 .input {
   width: 100%;
   padding: 10px;
@@ -9,4 +60,24 @@
   border: 1px solid rgba(255,255,255,0.1);
   color: white;
   outline: none;
+}
+
+/*
+========================================
+SCROLLBAR
+========================================
+*/
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background:
+    rgba(127,90,240,0.4);
+
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
 }
