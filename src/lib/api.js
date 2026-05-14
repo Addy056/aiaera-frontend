@@ -3,6 +3,11 @@ import axios from "axios";
 import { supabase }
   from "./supabase";
 
+/*
+========================================
+AXIOS INSTANCE
+========================================
+*/
 const api = axios.create({
   baseURL:
     import.meta.env.VITE_API_URL,
@@ -49,7 +54,57 @@ export const integrationsAPI = {
           "/api/integrations"
         );
 
-      return res.data;
+      /*
+      ====================================
+      NORMALIZE RESPONSE
+      ====================================
+      */
+
+      return (
+        res.data?.integrations || {
+          /*
+          ================================
+          WHATSAPP
+          ================================
+          */
+          whatsapp_token: "",
+          whatsapp_phone_id: "",
+          whatsapp_enabled: false,
+
+          /*
+          ================================
+          FACEBOOK
+          ================================
+          */
+          facebook_page_id: "",
+          facebook_page_token: "",
+          facebook_enabled: false,
+
+          /*
+          ================================
+          INSTAGRAM
+          ================================
+          */
+          instagram_business_id: "",
+          instagram_access_token: "",
+          instagram_enabled: false,
+
+          /*
+          ================================
+          MEETING PROVIDER
+          ================================
+          */
+          provider: "calendly",
+          meeting_link: "",
+
+          /*
+          ================================
+          OTHER
+          ================================
+          */
+          maps: "",
+        }
+      );
     },
 
   /*
@@ -60,10 +115,80 @@ export const integrationsAPI = {
   saveIntegrations:
     async (payload) => {
 
+      /*
+      ====================================
+      SANITIZE PAYLOAD
+      ====================================
+      */
+
+      const cleanPayload = {
+
+        /*
+        ================================
+        WHATSAPP
+        ================================
+        */
+        whatsapp_token:
+          payload.whatsapp_token || "",
+
+        whatsapp_phone_id:
+          payload.whatsapp_phone_id || "",
+
+        whatsapp_enabled:
+          payload.whatsapp_enabled || false,
+
+        /*
+        ================================
+        FACEBOOK
+        ================================
+        */
+        facebook_page_id:
+          payload.facebook_page_id || "",
+
+        facebook_page_token:
+          payload.facebook_page_token || "",
+
+        facebook_enabled:
+          payload.facebook_enabled || false,
+
+        /*
+        ================================
+        INSTAGRAM
+        ================================
+        */
+        instagram_business_id:
+          payload.instagram_business_id || "",
+
+        instagram_access_token:
+          payload.instagram_access_token || "",
+
+        instagram_enabled:
+          payload.instagram_enabled || false,
+
+        /*
+        ================================
+        MEETING PROVIDER
+        ================================
+        */
+        provider:
+          payload.provider || "calendly",
+
+        meeting_link:
+          payload.meeting_link || "",
+
+        /*
+        ================================
+        OTHER
+        ================================
+        */
+        maps:
+          payload.maps || "",
+      };
+
       const res =
         await api.post(
           "/api/integrations",
-          payload
+          cleanPayload
         );
 
       return res.data;

@@ -51,9 +51,15 @@ export default function PublicChatbot() {
   const [fetching, setFetching] =
     useState(true);
 
+  /*
+  ========================================
+  GENERIC INTEGRATIONS
+  ========================================
+  */
   const [integrations, setIntegrations] =
     useState({
-      calendly: "",
+      provider: "calendly",
+      meeting_link: "",
       maps: "",
     });
 
@@ -246,9 +252,14 @@ export default function PublicChatbot() {
         if (data.success) {
 
           setIntegrations({
-            calendly:
+            provider:
               data.integrations
-                ?.calendly || "",
+                ?.provider ||
+              "calendly",
+
+            meeting_link:
+              data.integrations
+                ?.meeting_link || "",
 
             maps:
               data.integrations
@@ -331,16 +342,38 @@ export default function PublicChatbot() {
       let response =
         "";
 
+      /*
+      ========================================
+      BOOKING
+      ========================================
+      */
       if (
-        type === "calendly"
+        type === "booking"
       ) {
 
+        const providerName =
+          integrations.provider === "zoom"
+            ? "Zoom"
+            : integrations.provider === "teams"
+            ? "Microsoft Teams"
+            : integrations.provider === "meet"
+            ? "Google Meet"
+            : integrations.provider === "custom"
+            ? "Meeting"
+            : "Calendly";
+
         response =
-          integrations.calendly
-            ? `📅 Book your appointment here:\n${integrations.calendly}`
+          integrations.meeting_link &&
+          integrations.meeting_link.trim() !== ""
+            ? `📅 Book your appointment using ${providerName}:\n${integrations.meeting_link}`
             : "Booking link not configured yet.";
       }
 
+      /*
+      ========================================
+      MAPS
+      ========================================
+      */
       if (
         type === "maps"
       ) {
@@ -505,6 +538,10 @@ export default function PublicChatbot() {
           "help",
           "business",
           "buy",
+          "call",
+          "zoom",
+          "meeting",
+          "schedule",
         ];
 
         const interested =
@@ -666,7 +703,7 @@ Could you also share your email and phone number so our team can assist you bett
           <button
             onClick={() =>
               handleQuickAction(
-                "calendly",
+                "booking",
                 "Book Appointment"
               )
             }

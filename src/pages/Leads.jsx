@@ -141,6 +141,8 @@ ${lead.name}
 ${lead.email}
 ${lead.phone}
 ${lead.message}
+${lead.source}
+${lead.provider}
 `
           .toLowerCase()
           .includes(
@@ -325,6 +327,8 @@ ${lead.message}
         "Name",
         "Email",
         "Phone",
+        "Source",
+        "Provider",
         "Message",
         "Date",
       ];
@@ -332,14 +336,12 @@ ${lead.message}
       const rows =
         filteredLeads.map(
           (lead) => [
-            lead.name ||
-              "",
-            lead.email ||
-              "",
-            lead.phone ||
-              "",
-            lead.message ||
-              "",
+            lead.name || "",
+            lead.email || "",
+            lead.phone || "",
+            lead.source || "Website",
+            lead.provider || "-",
+            lead.message || "",
             new Date(
               lead.created_at
             ).toLocaleString(),
@@ -529,7 +531,7 @@ ${lead.message}
       )}
 
       {/* STATS */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
 
         <StatCard
           title="Total Leads"
@@ -562,6 +564,18 @@ ${lead.message}
           }
           icon={
             <Phone size={16} />
+          }
+        />
+
+        <StatCard
+          title="Appointments"
+          value={
+            filteredLeads.filter(
+              (l) => l.provider
+            ).length
+          }
+          icon={
+            <Calendar size={16} />
           }
         />
 
@@ -696,6 +710,14 @@ ${lead.message}
                   </th>
 
                   <th className="px-4 py-3">
+                    Source
+                  </th>
+
+                  <th className="px-4 py-3">
+                    Provider
+                  </th>
+
+                  <th className="px-4 py-3">
                     Message
                   </th>
 
@@ -736,6 +758,26 @@ ${lead.message}
                       <td className="px-4 py-4 text-sm text-gray-300">
                         {lead.phone ||
                           "-"}
+                      </td>
+
+                      <td className="px-4 py-4">
+
+                        <div className="inline-flex items-center px-3 py-1 rounded-xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-300">
+
+                          {lead.source || "Website"}
+
+                        </div>
+
+                      </td>
+
+                      <td className="px-4 py-4">
+
+                        <div className="inline-flex items-center px-3 py-1 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs text-blue-300">
+
+                          {lead.provider || "-"}
+
+                        </div>
+
                       </td>
 
                       <td className="px-4 py-4 text-sm text-gray-400 max-w-[240px] truncate">
@@ -850,6 +892,28 @@ ${lead.message}
                 label="Phone"
                 value={
                   selectedLead.phone
+                }
+              />
+
+              <DetailItem
+                icon={
+                  <Sparkles size={15} />
+                }
+                label="Source"
+                value={
+                  selectedLead.source ||
+                  "Website"
+                }
+              />
+
+              <DetailItem
+                icon={
+                  <Calendar size={15} />
+                }
+                label="Meeting Provider"
+                value={
+                  selectedLead.provider ||
+                  "-"
                 }
               />
 

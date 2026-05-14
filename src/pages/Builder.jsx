@@ -59,11 +59,12 @@ export default function Builder() {
   const [website, setWebsite] =
     useState("");
 
-  const [integrations, setIntegrations] =
-    useState({
-      calendly_link: "",
-      maps_link: "",
-    });
+ const [integrations, setIntegrations] =
+  useState({
+    provider: "calendly",
+    meeting_link: "",
+    maps_link: "",
+  });
 
   const [theme, setTheme] =
     useState({
@@ -237,13 +238,17 @@ export default function Builder() {
       const integrationData =
         await integrationRes.json();
 
-      setIntegrations({
-        calendly_link:
-          integrationData.calendly || "",
+    setIntegrations({
+  provider:
+    integrationData.provider ||
+    "calendly",
 
-        maps_link:
-          integrationData.maps || "",
-      });
+  meeting_link:
+    integrationData.meeting_link || "",
+
+  maps_link:
+    integrationData.maps || "",
+});
 
     } catch (err) {
 
@@ -301,13 +306,16 @@ await fetch(
         `Bearer ${token}`,
     },
 
-    body: JSON.stringify({
-      calendly:
-        integrations.calendly_link,
+  body: JSON.stringify({
+  provider:
+    integrations.provider,
 
-      maps:
-        integrations.maps_link,
-    }),
+  meeting_link:
+    integrations.meeting_link,
+
+  maps:
+    integrations.maps_link,
+}),
   }
 );
     } catch (err) {
@@ -502,26 +510,37 @@ await fetch(
       userMessage.toLowerCase();
 
     if (
-      (
-        lowerMessage.includes("book") ||
-        lowerMessage.includes("appointment") ||
-        lowerMessage.includes("meeting") ||
-        lowerMessage.includes("schedule")
-      ) &&
-      integrations?.calendly_link
-    ) {
+  (
+    lowerMessage.includes("book") ||
+    lowerMessage.includes("appointment") ||
+    lowerMessage.includes("meeting") ||
+    lowerMessage.includes("schedule")
+  ) &&
+  integrations?.meeting_link
+) {
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "bot",
-          text:
-            `📅 Book your appointment here:\n${integrations.calendly_link}`,
-        },
-      ]);
+  const providerName =
+    integrations.provider === "zoom"
+      ? "Zoom"
+      : integrations.provider === "teams"
+      ? "Microsoft Teams"
+      : integrations.provider === "meet"
+      ? "Google Meet"
+      : integrations.provider === "custom"
+      ? "Meeting"
+      : "Calendly";
 
-      return;
-    }
+  setMessages((prev) => [
+    ...prev,
+    {
+      role: "bot",
+      text:
+        `📅 Book your appointment using ${providerName}:\n${integrations.meeting_link}`,
+    },
+  ]);
+
+  return;
+}
 
     if (
       (
@@ -892,17 +911,59 @@ await fetch(
               <div className="space-y-2">
 
   <label className="text-sm text-gray-300">
-    Calendly Link
+    Meeting Provider
+  </label>
+
+  <select
+    value={integrations.provider}
+    onChange={(e) =>
+      setIntegrations({
+        ...integrations,
+        provider:
+          e.target.value,
+      })
+    }
+    className="w-full h-11 rounded-2xl bg-white/[0.03] border border-white/5 px-4 outline-none text-sm"
+  >
+
+    <option value="calendly">
+      Calendly
+    </option>
+
+    <option value="zoom">
+      Zoom
+    </option>
+
+    <option value="teams">
+      Microsoft Teams
+    </option>
+
+    <option value="meet">
+      Google Meet
+    </option>
+
+    <option value="custom">
+      Custom
+    </option>
+
+  </select>
+
+</div>
+
+<div className="space-y-2">
+
+  <label className="text-sm text-gray-300">
+    Meeting Link
   </label>
 
   <input
     type="text"
-    placeholder="https://calendly.com/..."
-    value={integrations.calendly_link}
+    placeholder="https://your-booking-link.com"
+    value={integrations.meeting_link}
     onChange={(e) =>
       setIntegrations({
         ...integrations,
-        calendly_link:
+        meeting_link:
           e.target.value,
       })
     }
@@ -1269,8 +1330,8 @@ await fetch(
                     role: "bot",
 
                     text:
-                      integrations?.calendly_link
-                        ? `📅 Book your appointment here:\n${integrations.calendly_link}`
+                      integrations?.meeting_link
+  ? `📅 Book your appointment here:\n${integrations.meeting_link}`
                         : "Booking link not configured yet.",
                   },
                 ]);

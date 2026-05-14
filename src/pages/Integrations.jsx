@@ -101,10 +101,17 @@ export default function Integrations() {
 
       /*
       ====================================
+      MEETING PROVIDER
+      ====================================
+      */
+      provider: "calendly",
+      meeting_link: "",
+
+      /*
+      ====================================
       OTHER
       ====================================
       */
-      calendly: "",
       maps: "",
     });
 
@@ -155,8 +162,17 @@ export default function Integrations() {
             instagram_enabled:
               data.instagram_enabled || false,
 
-            calendly:
-              data.calendly || "",
+            /*
+            ====================================
+            GENERIC MEETING SUPPORT
+            ====================================
+            */
+
+            provider:
+              data.provider || "calendly",
+
+            meeting_link:
+              data.meeting_link || "",
 
             maps:
               data.maps || "",
@@ -331,10 +347,9 @@ export default function Integrations() {
             </h1>
 
             <p className="text-sm text-gray-400 max-w-xl">
-              Connect WhatsApp,
-              Facebook and Instagram
-              to automate customer
-              communication using AI.
+              Connect your communication
+              channels and meeting provider
+              for automated AI interactions.
             </p>
 
           </div>
@@ -463,21 +478,6 @@ export default function Integrations() {
               onChange={handleChange}
             />
 
-            <button
-              onClick={() =>
-                setShowWhatsAppModal(true)
-              }
-              className="text-sm text-purple-400 hover:text-purple-300"
-            >
-              View Setup Guide →
-            </button>
-
-            <InfoBox>
-              Connect your WhatsApp
-              Business account for AI
-              powered customer replies.
-            </InfoBox>
-
           </IntegrationCard>
 
           {/* FACEBOOK */}
@@ -538,21 +538,6 @@ export default function Integrations() {
               }
               onChange={handleChange}
             />
-
-            <button
-              onClick={() =>
-                setShowFacebookModal(true)
-              }
-              className="text-sm text-purple-400 hover:text-purple-300"
-            >
-              View Setup Guide →
-            </button>
-
-            <InfoBox>
-              Automatically reply to
-              Facebook page messages
-              using your AI chatbot.
-            </InfoBox>
 
           </IntegrationCard>
 
@@ -615,49 +600,71 @@ export default function Integrations() {
               onChange={handleChange}
             />
 
-            <button
-              onClick={() =>
-                setShowInstagramModal(true)
-              }
-              className="text-sm text-purple-400 hover:text-purple-300"
-            >
-              View Setup Guide →
-            </button>
-
-            <InfoBox>
-              Automatically respond to
-              Instagram direct messages
-              using AI.
-            </InfoBox>
-
           </IntegrationCard>
 
-          {/* CALENDLY */}
+          {/* MEETING PROVIDER */}
 
           <IntegrationCard
-            title="Calendly Booking"
-            subtitle="Allow visitors to schedule appointments instantly."
+            title="Appointment Booking"
+            subtitle="Connect any booking provider for AI appointment scheduling."
             icon={
               <PlatformIcon type="calendly" />
             }
             status={
-              form.calendly
+              form.meeting_link
                 ? "connected"
                 : "disconnected"
             }
           >
 
+            <div className="space-y-2">
+
+              <label className="text-sm text-gray-300">
+                Meeting Provider
+              </label>
+
+              <select
+                name="provider"
+                value={form.provider}
+                onChange={handleChange}
+                className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-purple-500"
+              >
+
+                <option value="calendly">
+                  Calendly
+                </option>
+
+                <option value="zoom">
+                  Zoom
+                </option>
+
+                <option value="teams">
+                  Microsoft Teams
+                </option>
+
+                <option value="meet">
+                  Google Meet
+                </option>
+
+                <option value="custom">
+                  Custom
+                </option>
+
+              </select>
+
+            </div>
+
             <IntegrationInput
-              name="calendly"
-              placeholder="https://calendly.com/your-link"
-              value={form.calendly}
+              name="meeting_link"
+              placeholder="https://your-booking-link.com"
+              value={form.meeting_link}
               onChange={handleChange}
             />
 
             <InfoBox>
-              Your chatbot can share
-              booking links directly
-              during conversations.
+              Your chatbot can instantly
+              share this booking link when
+              customers ask for appointments.
             </InfoBox>
 
           </IntegrationCard>

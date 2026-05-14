@@ -11,10 +11,13 @@ import {
   Sparkles,
   ExternalLink,
   Users,
+  Video,
 } from "lucide-react";
 
 import { supabase } from "../lib/supabase";
+
 import { AuthContext } from "../context/AuthContext";
+
 import { useNavigate } from "react-router-dom";
 
 export default function Appointments() {
@@ -26,7 +29,12 @@ export default function Appointments() {
 
   const navigate = useNavigate();
 
-  // ✅ ADMIN EMAILS
+  /*
+  ========================================
+  ADMIN EMAILS
+  ========================================
+  */
+
   const ADMIN_EMAILS = [
     "dhawaleaditya077@gmail.com",
   ];
@@ -34,6 +42,12 @@ export default function Appointments() {
   const isAdmin =
     user &&
     ADMIN_EMAILS.includes(user.email);
+
+  /*
+  ========================================
+  STATES
+  ========================================
+  */
 
   const [appointments, setAppointments] =
     useState([]);
@@ -44,9 +58,12 @@ export default function Appointments() {
   const [isSubscribed, setIsSubscribed] =
     useState(true);
 
-  // =============================
-  // INIT
-  // =============================
+  /*
+  ========================================
+  INIT
+  ========================================
+  */
+
   useEffect(() => {
 
     if (!user) return;
@@ -55,13 +72,22 @@ export default function Appointments() {
 
   }, [user]);
 
+  /*
+  ========================================
+  INIT FUNCTION
+  ========================================
+  */
+
   const init = async () => {
 
     try {
 
-      // =============================
-      // CHECK SUBSCRIPTION
-      // =============================
+      /*
+      ====================================
+      CHECK SUBSCRIPTION
+      ====================================
+      */
+
       const { data: sub } =
         await supabase
           .from("user_subscriptions")
@@ -69,7 +95,12 @@ export default function Appointments() {
           .eq("user_id", user.id)
           .maybeSingle();
 
-      // ✅ ADMIN BYPASS
+      /*
+      ====================================
+      ADMIN BYPASS
+      ====================================
+      */
+
       if (isAdmin) {
 
         setIsSubscribed(true);
@@ -89,9 +120,12 @@ export default function Appointments() {
 
       }
 
-      // =============================
-      // FETCH APPOINTMENTS
-      // =============================
+      /*
+      ====================================
+      FETCH APPOINTMENTS
+      ====================================
+      */
+
       const {
         data,
         error,
@@ -118,9 +152,44 @@ export default function Appointments() {
     }
   };
 
-  // =============================
-  // LOADING
-  // =============================
+  /*
+  ========================================
+  PROVIDER BADGE
+  ========================================
+  */
+
+  const getProviderBadge = (
+    provider
+  ) => {
+
+    switch (provider) {
+
+      case "zoom":
+        return "Zoom";
+
+      case "teams":
+        return "Teams";
+
+      case "meet":
+        return "Google Meet";
+
+      case "calendly":
+        return "Calendly";
+
+      case "custom":
+        return "Custom";
+
+      default:
+        return "Meeting";
+    }
+  };
+
+  /*
+  ========================================
+  LOADING
+  ========================================
+  */
+
   if (
     authLoading ||
     loading
@@ -150,6 +219,7 @@ export default function Appointments() {
     <div className="space-y-6 text-white">
 
       {/* HEADER */}
+
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
 
         <div>
@@ -172,8 +242,8 @@ export default function Appointments() {
           </h1>
 
           <p className="text-gray-400 text-sm">
-            Manage all meetings booked
-            through your AI chatbot.
+            Manage all customer meetings
+            booked through your AI chatbot.
           </p>
 
         </div>
@@ -202,7 +272,8 @@ export default function Appointments() {
 
       </div>
 
-      {/* 🔴 UPGRADE BANNER */}
+      {/* SUBSCRIPTION BANNER */}
+
       {!isSubscribed && (
 
         <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 flex items-center justify-between gap-4">
@@ -226,7 +297,7 @@ export default function Appointments() {
 
               <p className="text-sm text-red-200/70">
                 Upgrade your plan to
-                manage appointments.
+                access appointments.
               </p>
 
             </div>
@@ -249,9 +320,11 @@ export default function Appointments() {
       )}
 
       {/* TABLE */}
+
       <div className="rounded-3xl border border-white/5 bg-white/[0.03] backdrop-blur-xl overflow-hidden">
 
         {/* TOP */}
+
         <div className="flex items-center justify-between p-6 border-b border-white/5">
 
           <div>
@@ -278,6 +351,7 @@ export default function Appointments() {
         </div>
 
         {/* LOCKED */}
+
         {!isSubscribed ? (
 
           <div className="p-20 text-center">
@@ -321,7 +395,11 @@ export default function Appointments() {
                   </th>
 
                   <th className="px-6 py-4">
-                    Meeting
+                    Provider
+                  </th>
+
+                  <th className="px-6 py-4">
+                    Meeting Link
                   </th>
 
                   <th className="px-6 py-4">
@@ -345,12 +423,16 @@ export default function Appointments() {
                         className="border-t border-white/5 hover:bg-white/[0.03] transition-all"
                       >
 
+                        {/* CUSTOMER */}
+
                         <td className="px-6 py-5 font-medium">
 
                           {appt.customer_name ||
                             "Unknown"}
 
                         </td>
+
+                        {/* EMAIL */}
 
                         <td className="px-6 py-5 text-gray-300 text-sm">
 
@@ -359,20 +441,38 @@ export default function Appointments() {
 
                         </td>
 
+                        {/* PROVIDER */}
+
                         <td className="px-6 py-5">
 
-                          {appt.calendly_event_link ? (
+                          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs">
+
+                            <Video size={12} />
+
+                            {getProviderBadge(
+                              appt.provider
+                            )}
+
+                          </div>
+
+                        </td>
+
+                        {/* LINK */}
+
+                        <td className="px-6 py-5">
+
+                          {appt.meeting_link ? (
 
                             <a
                               href={
-                                appt.calendly_event_link
+                                appt.meeting_link
                               }
                               target="_blank"
                               rel="noreferrer"
                               className="inline-flex items-center gap-2 text-purple-400 hover:text-purple-300 transition-all text-sm font-medium"
                             >
 
-                              View Meeting
+                              Open Meeting
 
                               <ExternalLink
                                 size={14}
@@ -389,6 +489,8 @@ export default function Appointments() {
                           )}
 
                         </td>
+
+                        {/* DATE */}
 
                         <td className="px-6 py-5 text-gray-400 text-sm">
 
@@ -408,7 +510,7 @@ export default function Appointments() {
                   <tr>
 
                     <td
-                      colSpan="4"
+                      colSpan="5"
                       className="p-16 text-center"
                     >
 
@@ -428,8 +530,8 @@ export default function Appointments() {
                         </h3>
 
                         <p className="text-gray-400 text-sm">
-                          Booked meetings will
-                          appear here.
+                          Customer meetings
+                          will appear here.
                         </p>
 
                       </div>
