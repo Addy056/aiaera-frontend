@@ -57,10 +57,16 @@ export default function PublicChatbot() {
       maps: "",
     });
 
+  const [leadCollected, setLeadCollected] =
+    useState(false);
+
+  const [leadAsked, setLeadAsked] =
+    useState(false);
+
   const [theme, setTheme] =
     useState({
       botName:
-        "AI Assistant",
+        "Assistant",
 
       logo: "",
 
@@ -157,13 +163,6 @@ export default function PublicChatbot() {
             `${API_URL}/api/embed/chatbot/${id}`
           );
 
-        if (!response.ok) {
-
-          throw new Error(
-            "Failed to fetch chatbot"
-          );
-        }
-
         const data =
           await response.json();
 
@@ -186,7 +185,7 @@ export default function PublicChatbot() {
           botName:
             bot.theme?.botName ||
             bot.bot_name ||
-            "AI Assistant",
+            "Assistant",
 
           logo:
             bot.theme?.logo ||
@@ -268,7 +267,7 @@ export default function PublicChatbot() {
 
   /*
   ========================================
-  MAKE LINKS CLICKABLE
+  LINK RENDER
   ========================================
   */
   const renderMessageWithLinks =
@@ -355,17 +354,35 @@ export default function PublicChatbot() {
       setMessages(
         (prev) => [
           ...prev,
-
           {
             role: "user",
             text: label,
           },
-
           {
             role: "bot",
             text: response,
           },
         ]
+      );
+    };
+
+  /*
+  ========================================
+  EMAIL + PHONE DETECTION
+  ========================================
+  */
+  const containsLeadInfo =
+    (text) => {
+
+      const emailRegex =
+        /\S+@\S+\.\S+/;
+
+      const phoneRegex =
+        /(\+?\d[\d\s-]{7,})/;
+
+      return (
+        emailRegex.test(text) ||
+        phoneRegex.test(text)
       );
     };
 
@@ -386,6 +403,18 @@ export default function PublicChatbot() {
 
       const msg =
         input.trim();
+
+      /*
+      ========================================
+      DETECT LEAD INFO
+      ========================================
+      */
+      if (
+        containsLeadInfo(msg)
+      ) {
+
+        setLeadCollected(true);
+      }
 
       setMessages(
         (prev) => [
@@ -427,30 +456,9 @@ export default function PublicChatbot() {
             }
           );
 
-        /*
-        ========================================
-        SAFE JSON
-        ========================================
-        */
-        let data = null;
+        const data =
+          await response.json();
 
-        try {
-
-          data =
-            await response.json();
-
-        } catch {
-
-          throw new Error(
-            "Invalid server response"
-          );
-        }
-
-        /*
-        ========================================
-        HANDLE FAILED RESPONSE
-        ========================================
-        */
         if (
           !response.ok ||
           !data.success
@@ -471,19 +479,65 @@ export default function PublicChatbot() {
           return;
         }
 
+        let botReply =
+          data.reply ||
+          "No response available.";
+
         /*
         ========================================
-        SUCCESS
+        SMART LEAD ASKING
         ========================================
         */
+        const userMessageCount =
+          messages.filter(
+            (m) =>
+              m.role === "user"
+          ).length + 1;
+
+        const interestKeywords = [
+          "price",
+          "pricing",
+          "cost",
+          "service",
+          "demo",
+          "appointment",
+          "consultation",
+          "help",
+          "business",
+          "buy",
+        ];
+
+        const interested =
+          interestKeywords.some(
+            (word) =>
+              msg
+                .toLowerCase()
+                .includes(word)
+          );
+
+        if (
+          !leadCollected &&
+          !leadAsked &&
+          (
+            userMessageCount >= 3 ||
+            interested
+          )
+        ) {
+
+          botReply += `
+
+Could you also share your email and phone number so our team can assist you better?`;
+
+          setLeadAsked(true);
+        }
+
         setMessages(
           (prev) => [
             ...prev,
             {
               role: "bot",
               text:
-                data.reply ||
-                "No response available.",
+                botReply,
             },
           ]
         );
@@ -501,7 +555,7 @@ export default function PublicChatbot() {
             {
               role: "bot",
               text:
-                "⚠️ AI assistant is temporarily unavailable.",
+                "⚠️ Service temporarily unavailable.",
             },
           ]
         );
@@ -679,7 +733,7 @@ export default function PublicChatbot() {
 
             {loading && (
               <div className="text-xs text-gray-400 px-2">
-                AI is typing...
+                {theme.botName} is typing...
               </div>
             )}
 
