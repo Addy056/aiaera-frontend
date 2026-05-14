@@ -1,28 +1,34 @@
 import {
-  MessageCircle,
-  MessageSquare,
-  Calendar,
+  Sparkles,
   Save,
   Loader2,
-  ShieldCheck,
-  Sparkles,
   CheckCircle2,
   AlertCircle,
-  KeyRound,
-  MapPinned,
 } from "lucide-react";
 
 import { useEffect, useState } from "react";
-import axios from "axios";
-import { supabase } from "../lib/supabase";
 
-const API_URL =
-  import.meta.env.VITE_API_URL;
+import {
+  integrationsAPI,
+} from "../lib/api";
+
+import IntegrationCard from "../components/integrations/IntegrationCard";
+
+import IntegrationInput from "../components/integrations/IntegrationInput";
+
+import InfoBox from "../components/integrations/InfoBox";
+
+import PlatformIcon from "../components/integrations/PlatformIcon";
+
+import WhatsAppSetupModal from "../components/integrations/WhatsAppSetupModal";
+
+import FacebookSetupModal from "../components/integrations/FacebookSetupModal";
+
+import InstagramSetupModal from "../components/integrations/InstagramSetupModal";
+
+import AutomationToggle from "../components/integrations/AutomationToggle";
 
 export default function Integrations() {
-
-  const [user, setUser] =
-    useState(null);
 
   const [loading, setLoading] =
     useState(false);
@@ -36,102 +42,151 @@ export default function Integrations() {
   const [success, setSuccess] =
     useState("");
 
+  /*
+  ========================================
+  MODALS
+  ========================================
+  */
+
+  const [
+    showWhatsAppModal,
+    setShowWhatsAppModal,
+  ] = useState(false);
+
+  const [
+    showFacebookModal,
+    setShowFacebookModal,
+  ] = useState(false);
+
+  const [
+    showInstagramModal,
+    setShowInstagramModal,
+  ] = useState(false);
+
+  /*
+  ========================================
+  FORM
+  ========================================
+  */
+
   const [form, setForm] =
     useState({
+
+      /*
+      ====================================
+      WHATSAPP
+      ====================================
+      */
       whatsapp_token: "",
       whatsapp_phone_id: "",
-      facebook: "",
+      whatsapp_enabled: false,
+
+      /*
+      ====================================
+      FACEBOOK
+      ====================================
+      */
+      facebook_page_id: "",
+      facebook_page_token: "",
+      facebook_enabled: false,
+
+      /*
+      ====================================
+      INSTAGRAM
+      ====================================
+      */
+      instagram_business_id: "",
+      instagram_access_token: "",
+      instagram_enabled: false,
+
+      /*
+      ====================================
+      OTHER
+      ====================================
+      */
       calendly: "",
       maps: "",
     });
 
-  // ================= INIT =================
+  /*
+  ========================================
+  FETCH INTEGRATIONS
+  ========================================
+  */
+
   useEffect(() => {
 
-    const init = async () => {
+    const loadIntegrations =
+      async () => {
 
-      try {
+        try {
 
-        setPageLoading(true);
+          setPageLoading(true);
 
-        const {
-          data: sessionData,
-        } = await supabase.auth.getSession();
-
-        if (
-          !sessionData.session
-        ) {
-
-          setError(
-            "User not authenticated"
-          );
-
-          return;
-        }
-
-        const currentUser =
-          sessionData.session.user;
-
-        setUser(currentUser);
-
-        const token =
-          sessionData.session
-            .access_token;
-
-        // FETCH INTEGRATIONS
-        const res = await axios.get(
-          `${API_URL}/api/integrations`,
-          {
-            headers: {
-              Authorization:
-                `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (res.data) {
+          const data =
+            await integrationsAPI.getIntegrations();
 
           setForm({
-  whatsapp_token:
-    res.data.whatsapp_token || "",
 
-  whatsapp_phone_id:
-    res.data.whatsapp_phone_id || "",
+            whatsapp_token:
+              data.whatsapp_token || "",
 
-  facebook:
-    res.data.facebook || "",
+            whatsapp_phone_id:
+              data.whatsapp_phone_id || "",
 
-  calendly:
-    res.data.calendly || "",
+            whatsapp_enabled:
+              data.whatsapp_enabled || false,
 
-  maps:
-    res.data.maps || "",
-});
+            facebook_page_id:
+              data.facebook_page_id || "",
+
+            facebook_page_token:
+              data.facebook_page_token || "",
+
+            facebook_enabled:
+              data.facebook_enabled || false,
+
+            instagram_business_id:
+              data.instagram_business_id || "",
+
+            instagram_access_token:
+              data.instagram_access_token || "",
+
+            instagram_enabled:
+              data.instagram_enabled || false,
+
+            calendly:
+              data.calendly || "",
+
+            maps:
+              data.maps || "",
+          });
+
+        } catch (err) {
+
+          console.error(err);
+
+          setError(
+            "Failed to load integrations"
+          );
+
+        } finally {
+
+          setPageLoading(false);
+
         }
+      };
 
-      } catch (err) {
-
-        console.error(
-          "Integration Fetch Error:",
-          err
-        );
-
-        setError(
-          "Failed to load integrations"
-        );
-
-      } finally {
-
-        setPageLoading(false);
-
-      }
-    };
-
-    init();
+    loadIntegrations();
 
   }, []);
 
-  // ================= INPUT =================
+  /*
+  ========================================
+  HANDLE INPUT
+  ========================================
+  */
+
   const handleChange = (e) => {
 
     setForm({
@@ -142,7 +197,30 @@ export default function Integrations() {
 
   };
 
-  // ================= SAVE =================
+  /*
+  ========================================
+  TOGGLE
+  ========================================
+  */
+
+  const handleToggle = (
+    key,
+    value
+  ) => {
+
+    setForm({
+      ...form,
+      [key]: value,
+    });
+
+  };
+
+  /*
+  ========================================
+  SAVE
+  ========================================
+  */
+
   const handleSave = async () => {
 
     try {
@@ -153,32 +231,8 @@ export default function Integrations() {
 
       setSuccess("");
 
-      const {
-        data: sessionData,
-      } = await supabase.auth.getSession();
-
-      if (
-        !sessionData.session
-      ) {
-        throw new Error(
-          "User not authenticated"
-        );
-      }
-
-      const token =
-        sessionData.session
-          .access_token;
-
-      await axios.post(
-        `${API_URL}/api/integrations`,
-        form,
-        {
-          headers: {
-            Authorization:
-              `Bearer ${token}`,
-          },
-        }
-      );
+      await integrationsAPI
+        .saveIntegrations(form);
 
       setSuccess(
         "Integrations saved successfully 🚀"
@@ -186,16 +240,11 @@ export default function Integrations() {
 
     } catch (err) {
 
-      console.error(
-        "Save Error:",
-        err
-      );
+      console.error(err);
 
       setError(
-        err.response?.data
-          ?.error ||
-          err.message ||
-          "Failed to save integrations"
+        err.response?.data?.error ||
+        "Failed to save integrations"
       );
 
     } finally {
@@ -205,7 +254,12 @@ export default function Integrations() {
     }
   };
 
-  // ================= LOADING =================
+  /*
+  ========================================
+  LOADING
+  ========================================
+  */
+
   if (pageLoading) {
 
     return (
@@ -214,11 +268,11 @@ export default function Integrations() {
         <div className="flex flex-col items-center">
 
           <Loader2
-            className="animate-spin text-purple-500 mb-4"
             size={36}
+            className="animate-spin text-purple-400 mb-4"
           />
 
-          <p className="text-gray-400 text-sm">
+          <p className="text-sm text-gray-400">
             Loading integrations...
           </p>
 
@@ -229,318 +283,418 @@ export default function Integrations() {
   }
 
   return (
-    <div className="space-y-6 text-white">
+    <>
+      <WhatsAppSetupModal
+        open={showWhatsAppModal}
+        onClose={() =>
+          setShowWhatsAppModal(false)
+        }
+      />
 
-      {/* HEADER */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <FacebookSetupModal
+        open={showFacebookModal}
+        onClose={() =>
+          setShowFacebookModal(false)
+        }
+      />
 
-        <div>
+      <InstagramSetupModal
+        open={showInstagramModal}
+        onClose={() =>
+          setShowInstagramModal(false)
+        }
+      />
 
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.03] border border-white/5 mb-3">
+      <div className="space-y-6 text-white">
 
-            <Sparkles
-              size={12}
-              className="text-purple-400"
-            />
+        {/* HEADER */}
 
-            <span className="text-[11px] text-gray-300">
-              AI Automation Hub
-            </span>
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+
+          <div>
+
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/[0.04] mb-3">
+
+              <Sparkles
+                size={12}
+                className="text-purple-400"
+              />
+
+              <span className="text-[11px] text-gray-300">
+                AI Automation Hub
+              </span>
+
+            </div>
+
+            <h1 className="text-3xl font-bold mb-2">
+              Integrations
+            </h1>
+
+            <p className="text-sm text-gray-400 max-w-xl">
+              Connect WhatsApp,
+              Facebook and Instagram
+              to automate customer
+              communication using AI.
+            </p>
 
           </div>
 
-          <h1 className="text-3xl font-bold mb-1">
-            Integrations
-          </h1>
+          <button
+            onClick={handleSave}
+            disabled={loading}
+            className="h-12 px-6 rounded-2xl bg-[#7f5af0] hover:opacity-90 transition-all flex items-center justify-center gap-2 text-sm font-medium disabled:opacity-60 shadow-[0_0_30px_rgba(127,90,240,0.35)]"
+          >
 
-          <p className="text-gray-400 text-sm">
-            Connect external tools for
-            automation, replies &
-            appointments.
-          </p>
+            {loading ? (
+              <Loader2
+                size={16}
+                className="animate-spin"
+              />
+            ) : (
+              <Save size={16} />
+            )}
+
+            {loading
+              ? "Saving..."
+              : "Save Integrations"}
+
+          </button>
 
         </div>
 
-        <button
-          onClick={handleSave}
-          disabled={loading}
-          className="h-12 px-6 rounded-2xl bg-[#7f5af0] hover:opacity-90 transition-all flex items-center gap-2 text-sm font-medium disabled:opacity-60"
-        >
+        {/* SUCCESS */}
 
-          {loading ? (
-            <Loader2
-              className="animate-spin"
-              size={16}
+        {success && (
+
+          <div className="rounded-2xl border border-green-500/20 bg-green-500/10 p-4 flex items-center gap-3">
+
+            <CheckCircle2
+              size={18}
+              className="text-green-400"
             />
-          ) : (
-            <Save size={16} />
-          )}
 
-          {loading
-            ? "Saving..."
-            : "Save Integrations"}
+            <p className="text-sm text-green-200">
+              {success}
+            </p>
 
-        </button>
+          </div>
 
-      </div>
+        )}
 
-      {/* SUCCESS */}
-      {success && (
+        {/* ERROR */}
 
-        <div className="rounded-2xl border border-green-500/20 bg-green-500/10 p-4 flex items-center gap-3">
+        {error && (
 
-          <CheckCircle2
-            className="text-green-400"
-            size={18}
-          />
+          <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 flex items-center gap-3">
 
-          <p className="text-sm text-green-200">
-            {success}
-          </p>
+            <AlertCircle
+              size={18}
+              className="text-red-400"
+            />
 
-        </div>
+            <p className="text-sm text-red-200">
+              {error}
+            </p>
 
-      )}
+          </div>
 
-      {/* ERROR */}
-      {error && (
+        )}
 
-        <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 flex items-center gap-3">
+        {/* GRID */}
 
-          <AlertCircle
-            className="text-red-400"
-            size={18}
-          />
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
 
-          <p className="text-sm text-red-200">
-            {error}
-          </p>
+          {/* WHATSAPP */}
 
-        </div>
-
-      )}
-
-      {/* GRID */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-
-        {/* WHATSAPP */}
-        <Card
-          title="WhatsApp Cloud API"
-          subtitle="Automate WhatsApp replies using Meta Cloud API"
-          icon={
-            <MessageCircle size={18} />
-          }
-        >
-
-          <Input
-            name="whatsapp_phone_id"
-            placeholder="Phone Number ID"
-            value={
-              form.whatsapp_phone_id
+          <IntegrationCard
+            title="WhatsApp Cloud API"
+            subtitle="Automate WhatsApp conversations using Meta Cloud API."
+            icon={
+              <PlatformIcon type="whatsapp" />
             }
-            onChange={handleChange}
-          />
-
-          <Input
-            name="whatsapp_token"
-            placeholder="Permanent Access Token"
-            value={
+            status={
               form.whatsapp_token
+                ? "connected"
+                : "disconnected"
             }
-            onChange={handleChange}
-          />
+          >
 
-          <InfoBox>
-            Get credentials from Meta
-            Developer Dashboard →
-            WhatsApp → API Setup
-          </InfoBox>
+            <div className="flex items-center justify-between">
 
-        </Card>
+              <div>
+                <h3 className="text-sm font-medium">
+                  Automation
+                </h3>
 
-        {/* FACEBOOK */}
-        <Card
-          title="Facebook Messenger"
-          subtitle="Connect your Facebook Page for automated replies"
-          icon={<MessageSquare size={18} />}
-        >
+                <p className="text-xs text-gray-400">
+                  Enable AI auto replies
+                </p>
+              </div>
 
-          <Input
-            name="facebook"
-            placeholder="Page Access Token"
-            value={form.facebook}
-            onChange={handleChange}
-          />
+              <AutomationToggle
+                enabled={
+                  form.whatsapp_enabled
+                }
+                onChange={(value) =>
+                  handleToggle(
+                    "whatsapp_enabled",
+                    value
+                  )
+                }
+              />
 
-          <InfoBox>
-            Add your Facebook Page
-            Access Token from Meta
-            Developers.
-          </InfoBox>
+            </div>
 
-        </Card>
+            <IntegrationInput
+              name="whatsapp_phone_id"
+              placeholder="Phone Number ID"
+              value={
+                form.whatsapp_phone_id
+              }
+              onChange={handleChange}
+            />
 
-        {/* CALENDLY */}
-        <Card
-          title="Calendly Booking"
-          subtitle="Allow users to book appointments directly"
-          icon={<Calendar size={18} />}
-        >
+            <IntegrationInput
+              name="whatsapp_token"
+              placeholder="Permanent Access Token"
+              value={
+                form.whatsapp_token
+              }
+              onChange={handleChange}
+            />
 
-          <Input
-            name="calendly"
-            placeholder="https://calendly.com/your-link"
-            value={form.calendly}
-            onChange={handleChange}
-          />
+            <button
+              onClick={() =>
+                setShowWhatsAppModal(true)
+              }
+              className="text-sm text-purple-400 hover:text-purple-300"
+            >
+              View Setup Guide →
+            </button>
 
-          <InfoBox>
-            Paste your Calendly booking
-            link to allow appointment
-            scheduling.
-          </InfoBox>
+            <InfoBox>
+              Connect your WhatsApp
+              Business account for AI
+              powered customer replies.
+            </InfoBox>
 
-        </Card>
+          </IntegrationCard>
 
-        {/* GOOGLE MAPS */}
-        <Card
-          title="Business Location"
-          subtitle="Allow customers to find your business location instantly"
-          icon={<MapPinned size={18} />}
-        >
+          {/* FACEBOOK */}
 
-          <Input
-  name="maps"
-  placeholder="https://maps.google.com/..."
-  value={form.maps}
-  onChange={handleChange}
-/>
+          <IntegrationCard
+            title="Facebook Messenger"
+            subtitle="Automate Facebook Messenger replies using AI."
+            icon={
+              <PlatformIcon type="facebook" />
+            }
+            status={
+              form.facebook_page_token
+                ? "connected"
+                : "disconnected"
+            }
+          >
 
-          <InfoBox>
-            Paste your Google Maps business
-            link. The AI chatbot will share
-            this location when customers ask
-            for your address or directions.
-          </InfoBox>
+            <div className="flex items-center justify-between">
 
-        </Card>
+              <div>
+                <h3 className="text-sm font-medium">
+                  Automation
+                </h3>
 
-       
+                <p className="text-xs text-gray-400">
+                  Enable Messenger automation
+                </p>
+              </div>
 
-      </div>
+              <AutomationToggle
+                enabled={
+                  form.facebook_enabled
+                }
+                onChange={(value) =>
+                  handleToggle(
+                    "facebook_enabled",
+                    value
+                  )
+                }
+              />
 
-    </div>
-  );
-}
+            </div>
 
-/* ================= CARD ================= */
+            <IntegrationInput
+              name="facebook_page_id"
+              placeholder="Facebook Page ID"
+              value={
+                form.facebook_page_id
+              }
+              onChange={handleChange}
+            />
 
-function Card({
-  title,
-  subtitle,
-  icon,
-  children,
-}) {
+            <IntegrationInput
+              name="facebook_page_token"
+              placeholder="Facebook Page Access Token"
+              value={
+                form.facebook_page_token
+              }
+              onChange={handleChange}
+            />
 
-  return (
-    <div className="rounded-3xl border border-white/5 bg-white/[0.03] backdrop-blur-xl p-6 shadow-2xl">
+            <button
+              onClick={() =>
+                setShowFacebookModal(true)
+              }
+              className="text-sm text-purple-400 hover:text-purple-300"
+            >
+              View Setup Guide →
+            </button>
 
-      <div className="flex items-start gap-4 mb-6">
+            <InfoBox>
+              Automatically reply to
+              Facebook page messages
+              using your AI chatbot.
+            </InfoBox>
 
-        <div className="w-12 h-12 rounded-2xl bg-[#7f5af0]/15 text-purple-400 flex items-center justify-center">
+          </IntegrationCard>
 
-          {icon}
+          {/* INSTAGRAM */}
+
+          <IntegrationCard
+            title="Instagram DM Automation"
+            subtitle="Automate Instagram DMs using AI."
+            icon={
+              <PlatformIcon type="instagram" />
+            }
+            status={
+              form.instagram_access_token
+                ? "connected"
+                : "disconnected"
+            }
+          >
+
+            <div className="flex items-center justify-between">
+
+              <div>
+                <h3 className="text-sm font-medium">
+                  Automation
+                </h3>
+
+                <p className="text-xs text-gray-400">
+                  Enable Instagram AI replies
+                </p>
+              </div>
+
+              <AutomationToggle
+                enabled={
+                  form.instagram_enabled
+                }
+                onChange={(value) =>
+                  handleToggle(
+                    "instagram_enabled",
+                    value
+                  )
+                }
+              />
+
+            </div>
+
+            <IntegrationInput
+              name="instagram_business_id"
+              placeholder="Instagram Business ID"
+              value={
+                form.instagram_business_id
+              }
+              onChange={handleChange}
+            />
+
+            <IntegrationInput
+              name="instagram_access_token"
+              placeholder="Instagram Access Token"
+              value={
+                form.instagram_access_token
+              }
+              onChange={handleChange}
+            />
+
+            <button
+              onClick={() =>
+                setShowInstagramModal(true)
+              }
+              className="text-sm text-purple-400 hover:text-purple-300"
+            >
+              View Setup Guide →
+            </button>
+
+            <InfoBox>
+              Automatically respond to
+              Instagram direct messages
+              using AI.
+            </InfoBox>
+
+          </IntegrationCard>
+
+          {/* CALENDLY */}
+
+          <IntegrationCard
+            title="Calendly Booking"
+            subtitle="Allow visitors to schedule appointments instantly."
+            icon={
+              <PlatformIcon type="calendly" />
+            }
+            status={
+              form.calendly
+                ? "connected"
+                : "disconnected"
+            }
+          >
+
+            <IntegrationInput
+              name="calendly"
+              placeholder="https://calendly.com/your-link"
+              value={form.calendly}
+              onChange={handleChange}
+            />
+
+            <InfoBox>
+              Your chatbot can share
+              booking links directly
+              during conversations.
+            </InfoBox>
+
+          </IntegrationCard>
+
+          {/* MAPS */}
+
+          <IntegrationCard
+            title="Business Location"
+            subtitle="Help customers find your business instantly."
+            icon={
+              <PlatformIcon type="maps" />
+            }
+            status={
+              form.maps
+                ? "connected"
+                : "disconnected"
+            }
+          >
+
+            <IntegrationInput
+              name="maps"
+              placeholder="https://maps.google.com/..."
+              value={form.maps}
+              onChange={handleChange}
+            />
+
+            <InfoBox>
+              Your AI chatbot can share
+              directions and business
+              locations automatically.
+            </InfoBox>
+
+          </IntegrationCard>
 
         </div>
 
-        <div>
-
-          <h2 className="text-lg font-semibold mb-1">
-            {title}
-          </h2>
-
-          <p className="text-sm text-gray-400">
-            {subtitle}
-          </p>
-
-        </div>
-
       </div>
-
-      <div className="space-y-4">
-        {children}
-      </div>
-
-    </div>
-  );
-}
-
-/* ================= INPUT ================= */
-
-function Input(props) {
-
-  return (
-    <div className="relative">
-
-      <KeyRound
-        size={15}
-        className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
-      />
-
-      <input
-        {...props}
-        className="w-full h-12 rounded-2xl bg-white/[0.03] border border-white/5 pl-11 pr-4 text-sm text-white placeholder-gray-500 outline-none focus:border-purple-500"
-      />
-
-    </div>
-  );
-}
-
-/* ================= INFO ================= */
-
-function InfoBox({
-  children,
-}) {
-
-  return (
-    <div className="rounded-2xl border border-white/5 bg-black/20 p-4 text-xs text-gray-400 leading-relaxed">
-      {children}
-    </div>
-  );
-}
-
-/* ================= SECURITY ================= */
-
-function SecurityItem({
-  title,
-  desc,
-}) {
-
-  return (
-    <div className="rounded-2xl border border-white/5 bg-black/20 p-4">
-
-      <div className="flex items-start gap-3">
-
-        <div className="w-9 h-9 rounded-xl bg-green-500/10 flex items-center justify-center text-green-400">
-
-          <ShieldCheck size={16} />
-
-        </div>
-
-        <div>
-
-          <h3 className="text-sm font-medium mb-1">
-            {title}
-          </h3>
-
-          <p className="text-xs text-gray-400 leading-relaxed">
-            {desc}
-          </p>
-
-        </div>
-
-      </div>
-
-    </div>
+    </>
   );
 }

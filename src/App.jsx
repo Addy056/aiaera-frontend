@@ -14,47 +14,54 @@ import {
 
 /*
 ========================================
+GLOBAL STYLES
+========================================
+*/
+import "./App.css";
+
+/*
+========================================
 LAZY PAGES
 ========================================
 */
 const Landing = lazy(() =>
-  import("./pages/Landing")
+  import("./pages/Landing.jsx")
 );
 
 const Login = lazy(() =>
-  import("./pages/Login")
+  import("./pages/Login.jsx")
 );
 
 const Signup = lazy(() =>
-  import("./pages/Signup")
+  import("./pages/Signup.jsx")
 );
 
 const Dashboard = lazy(() =>
-  import("./pages/Dashboard")
+  import("./pages/Dashboard.jsx")
 );
 
 const Builder = lazy(() =>
-  import("./pages/Builder")
+  import("./pages/Builder.jsx")
 );
 
 const Leads = lazy(() =>
-  import("./pages/Leads")
+  import("./pages/Leads.jsx")
 );
 
 const Appointments = lazy(() =>
-  import("./pages/Appointments")
+  import("./pages/Appointments.jsx")
 );
 
 const Integrations = lazy(() =>
-  import("./pages/Integrations")
+  import("./pages/Integrations.jsx")
 );
 
 const Pricing = lazy(() =>
-  import("./pages/Pricing")
+  import("./pages/Pricing.jsx")
 );
 
 const PublicChatbot = lazy(() =>
-  import("./pages/PublicChatbot")
+  import("./pages/PublicChatbot.jsx")
 );
 
 /*
@@ -62,9 +69,9 @@ const PublicChatbot = lazy(() =>
 LAYOUTS & COMPONENTS
 ========================================
 */
-import MainLayout from "./layouts/MainLayout";
+import MainLayout from "./layouts/MainLayout.jsx";
 
-import ProtectedRoute from "./components/ProtectedRoute";
+import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
 /*
 ========================================
@@ -72,14 +79,17 @@ SCROLL TO TOP
 ========================================
 */
 function ScrollToTop() {
+
   const { pathname } =
     useLocation();
 
   useEffect(() => {
+
     window.scrollTo({
       top: 0,
       behavior: "smooth",
     });
+
   }, [pathname]);
 
   return null;
@@ -91,6 +101,7 @@ GLOBAL LOADER
 ========================================
 */
 function Loader() {
+
   return (
     <div className="min-h-screen bg-[#060816] flex items-center justify-center overflow-hidden relative">
 
@@ -124,6 +135,7 @@ function Loader() {
 ========================================
 */
 function NotFoundPage() {
+
   return (
     <div className="min-h-screen bg-[#060816] flex items-center justify-center overflow-hidden relative">
 
@@ -162,6 +174,7 @@ APP ROUTES
 ========================================
 */
 function AppRoutes() {
+
   return (
     <>
       <ScrollToTop />
@@ -209,7 +222,7 @@ function AppRoutes() {
 
           {/*
           ========================================
-          PROTECTED APP ROUTES
+          PROTECTED ROUTES
           ========================================
           */}
 
@@ -222,7 +235,7 @@ function AppRoutes() {
             }
           >
 
-            {/* DEFAULT REDIRECT */}
+            {/* DEFAULT */}
             <Route
               index
               element={
@@ -273,6 +286,62 @@ function AppRoutes() {
 
           {/*
           ========================================
+          REDIRECT OLD ROUTES
+          ========================================
+          */}
+
+          <Route
+            path="/dashboard"
+            element={
+              <Navigate
+                to="/app/dashboard"
+                replace
+              />
+            }
+          />
+
+          <Route
+            path="/builder"
+            element={
+              <Navigate
+                to="/app/builder"
+                replace
+              />
+            }
+          />
+
+          <Route
+            path="/leads"
+            element={
+              <Navigate
+                to="/app/leads"
+                replace
+              />
+            }
+          />
+
+          <Route
+            path="/appointments"
+            element={
+              <Navigate
+                to="/app/appointments"
+                replace
+              />
+            }
+          />
+
+          <Route
+            path="/integrations"
+            element={
+              <Navigate
+                to="/app/integrations"
+                replace
+              />
+            }
+          />
+
+          {/*
+          ========================================
           404 PAGE
           ========================================
           */}
@@ -295,6 +364,7 @@ MAIN APP
 ========================================
 */
 function App() {
+
   return (
     <Router>
       <AppRoutes />

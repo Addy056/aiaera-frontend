@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 
 import "./index.css";
+
 import App from "./App.jsx";
 
 /*
@@ -8,7 +9,7 @@ import App from "./App.jsx";
 AUTH CONTEXT
 ========================================
 */
-import AuthProvider from "./context/AuthContext";
+import AuthProvider from "./context/AuthContext.jsx";
 
 /*
 ========================================
@@ -26,9 +27,37 @@ SAFETY CHECK
 if (!rootElement) {
 
   throw new Error(
-    "Root element not found"
+    "❌ Root element not found"
   );
 }
+
+/*
+========================================
+REMOVE DUPLICATE CHATBOT ELEMENTS
+========================================
+*/
+const duplicateElements = [
+
+  "aiaera-chatbot-widget",
+
+  "aiaera-chatbot-button",
+
+  "aiaera-chatbot-iframe",
+
+];
+
+duplicateElements.forEach(
+  (id) => {
+
+    const element =
+      document.getElementById(id);
+
+    if (element) {
+
+      element.remove();
+    }
+  }
+);
 
 /*
 ========================================
@@ -37,31 +66,6 @@ CREATE ROOT
 */
 const root =
   createRoot(rootElement);
-
-/*
-========================================
-REMOVE DUPLICATE CHATBOT
-========================================
-*/
-const existingWidget =
-  document.getElementById(
-    "aiaera-chatbot-widget"
-  );
-
-if (existingWidget) {
-
-  existingWidget.remove();
-}
-
-const existingButton =
-  document.getElementById(
-    "aiaera-chatbot-button"
-  );
-
-if (existingButton) {
-
-  existingButton.remove();
-}
 
 /*
 ========================================
