@@ -268,6 +268,58 @@ export default function PublicChatbot() {
 
   /*
   ========================================
+  MAKE LINKS CLICKABLE
+  ========================================
+  */
+  const renderMessageWithLinks =
+    (text) => {
+
+      if (!text) return null;
+
+      const urlRegex =
+        /(https?:\/\/[^\s]+)/g;
+
+      const parts =
+        text.split(urlRegex);
+
+      return parts.map(
+        (
+          part,
+          index
+        ) => {
+
+          if (
+            part.match(urlRegex)
+          ) {
+
+            return (
+              <a
+                key={index}
+                href={part}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="
+                  text-blue-400
+                  underline
+                  break-all
+                "
+              >
+                {part}
+              </a>
+            );
+          }
+
+          return (
+            <span key={index}>
+              {part}
+            </span>
+          );
+        }
+      );
+    };
+
+  /*
+  ========================================
   QUICK ACTIONS
   ========================================
   */
@@ -375,9 +427,55 @@ export default function PublicChatbot() {
             }
           );
 
-        const data =
-          await response.json();
+        /*
+        ========================================
+        SAFE JSON
+        ========================================
+        */
+        let data = null;
 
+        try {
+
+          data =
+            await response.json();
+
+        } catch {
+
+          throw new Error(
+            "Invalid server response"
+          );
+        }
+
+        /*
+        ========================================
+        HANDLE FAILED RESPONSE
+        ========================================
+        */
+        if (
+          !response.ok ||
+          !data.success
+        ) {
+
+          setMessages(
+            (prev) => [
+              ...prev,
+              {
+                role: "bot",
+                text:
+                  data?.reply ||
+                  "⚠️ Server error",
+              },
+            ]
+          );
+
+          return;
+        }
+
+        /*
+        ========================================
+        SUCCESS
+        ========================================
+        */
         setMessages(
           (prev) => [
             ...prev,
@@ -566,7 +664,13 @@ export default function PublicChatbot() {
                     }}
                     className="max-w-[82%] px-4 py-3 rounded-2xl text-sm text-white border border-white/5 whitespace-pre-wrap break-words"
                   >
-                    {msg.text}
+
+                    <p className="whitespace-pre-wrap break-words">
+                      {renderMessageWithLinks(
+                        msg.text
+                      )}
+                    </p>
+
                   </div>
 
                 </div>
