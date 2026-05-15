@@ -59,12 +59,12 @@ export default function Builder() {
   const [website, setWebsite] =
     useState("");
 
- const [integrations, setIntegrations] =
-  useState({
-    provider: "calendly",
-    meeting_link: "",
-    maps_link: "",
-  });
+  const [integrations, setIntegrations] =
+    useState({
+      provider: "calendly",
+      meeting_link: "",
+      maps_link: "",
+    });
 
   const [theme, setTheme] =
     useState({
@@ -238,17 +238,17 @@ export default function Builder() {
       const integrationData =
         await integrationRes.json();
 
-    setIntegrations({
-  provider:
-    integrationData.provider ||
-    "calendly",
+      setIntegrations({
+        provider:
+          integrationData.provider ||
+          "calendly",
 
-  meeting_link:
-    integrationData.meeting_link || "",
+        meeting_link:
+          integrationData.meeting_link || "",
 
-  maps_link:
-    integrationData.maps || "",
-});
+        maps_link:
+          integrationData.maps || "",
+      });
 
     } catch (err) {
 
@@ -282,42 +282,39 @@ export default function Builder() {
           theme,
         })
         .eq("id", chatbotId);
-/*
-========================================
-SAVE INTEGRATIONS
-========================================
-*/
-const token =
-  (
-    await supabase.auth.getSession()
-  ).data.session
-    ?.access_token;
 
-await fetch(
-  `${API_URL}/api/integrations`,
-  {
-    method: "POST",
+      const token =
+        (
+          await supabase.auth.getSession()
+        ).data.session
+          ?.access_token;
 
-    headers: {
-      "Content-Type":
-        "application/json",
+      await fetch(
+        `${API_URL}/api/integrations`,
+        {
+          method: "POST",
 
-      Authorization:
-        `Bearer ${token}`,
-    },
+          headers: {
+            "Content-Type":
+              "application/json",
 
-  body: JSON.stringify({
-  provider:
-    integrations.provider,
+            Authorization:
+              `Bearer ${token}`,
+          },
 
-  meeting_link:
-    integrations.meeting_link,
+          body: JSON.stringify({
+            provider:
+              integrations.provider,
 
-  maps:
-    integrations.maps_link,
-}),
-  }
-);
+            meeting_link:
+              integrations.meeting_link,
+
+            maps:
+              integrations.maps_link,
+          }),
+        }
+      );
+
     } catch (err) {
 
       console.error(err);
@@ -331,124 +328,87 @@ await fetch(
 
   const uploadLogo = async (e) => {
 
-  try {
+    try {
 
-    const file =
-      e.target.files?.[0];
+      const file =
+        e.target.files?.[0];
 
-    if (!file) return;
+      if (!file) return;
 
-    /*
-    ========================================
-    FILE VALIDATION
-    ========================================
-    */
-    if (
-      !file.type.startsWith(
-        "image/"
-      )
-    ) {
+      if (
+        !file.type.startsWith(
+          "image/"
+        )
+      ) {
 
-      alert(
-        "Please upload an image file"
+        alert(
+          "Please upload an image file"
+        );
+
+        return;
+      }
+
+      const fileExt =
+        file.name
+          .split(".")
+          .pop();
+
+      const fileName =
+        `${Date.now()}-${Math.random()
+          .toString(36)
+          .substring(2)}.${fileExt}`;
+
+      const filePath =
+        `${user.id}/${fileName}`;
+
+      const {
+        error: uploadError,
+      } = await supabase.storage
+        .from("chatbot-files")
+        .upload(
+          filePath,
+          file,
+          {
+            cacheControl:
+              "0",
+
+            upsert: true,
+          }
+        );
+
+      if (uploadError) {
+
+        console.error(
+          uploadError
+        );
+
+        alert(
+          "Logo upload failed"
+        );
+
+        return;
+      }
+
+      const {
+        data: publicData,
+      } = supabase.storage
+        .from("chatbot-files")
+        .getPublicUrl(
+          filePath
+        );
+
+      const logoUrl =
+        `${publicData.publicUrl}?t=${Date.now()}`;
+
+      const updatedTheme = {
+        ...theme,
+        logo: logoUrl,
+      };
+
+      setTheme(
+        updatedTheme
       );
 
-      return;
-    }
-
-    /*
-    ========================================
-    UNIQUE FILE NAME
-    ========================================
-    */
-    const fileExt =
-      file.name
-        .split(".")
-        .pop();
-
-    const fileName =
-      `${Date.now()}-${Math.random()
-        .toString(36)
-        .substring(2)}.${fileExt}`;
-
-    const filePath =
-      `${user.id}/${fileName}`;
-
-    /*
-    ========================================
-    UPLOAD FILE
-    ========================================
-    */
-    const {
-      error: uploadError,
-    } = await supabase.storage
-      .from("chatbot-files")
-      .upload(
-        filePath,
-        file,
-        {
-          cacheControl:
-            "0",
-
-          upsert: true,
-        }
-      );
-
-    if (uploadError) {
-
-      console.error(
-        "UPLOAD ERROR:",
-        uploadError
-      );
-
-      alert(
-        "Logo upload failed"
-      );
-
-      return;
-    }
-
-    /*
-    ========================================
-    GET PUBLIC URL
-    ========================================
-    */
-    const {
-      data: publicData,
-    } = supabase.storage
-      .from("chatbot-files")
-      .getPublicUrl(
-        filePath
-      );
-
-    /*
-    ========================================
-    CACHE BUSTING
-    ========================================
-    */
-    const logoUrl =
-      `${publicData.publicUrl}?t=${Date.now()}`;
-
-    /*
-    ========================================
-    UPDATE THEME
-    ========================================
-    */
-    const updatedTheme = {
-      ...theme,
-      logo: logoUrl,
-    };
-
-    setTheme(
-      updatedTheme
-    );
-
-    /*
-    ========================================
-    SAVE TO DATABASE
-    ========================================
-    */
-    const { error } =
       await supabase
         .from("chatbots")
         .update({
@@ -460,33 +420,17 @@ await fetch(
           chatbotId
         );
 
-    if (error) {
+    } catch (err) {
 
-      console.error(
-        "DB UPDATE ERROR:",
-        error
-      );
+      console.error(err);
 
       alert(
-        "Failed to save logo"
+        "Something went wrong"
       );
-
-      return;
     }
+  };
 
-  } catch (err) {
-
-    console.error(
-      "LOGO ERROR:",
-      err
-    );
-
-    alert(
-      "Something went wrong"
-    );
-  }
-};
-    const sendMessage = async () => {
+  const sendMessage = async () => {
 
     if (
       !input.trim() ||
@@ -510,37 +454,37 @@ await fetch(
       userMessage.toLowerCase();
 
     if (
-  (
-    lowerMessage.includes("book") ||
-    lowerMessage.includes("appointment") ||
-    lowerMessage.includes("meeting") ||
-    lowerMessage.includes("schedule")
-  ) &&
-  integrations?.meeting_link
-) {
+      (
+        lowerMessage.includes("book") ||
+        lowerMessage.includes("appointment") ||
+        lowerMessage.includes("meeting") ||
+        lowerMessage.includes("schedule")
+      ) &&
+      integrations?.meeting_link
+    ) {
 
-  const providerName =
-    integrations.provider === "zoom"
-      ? "Zoom"
-      : integrations.provider === "teams"
-      ? "Microsoft Teams"
-      : integrations.provider === "meet"
-      ? "Google Meet"
-      : integrations.provider === "custom"
-      ? "Meeting"
-      : "Calendly";
+      const providerName =
+        integrations.provider === "zoom"
+          ? "Zoom"
+          : integrations.provider === "teams"
+          ? "Microsoft Teams"
+          : integrations.provider === "meet"
+          ? "Google Meet"
+          : integrations.provider === "custom"
+          ? "Meeting"
+          : "Calendly";
 
-  setMessages((prev) => [
-    ...prev,
-    {
-      role: "bot",
-      text:
-        `📅 Book your appointment using ${providerName}:\n${integrations.meeting_link}`,
-    },
-  ]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "bot",
+          text:
+            `📅 Book your appointment using ${providerName}:\n${integrations.meeting_link}`,
+        },
+      ]);
 
-  return;
-}
+      return;
+    }
 
     if (
       (
@@ -628,23 +572,23 @@ await fetch(
 
   const copyEmbed = async () => {
 
-  const code =
+    const code =
 `<script
   src="${API_URL}/embed.js"
   data-chatbot-id="${chatbotId}"
 ></script>`;
 
-  await navigator.clipboard.writeText(
-    code
-  );
+    await navigator.clipboard.writeText(
+      code
+    );
 
-  setCopied(true);
+    setCopied(true);
 
-  setTimeout(() => {
+    setTimeout(() => {
 
-    setCopied(false);
+      setCopied(false);
 
-  }, 2000);
+    }, 2000);
 
   };
 
@@ -708,9 +652,10 @@ await fetch(
 
       </div>
 
-      <div className="grid grid-cols-[190px_360px_1fr] gap-4 h-[calc(100%-80px)]">
+      <div className="grid grid-cols-[190px_360px_1fr] gap-4 h-[calc(100vh-180px)] overflow-hidden">
 
-        <div className="rounded-3xl border border-white/5 bg-white/[0.03] p-3 flex flex-col gap-2">
+        {/* LEFT CARD */}
+        <div className="h-full overflow-y-auto rounded-3xl border border-white/5 bg-white/[0.03] p-3 flex flex-col gap-2">
 
           <MenuItem
             active={activeTab === "basic"}
@@ -790,7 +735,8 @@ await fetch(
           </div>
 
         </div>
-                <div className="rounded-3xl border border-white/5 bg-white/[0.03] p-5 overflow-y-auto">
+                {/* MIDDLE CARD */}
+        <div className="h-full overflow-y-auto rounded-3xl border border-white/5 bg-white/[0.03] p-5">
 
           {activeTab === "basic" && (
 
@@ -815,13 +761,13 @@ await fetch(
                   {theme.logo ? (
 
                     <img
-  src={theme.logo}
-  alt="logo"
-  onError={(e) => {
-    e.target.style.display = "none";
-  }}
-  className="w-full h-full object-cover"
-/>
+                      src={theme.logo}
+                      alt="logo"
+                      onError={(e) => {
+                        e.target.style.display = "none";
+                      }}
+                      className="w-full h-full object-cover"
+                    />
 
                   ) : (
 
@@ -908,91 +854,7 @@ await fetch(
                 />
 
               </div>
-              <div className="space-y-2">
 
-  <label className="text-sm text-gray-300">
-    Meeting Provider
-  </label>
-
-  <select
-    value={integrations.provider}
-    onChange={(e) =>
-      setIntegrations({
-        ...integrations,
-        provider:
-          e.target.value,
-      })
-    }
-    className="w-full h-11 rounded-2xl bg-white/[0.03] border border-white/5 px-4 outline-none text-sm"
-  >
-
-    <option value="calendly">
-      Calendly
-    </option>
-
-    <option value="zoom">
-      Zoom
-    </option>
-
-    <option value="teams">
-      Microsoft Teams
-    </option>
-
-    <option value="meet">
-      Google Meet
-    </option>
-
-    <option value="custom">
-      Custom
-    </option>
-
-  </select>
-
-</div>
-
-<div className="space-y-2">
-
-  <label className="text-sm text-gray-300">
-    Meeting Link
-  </label>
-
-  <input
-    type="text"
-    placeholder="https://your-booking-link.com"
-    value={integrations.meeting_link}
-    onChange={(e) =>
-      setIntegrations({
-        ...integrations,
-        meeting_link:
-          e.target.value,
-      })
-    }
-    className="w-full h-11 rounded-2xl bg-white/[0.03] border border-white/5 px-4 outline-none text-sm"
-  />
-
-</div>
-
-<div className="space-y-2">
-
-  <label className="text-sm text-gray-300">
-    Google Maps Link
-  </label>
-
-  <input
-    type="text"
-    placeholder="https://maps.google.com/..."
-    value={integrations.maps_link}
-    onChange={(e) =>
-      setIntegrations({
-        ...integrations,
-        maps_link:
-          e.target.value,
-      })
-    }
-    className="w-full h-11 rounded-2xl bg-white/[0.03] border border-white/5 px-4 outline-none text-sm"
-  />
-
-</div>
             </div>
           )}
 
@@ -1028,87 +890,88 @@ await fetch(
                 </p>
 
                 <input
-  type="file"
-  hidden
-  multiple
-  accept=".pdf,.csv"
-  onChange={async (e) => {
+                  type="file"
+                  hidden
+                  multiple
+                  accept=".pdf,.csv"
+                  onChange={async (e) => {
 
-    try {
+                    try {
 
-      const files =
-        Array.from(
-          e.target.files
-        );
+                      const files =
+                        Array.from(
+                          e.target.files
+                        );
 
-      if (
-        !files.length
-      ) return;
+                      if (
+                        !files.length
+                      ) return;
 
-      const token =
-        (
-          await supabase.auth.getSession()
-        ).data.session
-          ?.access_token;
+                      const token =
+                        (
+                          await supabase.auth.getSession()
+                        ).data.session
+                          ?.access_token;
 
-      for (const file of files) {
+                      for (const file of files) {
 
-        const formData =
-          new FormData();
+                        const formData =
+                          new FormData();
 
-        formData.append(
-          "file",
-          file
-        );
+                        formData.append(
+                          "file",
+                          file
+                        );
 
-        formData.append(
-          "chatbot_id",
-          chatbotId
-        );
+                        formData.append(
+                          "chatbot_id",
+                          chatbotId
+                        );
 
-        const response =
-          await fetch(
-            `${API_URL}/api/upload/training`,
-            {
-              method: "POST",
+                        const response =
+                          await fetch(
+                            `${API_URL}/api/upload/training`,
+                            {
+                              method: "POST",
 
-              headers: {
-                Authorization:
-                  `Bearer ${token}`,
-              },
+                              headers: {
+                                Authorization:
+                                  `Bearer ${token}`,
+                              },
 
-              body:
-                formData,
-            }
-          );
+                              body:
+                                formData,
+                            }
+                          );
 
-        const data =
-          await response.json();
+                        const data =
+                          await response.json();
 
-        console.log(
-          "UPLOAD RESPONSE:",
-          data
-        );
-      }
+                        console.log(
+                          "UPLOAD RESPONSE:",
+                          data
+                        );
+                      }
 
-      alert(
-        "Training files uploaded successfully 🚀"
-      );
+                      alert(
+                        "Training files uploaded successfully 🚀"
+                      );
 
-    } catch (err) {
+                    } catch (err) {
 
-      console.error(
-        "UPLOAD ERROR:",
-        err
-      );
+                      console.error(
+                        "UPLOAD ERROR:",
+                        err
+                      );
 
-      alert(
-        "Failed to upload files"
-      );
+                      alert(
+                        "Failed to upload files"
+                      );
 
-    }
-  }}
-/>
+                    }
+                  }}
+                />
+
               </label>
 
               <div className="rounded-2xl border border-white/5 bg-white/[0.03] p-4">
@@ -1137,8 +1000,7 @@ await fetch(
 
             </div>
           )}
-
-          {activeTab === "appearance" && (
+                    {activeTab === "appearance" && (
 
             <div className="space-y-5">
 
@@ -1224,7 +1086,7 @@ await fetch(
   src="${API_URL}/embed.js"
   data-chatbot-id="${chatbotId}"
 ></script>`}
-</code>
+                </code>
 
               </div>
 
@@ -1251,266 +1113,274 @@ await fetch(
           )}
 
         </div>
-                <div
-         
-  className="w-[380px] h-[700px] mx-auto rounded-[32px] overflow-hidden border border-white/5 flex flex-col shadow-[0_20px_80px_rgba(0,0,0,0.45)]"
-          style={{
-            background:
-              theme.chatBg,
-          }}
-        >
 
-          <div className="p-4 border-b border-white/5 flex items-center justify-between">
+        {/* RIGHT CARD */}
+        <div className="h-full flex justify-center">
 
-            <div className="flex items-center gap-3">
+          <div
+            className="h-full w-full max-w-[390px] mx-auto rounded-[32px] overflow-hidden border border-white/5 flex flex-col shadow-[0_20px_80px_rgba(0,0,0,0.45)]"
+            style={{
+              background:
+                theme.chatBg,
+            }}
+          >
 
-              <div className="w-12 h-12 rounded-2xl overflow-hidden bg-white/10 flex items-center justify-center">
+            {/* HEADER */}
+            <div className="p-4 border-b border-white/5 flex items-center justify-between shrink-0">
 
-                {theme.logo ? (
+              <div className="flex items-center gap-3">
 
-                  <img
-  src={theme.logo}
-  alt="logo"
-  onError={(e) => {
-    e.target.style.display = "none";
-  }}
-  className="w-full h-full object-cover"
-/>
+                <div className="w-12 h-12 rounded-2xl overflow-hidden bg-white/10 flex items-center justify-center">
 
-                ) : (
+                  {theme.logo ? (
 
-                  <span className="text-xs text-gray-500">
-                    Logo
-                  </span>
+                    <img
+                      src={theme.logo}
+                      alt="logo"
+                      onError={(e) => {
+                        e.target.style.display = "none";
+                      }}
+                      className="w-full h-full object-cover"
+                    />
 
-                )}
+                  ) : (
 
-              </div>
+                    <span className="text-xs text-gray-500">
+                      Logo
+                    </span>
 
-              <div>
-
-                <h2 className="text-xl font-bold">
-                  {theme.botName}
-                </h2>
-
-                <p className="text-green-400 text-xs">
-                  ● Online
-                </p>
-
-              </div>
-
-            </div>
-
-            <div className="w-10 h-10 rounded-2xl bg-green-500/10 flex items-center justify-center">
-
-              <BrainCircuit
-                className="text-green-400"
-                size={18}
-              />
-
-            </div>
-
-          </div>
-
-          <div className="p-4 border-b border-white/5 flex gap-2 flex-wrap">
-
-            <button
-              onClick={() => {
-
-                setMessages((prev) => [
-                  ...prev,
-
-                  {
-                    role: "user",
-                    text:
-                      "Book Appointment",
-                  },
-
-                  {
-                    role: "bot",
-
-                    text:
-                      integrations?.meeting_link
-  ? `📅 Book your appointment here:\n${integrations.meeting_link}`
-                        : "Booking link not configured yet.",
-                  },
-                ]);
-              }}
-              className="px-4 h-10 rounded-full bg-[#7f5af0]/15 border border-purple-500/20 text-xs text-purple-300 hover:bg-[#7f5af0]/25 transition-all"
-            >
-              📅 Book Appointment
-            </button>
-
-            <button
-              onClick={() => {
-
-                setMessages((prev) => [
-                  ...prev,
-
-                  {
-                    role: "user",
-                    text:
-                      "Visit Office",
-                  },
-
-                  {
-                    role: "bot",
-
-                    text:
-                      integrations?.maps_link
-                        ? `📍 Visit our office:\n${integrations.maps_link}`
-                        : "Office location not configured yet.",
-                  },
-                ]);
-              }}
-              className="px-4 h-10 rounded-full bg-[#7f5af0]/15 border border-purple-500/20 text-xs text-purple-300 hover:bg-[#7f5af0]/25 transition-all"
-            >
-              📍 Visit Office
-            </button>
-
-          </div>
-
-         <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-purple-500/30">
-
-            {messages.map(
-              (
-                msg,
-                index
-              ) => (
-
-                <div
-                  key={index}
-                  className={`flex ${
-                    msg.role === "user"
-                      ? "justify-end"
-                      : "justify-start"
-                  }`}
-                >
-
-                  <div
-                    className="max-w-[85%] px-4 py-3 text-sm leading-relaxed break-words whitespace-pre-wrap"
-                    style={{
-                      background:
-                        msg.role === "user"
-                          ? theme.userBubble
-                          : theme.botBubble,
-
-                      color:
-                        theme.textColor,
-
-                      borderRadius:
-                        "20px",
-                    }}
-                  >
-
-                    {msg.text
-                      .split("\n")
-                      .map((line, index) => {
-
-                        const urlMatch =
-                          line.match(
-                            /(https?:\/\/[^\s]+)/
-                          );
-
-                        if (urlMatch) {
-
-                          const url =
-                            urlMatch[0];
-
-                          const text =
-                            line.replace(
-                              url,
-                              ""
-                            );
-
-                          return (
-                            <div
-                              key={index}
-                              className="space-y-2"
-                            >
-
-                              {text && (
-                                <div>{text}</div>
-                              )}
-
-                              <a
-                                href={url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-purple-300 underline break-all hover:text-purple-200 transition-all block"
-                              >
-                                {url}
-                              </a>
-
-                            </div>
-                          );
-                        }
-
-                        return (
-                          <div key={index}>
-                            {line}
-                          </div>
-                        );
-                      })}
-
-                  </div>
+                  )}
 
                 </div>
-              )
-            )}
 
-            <div ref={messagesEndRef}></div>
+                <div>
 
-          </div>
+                  <h2 className="text-xl font-bold">
+                    {theme.botName}
+                  </h2>
 
-          <div className="p-4 border-t border-white/5">
+                  <p className="text-green-400 text-xs">
+                    ● Online
+                  </p>
 
-            <div className="flex gap-2">
+                </div>
 
-              <input
-                type="text"
-                placeholder="Type your message..."
-                value={input}
-                onChange={(e) =>
-                  setInput(
-                    e.target.value
-                  )
-                }
-                onKeyDown={(e) => {
+              </div>
 
-                  if (
-                    e.key === "Enter"
-                  ) {
+              <div className="w-10 h-10 rounded-2xl bg-green-500/10 flex items-center justify-center">
 
-                    sendMessage();
-                  }
-                }}
-                className="flex-1 h-14 rounded-2xl bg-white/[0.03] border border-white/5 px-4 outline-none text-sm"
-              />
+                <BrainCircuit
+                  className="text-green-400"
+                  size={18}
+                />
+
+              </div>
+
+            </div>
+
+            {/* QUICK ACTIONS */}
+            <div className="p-4 border-b border-white/5 flex gap-2 flex-wrap shrink-0">
 
               <button
-                onClick={sendMessage}
-                className="w-12 h-12 rounded-2xl flex items-center justify-center"
-                style={{
-                  background:
-                    theme.userBubble,
+                onClick={() => {
+
+                  setMessages((prev) => [
+                    ...prev,
+
+                    {
+                      role: "user",
+                      text:
+                        "Book Appointment",
+                    },
+
+                    {
+                      role: "bot",
+
+                      text:
+                        integrations?.meeting_link
+                          ? `📅 Book your appointment here:\n${integrations.meeting_link}`
+                          : "Booking link not configured yet.",
+                    },
+                  ]);
                 }}
+                className="px-4 h-10 rounded-full bg-[#7f5af0]/15 border border-purple-500/20 text-xs text-purple-300 hover:bg-[#7f5af0]/25 transition-all"
               >
-
-                {sending ? (
-
-                  <Loader2
-                    className="animate-spin"
-                    size={16}
-                  />
-
-                ) : (
-
-                  <Send size={16} />
-
-                )}
-
+                📅 Book Appointment
               </button>
+
+              <button
+                onClick={() => {
+
+                  setMessages((prev) => [
+                    ...prev,
+
+                    {
+                      role: "user",
+                      text:
+                        "Visit Office",
+                    },
+
+                    {
+                      role: "bot",
+
+                      text:
+                        integrations?.maps_link
+                          ? `📍 Visit our office:\n${integrations.maps_link}`
+                          : "Office location not configured yet.",
+                    },
+                  ]);
+                }}
+                className="px-4 h-10 rounded-full bg-[#7f5af0]/15 border border-purple-500/20 text-xs text-purple-300 hover:bg-[#7f5af0]/25 transition-all"
+              >
+                📍 Visit Office
+              </button>
+
+            </div>
+                        {/* CHAT AREA */}
+            <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-purple-500/30">
+
+              {messages.map(
+                (
+                  msg,
+                  index
+                ) => (
+
+                  <div
+                    key={index}
+                    className={`flex ${
+                      msg.role === "user"
+                        ? "justify-end"
+                        : "justify-start"
+                    }`}
+                  >
+
+                    <div
+                      className="max-w-[85%] px-4 py-3 text-sm leading-relaxed break-words whitespace-pre-wrap"
+                      style={{
+                        background:
+                          msg.role === "user"
+                            ? theme.userBubble
+                            : theme.botBubble,
+
+                        color:
+                          theme.textColor,
+
+                        borderRadius:
+                          "20px",
+                      }}
+                    >
+
+                      {msg.text
+                        .split("\n")
+                        .map((line, index) => {
+
+                          const urlMatch =
+                            line.match(
+                              /(https?:\/\/[^\s]+)/
+                            );
+
+                          if (urlMatch) {
+
+                            const url =
+                              urlMatch[0];
+
+                            const text =
+                              line.replace(
+                                url,
+                                ""
+                              );
+
+                            return (
+                              <div
+                                key={index}
+                                className="space-y-2"
+                              >
+
+                                {text && (
+                                  <div>{text}</div>
+                                )}
+
+                                <a
+                                  href={url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-purple-300 underline break-all hover:text-purple-200 transition-all block"
+                                >
+                                  {url}
+                                </a>
+
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <div key={index}>
+                              {line}
+                            </div>
+                          );
+                        })}
+
+                    </div>
+
+                  </div>
+                )
+              )}
+
+              <div ref={messagesEndRef}></div>
+
+            </div>
+
+            {/* INPUT */}
+            <div className="p-4 border-t border-white/5 shrink-0">
+
+              <div className="flex gap-2">
+
+                <input
+                  type="text"
+                  placeholder="Type your message..."
+                  value={input}
+                  onChange={(e) =>
+                    setInput(
+                      e.target.value
+                    )
+                  }
+                  onKeyDown={(e) => {
+
+                    if (
+                      e.key === "Enter"
+                    ) {
+
+                      sendMessage();
+                    }
+                  }}
+                  className="flex-1 h-14 rounded-2xl bg-white/[0.03] border border-white/5 px-4 outline-none text-sm"
+                />
+
+                <button
+                  onClick={sendMessage}
+                  className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
+                  style={{
+                    background:
+                      theme.userBubble,
+                  }}
+                >
+
+                  {sending ? (
+
+                    <Loader2
+                      className="animate-spin"
+                      size={16}
+                    />
+
+                  ) : (
+
+                    <Send size={16} />
+
+                  )}
+
+                </button>
+
+              </div>
 
             </div>
 
@@ -1523,6 +1393,7 @@ await fetch(
     </div>
   );
 }
+
 function MenuItem({
   icon,
   title,

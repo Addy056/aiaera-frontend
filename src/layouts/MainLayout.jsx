@@ -10,32 +10,71 @@ import {
   X,
 } from "lucide-react";
 
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import {
+  NavLink,
+  Outlet,
+  useNavigate,
+} from "react-router-dom";
+
+import {
+  useEffect,
+  useState,
+} from "react";
+
 import { supabase } from "../lib/supabase";
-import { useEffect, useState } from "react";
+
 import logo from "../assets/logo.png";
 
 export default function MainLayout() {
-  const navigate = useNavigate();
 
-  const [userEmail, setUserEmail] = useState("");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const navigate =
+    useNavigate();
 
-  // GET USER
+  const [userEmail, setUserEmail] =
+    useState("");
+
+  const [sidebarOpen, setSidebarOpen] =
+    useState(false);
+
+  /*
+  ========================================
+  GET USER
+  ========================================
+  */
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) {
-        setUserEmail(data.user.email);
-      }
-    });
+
+    supabase.auth
+      .getUser()
+      .then(({ data }) => {
+
+        if (data.user) {
+
+          setUserEmail(
+            data.user.email
+          );
+        }
+      });
+
   }, []);
 
-  // LOGOUT
- const handleLogout = async () => {
-  await supabase.auth.signOut();
-  navigate("/");
-};
-  // LINKS
+  /*
+  ========================================
+  LOGOUT
+  ========================================
+  */
+  const handleLogout =
+    async () => {
+
+      await supabase.auth.signOut();
+
+      navigate("/");
+    };
+
+  /*
+  ========================================
+  NAVIGATION LINKS
+  ========================================
+  */
   const workspaceLinks = [
     {
       name: "Dashboard",
@@ -73,12 +112,15 @@ export default function MainLayout() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#081120] text-white flex overflow-hidden">
 
-      {/* MOBILE TOPBAR */}
+    <div className="min-h-screen bg-[#081120] text-white flex">
+
+      {/* ========================================
+      MOBILE TOPBAR
+      ======================================== */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 z-50 bg-[#081120]/95 backdrop-blur-xl border-b border-white/5 flex items-center justify-between px-4">
 
-        {/* MOBILE LOGO */}
+        {/* LOGO */}
         <div className="flex items-center gap-3">
 
           <div className="w-10 h-10 rounded-2xl overflow-hidden bg-white/5 border border-white/10 shadow-[0_0_30px_rgba(127,90,240,0.35)]">
@@ -92,6 +134,7 @@ export default function MainLayout() {
           </div>
 
           <div>
+
             <h1 className="text-lg font-bold tracking-tight text-white">
               AIAERA
             </h1>
@@ -99,43 +142,68 @@ export default function MainLayout() {
             <p className="text-[10px] text-gray-400">
               AI Workspace
             </p>
+
           </div>
 
         </div>
 
-        {/* MENU BUTTON */}
+        {/* MOBILE MENU */}
         <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
+          onClick={() =>
+            setSidebarOpen(
+              !sidebarOpen
+            )
+          }
           className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/5 flex items-center justify-center"
         >
-          {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
+
+          {sidebarOpen ? (
+            <X size={18} />
+          ) : (
+            <Menu size={18} />
+          )}
+
         </button>
 
       </div>
 
-      {/* MOBILE OVERLAY */}
+      {/* ========================================
+      MOBILE OVERLAY
+      ======================================== */}
       {sidebarOpen && (
+
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
+          onClick={() =>
+            setSidebarOpen(false)
+          }
         />
+
       )}
 
-      {/* SIDEBAR */}
+      {/* ========================================
+      SIDEBAR
+      ======================================== */}
       <aside
         className={`
-          fixed top-0 left-0 z-50 h-screen w-[255px]
+          fixed top-0 left-0 z-50
+          h-screen w-[255px]
           bg-[#0B1120]
           border-r border-white/5
           flex flex-col
           transition-all duration-300
 
-          ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
+          ${
+            sidebarOpen
+              ? "translate-x-0"
+              : "-translate-x-full"
+          }
+
           lg:translate-x-0
         `}
       >
 
-        {/* TOP AREA */}
+        {/* TOP */}
         <div className="px-5 pt-6">
 
           {/* DESKTOP LOGO */}
@@ -152,6 +220,7 @@ export default function MainLayout() {
             </div>
 
             <div>
+
               <h1 className="text-xl font-bold tracking-tight text-white">
                 AIAERA
               </h1>
@@ -159,6 +228,7 @@ export default function MainLayout() {
               <p className="text-xs text-gray-400">
                 AI Workspace
               </p>
+
             </div>
 
           </div>
@@ -172,36 +242,45 @@ export default function MainLayout() {
 
             <nav className="space-y-1">
 
-              {workspaceLinks.map((link) => {
-                const Icon = link.icon;
+              {workspaceLinks.map(
+                (link) => {
 
-                return (
-                  <NavLink
-                    key={link.path}
-                    to={link.path}
-                    onClick={() => setSidebarOpen(false)}
-                    className={({ isActive }) =>
-                      `group flex items-center gap-3 px-3 py-3 rounded-2xl transition-all duration-200 ${
-                        isActive
-                          ? "bg-gradient-to-r from-[#7f5af0] to-[#6c63ff] text-white shadow-lg shadow-purple-500/20"
-                          : "text-gray-400 hover:bg-white/[0.04] hover:text-white"
-                      }`
-                    }
-                  >
+                  const Icon =
+                    link.icon;
 
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-white/[0.04] group-hover:bg-white/[0.07] transition-all">
+                  return (
 
-                      <Icon size={17} />
+                    <NavLink
+                      key={link.path}
+                      to={link.path}
+                      onClick={() =>
+                        setSidebarOpen(false)
+                      }
+                      className={({
+                        isActive,
+                      }) =>
+                        `group flex items-center gap-3 px-3 py-3 rounded-2xl transition-all duration-200 ${
+                          isActive
+                            ? "bg-gradient-to-r from-[#7f5af0] to-[#6c63ff] text-white shadow-lg shadow-purple-500/20"
+                            : "text-gray-400 hover:bg-white/[0.04] hover:text-white"
+                        }`
+                      }
+                    >
 
-                    </div>
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-white/[0.04] group-hover:bg-white/[0.07] transition-all">
 
-                    <span className="text-sm font-medium">
-                      {link.name}
-                    </span>
+                        <Icon size={17} />
 
-                  </NavLink>
-                );
-              })}
+                      </div>
+
+                      <span className="text-sm font-medium">
+                        {link.name}
+                      </span>
+
+                    </NavLink>
+                  );
+                }
+              )}
 
             </nav>
 
@@ -216,36 +295,45 @@ export default function MainLayout() {
 
             <nav className="space-y-1">
 
-              {settingsLinks.map((link) => {
-                const Icon = link.icon;
+              {settingsLinks.map(
+                (link) => {
 
-                return (
-                  <NavLink
-                    key={link.path}
-                    to={link.path}
-                    onClick={() => setSidebarOpen(false)}
-                    className={({ isActive }) =>
-                      `group flex items-center gap-3 px-3 py-3 rounded-2xl transition-all duration-200 ${
-                        isActive
-                          ? "bg-gradient-to-r from-[#7f5af0] to-[#6c63ff] text-white shadow-lg shadow-purple-500/20"
-                          : "text-gray-400 hover:bg-white/[0.04] hover:text-white"
-                      }`
-                    }
-                  >
+                  const Icon =
+                    link.icon;
 
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-white/[0.04] group-hover:bg-white/[0.07] transition-all">
+                  return (
 
-                      <Icon size={17} />
+                    <NavLink
+                      key={link.path}
+                      to={link.path}
+                      onClick={() =>
+                        setSidebarOpen(false)
+                      }
+                      className={({
+                        isActive,
+                      }) =>
+                        `group flex items-center gap-3 px-3 py-3 rounded-2xl transition-all duration-200 ${
+                          isActive
+                            ? "bg-gradient-to-r from-[#7f5af0] to-[#6c63ff] text-white shadow-lg shadow-purple-500/20"
+                            : "text-gray-400 hover:bg-white/[0.04] hover:text-white"
+                        }`
+                      }
+                    >
 
-                    </div>
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-white/[0.04] group-hover:bg-white/[0.07] transition-all">
 
-                    <span className="text-sm font-medium">
-                      {link.name}
-                    </span>
+                        <Icon size={17} />
 
-                  </NavLink>
-                );
-              })}
+                      </div>
+
+                      <span className="text-sm font-medium">
+                        {link.name}
+                      </span>
+
+                    </NavLink>
+                  );
+                }
+              )}
 
             </nav>
 
@@ -253,7 +341,9 @@ export default function MainLayout() {
 
         </div>
 
-        {/* BOTTOM */}
+        {/* ========================================
+        BOTTOM
+        ======================================== */}
         <div className="p-5 mt-auto border-t border-white/5">
 
           {/* USER CARD */}
@@ -285,16 +375,18 @@ export default function MainLayout() {
 
       </aside>
 
-      {/* MAIN CONTENT */}
-      <main className="flex-1 lg:ml-[255px] min-h-screen bg-[#0F172A] overflow-y-auto">
+      {/* ========================================
+      MAIN CONTENT
+      ======================================== */}
+      <main className="flex-1 lg:ml-[255px] min-h-screen bg-[#0F172A]">
 
-        {/* SOFT BACKGROUND */}
+        {/* BG EFFECTS */}
         <div className="fixed top-[-200px] right-[-100px] w-[350px] h-[350px] bg-purple-600/10 blur-[140px] rounded-full pointer-events-none"></div>
 
         <div className="fixed bottom-[-200px] left-[-100px] w-[300px] h-[300px] bg-blue-600/10 blur-[120px] rounded-full pointer-events-none"></div>
 
-        {/* CONTENT */}
-        <div className="relative z-10 max-w-7xl mx-auto p-5 lg:p-8 pt-24 lg:pt-8">
+        {/* PAGE CONTENT */}
+        <div className="relative z-10 max-w-7xl mx-auto p-5 lg:p-8 pt-24 lg:pt-8 pb-32">
 
           <Outlet />
 

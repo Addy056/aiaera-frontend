@@ -44,8 +44,10 @@ const Landing = () => {
     script.id =
       "aiaera-test-widget";
 
-    script.src =
-      "https://aiaera-backend.onrender.com/api/embed/99493a77-06a0-4976-a26c-2df0decdd145.js";
+   <script
+  src="https://aiaera-backend.onrender.com/embed.js"
+  data-chatbot-id="6cffa8c2-93e8-41eb-84c0-573bec375622"
+></script>
 
     script.async = true;
 
