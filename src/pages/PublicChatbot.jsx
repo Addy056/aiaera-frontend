@@ -635,13 +635,15 @@ Could you also share your email and phone number so our team can assist you bett
     <div
       className={
         isEmbedded
-          ? "w-screen h-screen overflow-hidden bg-[#0B1120]"
+          ? "w-screen h-screen overflow-hidden bg-[#0B1120] flex flex-col"
           : "w-full min-h-screen flex items-center justify-center bg-[#0B1120] p-4"
       }
     >
 
       <div
         className={`
+          w-full
+          h-full
           flex
           flex-col
           overflow-hidden
@@ -651,8 +653,8 @@ Could you also share your email and phone number so our team can assist you bett
           shadow-2xl
           ${
             isEmbedded
-              ? "w-screen h-screen rounded-none"
-              : "w-full max-w-[420px] h-[720px] rounded-[28px]"
+              ? "rounded-none"
+              : "max-w-[390px] h-[700px] rounded-[28px]"
           }
         `}
         style={{
@@ -727,7 +729,7 @@ Could you also share your email and phone number so our team can assist you bett
         </div>
 
         {/* CHAT */}
-        <div className="flex-1 overflow-y-auto px-3 py-4 min-h-0">
+        <div className="flex-1 min-h-0 overflow-y-auto px-3 py-4">
 
           <div className="flex flex-col gap-3">
 
