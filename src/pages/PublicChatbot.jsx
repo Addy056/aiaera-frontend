@@ -35,7 +35,7 @@ export default function PublicChatbot() {
       {
         role: "bot",
         text:
-          "Hi 👋 How can I help you today?",
+          "Hi 👋 I'm your AI assistant. How can I help you today?",
       },
     ]);
 
@@ -309,10 +309,13 @@ export default function PublicChatbot() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="
-                  text-blue-400
                   underline
                   break-all
                 "
+                style={{
+                  color:
+                    theme.userBubble,
+                }}
               >
                 {part}
               </a>
@@ -635,9 +638,13 @@ Could you also share your email and phone number so our team can assist you bett
     <div
       className={
         isEmbedded
-          ? "w-screen h-screen overflow-hidden bg-[#0B1120] flex flex-col"
-          : "w-full min-h-screen flex items-center justify-center bg-[#0B1120] p-4"
+          ? "w-screen h-screen overflow-hidden flex flex-col"
+          : "w-full min-h-screen flex items-center justify-center p-4"
       }
+      style={{
+        background:
+          theme.chatBg,
+      }}
     >
 
       <div
@@ -649,7 +656,6 @@ Could you also share your email and phone number so our team can assist you bett
           overflow-hidden
           border
           border-white/10
-          bg-[#0B1120]
           shadow-2xl
           ${
             isEmbedded
@@ -659,7 +665,7 @@ Could you also share your email and phone number so our team can assist you bett
         `}
         style={{
           background:
-            `linear-gradient(to bottom, ${theme.chatBg}, #0B1120)`,
+            theme.chatBg,
 
           color:
             theme.textColor,
@@ -667,7 +673,13 @@ Could you also share your email and phone number so our team can assist you bett
       >
 
         {/* HEADER */}
-        <div className="h-[72px] min-h-[72px] px-4 border-b border-white/10 flex items-center bg-[#151226] shrink-0">
+        <div
+          className="h-[72px] min-h-[72px] px-4 border-b border-white/10 flex items-center shrink-0"
+          style={{
+            background:
+              theme.chatBg,
+          }}
+        >
 
           <div className="flex items-center gap-3 min-w-0">
 
@@ -678,7 +690,16 @@ Could you also share your email and phone number so our team can assist you bett
                 className="w-11 h-11 rounded-2xl object-cover border border-white/10"
               />
             ) : (
-              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white font-bold">
+              <div
+                className="w-11 h-11 rounded-2xl flex items-center justify-center font-bold"
+                style={{
+                  background:
+                    theme.userBubble,
+
+                  color:
+                    theme.textColor,
+                }}
+              >
                 AI
               </div>
             )}
@@ -700,7 +721,13 @@ Could you also share your email and phone number so our team can assist you bett
         </div>
 
         {/* QUICK ACTIONS */}
-        <div className="px-3 py-3 border-b border-white/10 bg-[#120f20] flex flex-wrap gap-2 shrink-0">
+        <div
+          className="px-3 py-3 border-b border-white/10 flex flex-wrap gap-2 shrink-0"
+          style={{
+            background:
+              theme.chatBg,
+          }}
+        >
 
           <button
             onClick={() =>
@@ -709,7 +736,17 @@ Could you also share your email and phone number so our team can assist you bett
                 "Book Appointment"
               )
             }
-            className="px-4 h-10 rounded-full bg-[#7f5af0]/15 border border-purple-500/20 text-xs text-purple-300"
+            className="px-4 h-10 rounded-full border text-xs transition-all"
+            style={{
+              background:
+                `${theme.userBubble}20`,
+
+              borderColor:
+                `${theme.userBubble}50`,
+
+              color:
+                theme.textColor,
+            }}
           >
             📅 Book Appointment
           </button>
@@ -721,7 +758,17 @@ Could you also share your email and phone number so our team can assist you bett
                 "Visit Office"
               )
             }
-            className="px-4 h-10 rounded-full bg-[#7f5af0]/15 border border-purple-500/20 text-xs text-purple-300"
+            className="px-4 h-10 rounded-full border text-xs transition-all"
+            style={{
+              background:
+                `${theme.userBubble}20`,
+
+              borderColor:
+                `${theme.userBubble}50`,
+
+              color:
+                theme.textColor,
+            }}
           >
             📍 Visit Office
           </button>
@@ -729,7 +776,13 @@ Could you also share your email and phone number so our team can assist you bett
         </div>
 
         {/* CHAT */}
-        <div className="flex-1 min-h-0 overflow-y-auto px-3 py-4">
+        <div
+          className="flex-1 min-h-0 overflow-y-auto px-3 py-4"
+          style={{
+            background:
+              theme.chatBg,
+          }}
+        >
 
           <div className="flex flex-col gap-3">
 
@@ -752,10 +805,13 @@ Could you also share your email and phone number so our team can assist you bett
                     style={{
                       background:
                         msg.role === "user"
-                          ? `linear-gradient(135deg, ${theme.userBubble}, #5b8cff)`
+                          ? theme.userBubble
                           : theme.botBubble,
+
+                      color:
+                        theme.textColor,
                     }}
-                    className="max-w-[82%] px-4 py-3 rounded-2xl text-sm text-white border border-white/5 whitespace-pre-wrap break-words"
+                    className="max-w-[82%] px-4 py-3 rounded-2xl text-sm border border-white/5 whitespace-pre-wrap break-words"
                   >
 
                     <p className="whitespace-pre-wrap break-words">
@@ -783,7 +839,13 @@ Could you also share your email and phone number so our team can assist you bett
         </div>
 
         {/* INPUT */}
-        <div className="p-3 border-t border-white/10 bg-[#151226] shrink-0">
+        <div
+          className="p-3 border-t border-white/10 shrink-0"
+          style={{
+            background:
+              theme.chatBg,
+          }}
+        >
 
           <div className="flex items-center gap-2">
 
@@ -805,13 +867,27 @@ Could you also share your email and phone number so our team can assist you bett
                   sendMessage();
                 }
               }}
-              className="flex-1 h-11 px-4 rounded-xl bg-white/10 border border-white/10 outline-none text-sm text-white placeholder:text-gray-400"
+              className="flex-1 h-11 px-4 rounded-xl border border-white/10 outline-none text-sm placeholder:text-gray-400"
+              style={{
+                background:
+                  "rgba(255,255,255,0.06)",
+
+                color:
+                  theme.textColor,
+              }}
             />
 
             <button
               onClick={sendMessage}
               disabled={loading}
-              className="h-11 px-5 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 text-white font-medium text-sm disabled:opacity-50"
+              className="h-11 px-5 rounded-xl font-medium text-sm disabled:opacity-50"
+              style={{
+                background:
+                  theme.userBubble,
+
+                color:
+                  theme.textColor,
+              }}
             >
               Send
             </button>
