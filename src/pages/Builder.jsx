@@ -570,27 +570,24 @@ export default function Builder() {
     }
   };
 
-  const copyEmbed = async () => {
+ const copyEmbed = async () => {
 
-    const code =
-`<script
-  src="${API_URL}/embed.js"
-  data-chatbot-id="${chatbotId}"
-></script>`;
+  const code =
+`<script src="${API_URL}/api/embed/${chatbotId}.js"></script>`;
 
-    await navigator.clipboard.writeText(
-      code
-    );
+  await navigator.clipboard.writeText(
+    code
+  );
 
-    setCopied(true);
+  setCopied(true);
 
-    setTimeout(() => {
+  setTimeout(() => {
 
-      setCopied(false);
+    setCopied(false);
 
-    }, 2000);
+  }, 2000);
 
-  };
+};
 
   if (loading) {
 
@@ -1082,11 +1079,8 @@ export default function Builder() {
               <div className="rounded-2xl bg-black/40 border border-white/5 p-4 overflow-x-auto">
 
                 <code className="text-xs text-purple-300 break-all whitespace-pre-wrap">
-{`<script
-  src="${API_URL}/embed.js"
-  data-chatbot-id="${chatbotId}"
-></script>`}
-                </code>
+{`<script src="${API_URL}/api/embed/${chatbotId}.js"></script>`}
+</code>
 
               </div>
 
