@@ -21,9 +21,10 @@ export default function PublicChatbot() {
   EMBED MODE
   ========================================
   */
-  const isEmbedded =
-    window.self !==
-    window.top;
+ const isEmbedded =
+  new URLSearchParams(
+    window.location.search
+  ).get("embed") === "true";
 
   /*
   ========================================
