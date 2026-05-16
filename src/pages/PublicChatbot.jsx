@@ -456,8 +456,7 @@ Could you also share your email and phone number so our team can assist you bett
 
         console.error(
           "CHAT ERROR:",
-          err
-        );
+          err);
 
         setMessages(
           (prev) => [
@@ -505,7 +504,20 @@ Could you also share your email and phone number so our team can assist you bett
   }
 
   return (
-    <div className="w-full h-full bg-white flex flex-col">
+
+    <div
+      className="
+        w-full
+        overflow-hidden
+        bg-white
+        flex
+        flex-col
+      "
+      style={{
+        height: "100dvh",
+        maxHeight: "100dvh",
+      }}
+    >
 
       {/* HEADER */}
       <div className="h-[74px] px-5 border-b border-gray-200 bg-white flex items-center justify-between shrink-0">
@@ -541,9 +553,9 @@ Could you also share your email and phone number so our team can assist you bett
       </div>
 
       {/* CHAT AREA */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 bg-[#f5f5f5]">
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 bg-[#f5f5f5]">
 
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 min-h-full">
 
           {/* QUICK ACTIONS */}
           <div className="flex flex-wrap gap-2 mb-2">
