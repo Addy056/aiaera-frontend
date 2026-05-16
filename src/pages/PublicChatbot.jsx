@@ -61,7 +61,7 @@ export default function PublicChatbot() {
 
   /*
   ========================================
-  GENERIC INTEGRATIONS
+  INTEGRATIONS
   ========================================
   */
   const [integrations, setIntegrations] =
@@ -79,7 +79,7 @@ export default function PublicChatbot() {
 
   /*
   ========================================
-  DEFAULT BLACK & WHITE THEME
+  CLEAN MODERN THEME
   ========================================
   */
   const [theme, setTheme] =
@@ -88,18 +88,6 @@ export default function PublicChatbot() {
         "Assistant",
 
       logo: "",
-
-      chatBg:
-        "#0B0B0F",
-
-      botBubble:
-        "rgba(255,255,255,0.08)",
-
-      userBubble:
-        "#FFFFFF",
-
-      textColor:
-        "#FFFFFF",
     });
 
   /*
@@ -202,29 +190,12 @@ export default function PublicChatbot() {
 
         setTheme({
           botName:
-            bot.theme?.botName ||
             bot.bot_name ||
             "Assistant",
 
           logo:
             bot.theme?.logo ||
             "",
-
-          chatBg:
-            bot.theme?.chatBg ||
-            "#0B0B0F",
-
-          botBubble:
-            bot.theme?.botBubble ||
-            "rgba(255,255,255,0.08)",
-
-          userBubble:
-            bot.theme?.userBubble ||
-            "#FFFFFF",
-
-          textColor:
-            bot.theme?.textColor ||
-            "#FFFFFF",
         });
 
       } catch (err) {
@@ -324,13 +295,8 @@ export default function PublicChatbot() {
                 className="
                   underline
                   break-all
+                  text-black
                 "
-                style={{
-                  color:
-                    theme.userBubble === "#FFFFFF"
-                      ? "#FFFFFF"
-                      : theme.userBubble,
-                }}
               >
                 {part}
               </a>
@@ -609,7 +575,7 @@ Could you also share your email and phone number so our team can assist you bett
   if (fetching) {
 
     return (
-      <div className="w-screen h-screen flex items-center justify-center bg-black text-white">
+      <div className="w-screen h-screen flex items-center justify-center bg-white text-black">
         Loading...
       </div>
     );
@@ -623,7 +589,7 @@ Could you also share your email and phone number so our team can assist you bett
   if (!chatbot) {
 
     return (
-      <div className="w-screen h-screen flex items-center justify-center bg-black text-white">
+      <div className="w-screen h-screen flex items-center justify-center bg-white text-black">
         Chatbot not found
       </div>
     );
@@ -632,10 +598,11 @@ Could you also share your email and phone number so our team can assist you bett
   return (
     <div
       className={`
-        fixed
-        bottom-6
-        right-6
-        z-[999999]
+        ${
+          isEmbedded
+            ? "w-full h-full"
+            : "fixed bottom-6 right-6 z-[999999]"
+        }
         flex
         flex-col
         items-end
@@ -652,23 +619,18 @@ Could you also share your email and phone number so our team can assist you bett
             w-16
             h-16
             rounded-full
-            shadow-2xl
-            border
-            border-white/10
+            shadow-xl
             flex
             items-center
             justify-center
-            text-black
+            text-white
             text-xl
             font-bold
             transition-all
             duration-300
             hover:scale-110
+            bg-black
           "
-          style={{
-            background:
-              theme.userBubble,
-          }}
         >
           🤖
         </button>
@@ -678,30 +640,25 @@ Could you also share your email and phone number so our team can assist you bett
       {isOpen && (
         <div
           className={`
-            w-[370px]
-            max-w-[calc(100vw-24px)]
-            h-[620px]
-            max-h-[calc(100vh-24px)]
-            rounded-[28px]
+            ${
+              isEmbedded
+                ? "w-full h-full rounded-none"
+                : `
+                  w-[370px]
+                  max-w-[calc(100vw-24px)]
+                  h-[700px]
+                  max-h-[calc(100vh-24px)]
+                  rounded-[28px]
+                `
+            }
             overflow-hidden
             border
-            border-white/10
-            shadow-2xl
-            backdrop-blur-2xl
+            border-gray-200
+            bg-white
+            shadow-[0_10px_40px_rgba(0,0,0,0.12)]
             flex
             flex-col
-            animate-in
-            fade-in
-            zoom-in-95
-            duration-300
           `}
-          style={{
-            background:
-              theme.chatBg,
-
-            color:
-              theme.textColor,
-          }}
         >
 
           {/* HEADER */}
@@ -710,16 +667,13 @@ Could you also share your email and phone number so our team can assist you bett
               h-[74px]
               px-5
               border-b
-              border-white/10
+              border-gray-200
+              bg-white
               flex
               items-center
               justify-between
               shrink-0
             "
-            style={{
-              background:
-                theme.chatBg,
-            }}
           >
 
             <div className="flex items-center gap-3 min-w-0">
@@ -732,14 +686,17 @@ Could you also share your email and phone number so our team can assist you bett
                 />
               ) : (
                 <div
-                  className="w-11 h-11 rounded-2xl flex items-center justify-center font-bold"
-                  style={{
-                    background:
-                      theme.userBubble,
-
-                    color:
-                      "#000000",
-                  }}
+                  className="
+                    w-11
+                    h-11
+                    rounded-2xl
+                    flex
+                    items-center
+                    justify-center
+                    font-bold
+                    bg-black
+                    text-white
+                  "
                 >
                   AI
                 </div>
@@ -747,11 +704,11 @@ Could you also share your email and phone number so our team can assist you bett
 
               <div className="min-w-0">
 
-                <h2 className="text-[15px] font-semibold truncate">
+                <h2 className="text-[15px] font-semibold truncate text-black">
                   {theme.botName}
                 </h2>
 
-                <p className="text-green-400 text-xs">
+                <p className="text-green-500 text-xs">
                   ● Online
                 </p>
 
@@ -759,27 +716,24 @@ Could you also share your email and phone number so our team can assist you bett
 
             </div>
 
-            <button
-              onClick={() =>
-                setIsOpen(false)
-              }
-              className="
-                w-9
-                h-9
-                rounded-xl
-                transition-all
-                text-lg
-              "
-              style={{
-                background:
-                  theme.botBubble,
-
-                color:
-                  theme.textColor,
-              }}
-            >
-              ✕
-            </button>
+            {!isEmbedded && (
+              <button
+                onClick={() =>
+                  setIsOpen(false)
+                }
+                className="
+                  w-10
+                  h-10
+                  rounded-2xl
+                  bg-gray-100
+                  text-black
+                  text-lg
+                  font-medium
+                "
+              >
+                ✕
+              </button>
+            )}
 
           </div>
 
@@ -790,14 +744,11 @@ Could you also share your email and phone number so our team can assist you bett
               overflow-y-auto
               px-4
               py-4
+              bg-[#f5f5f5]
             "
-            style={{
-              background:
-                theme.chatBg,
-            }}
           >
 
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 min-h-full">
 
               {/* QUICK ACTIONS */}
               <div className="flex flex-wrap gap-2 mb-2">
@@ -813,20 +764,13 @@ Could you also share your email and phone number so our team can assist you bett
                     px-4
                     py-2
                     rounded-full
-                    text-xs
+                    text-sm
+                    bg-white
+                    text-black
+                    font-medium
                     border
-                    transition-all
+                    border-gray-200
                   "
-                  style={{
-                    background:
-                      theme.botBubble,
-
-                    borderColor:
-                      "rgba(255,255,255,0.08)",
-
-                    color:
-                      theme.textColor,
-                  }}
                 >
                   📅 Book Demo
                 </button>
@@ -842,20 +786,13 @@ Could you also share your email and phone number so our team can assist you bett
                     px-4
                     py-2
                     rounded-full
-                    text-xs
+                    text-sm
+                    bg-white
+                    text-black
+                    font-medium
                     border
-                    transition-all
+                    border-gray-200
                   "
-                  style={{
-                    background:
-                      theme.botBubble,
-
-                    borderColor:
-                      "rgba(255,255,255,0.08)",
-
-                    color:
-                      theme.textColor,
-                  }}
                 >
                   📍 Visit Office
                 </button>
@@ -878,17 +815,6 @@ Could you also share your email and phone number so our team can assist you bett
                   >
 
                     <div
-                      style={{
-                        background:
-                          msg.role === "user"
-                            ? theme.userBubble
-                            : theme.botBubble,
-
-                        color:
-                          msg.role === "user"
-                            ? "#000000"
-                            : theme.textColor,
-                      }}
                       className="
                         max-w-[82%]
                         px-4
@@ -897,8 +823,23 @@ Could you also share your email and phone number so our team can assist you bett
                         text-sm
                         whitespace-pre-wrap
                         break-words
-                        shadow-lg
                       "
+                      style={{
+                        background:
+                          msg.role === "user"
+                            ? "#000000"
+                            : "#FFFFFF",
+
+                        color:
+                          msg.role === "user"
+                            ? "#FFFFFF"
+                            : "#111111",
+
+                        border:
+                          msg.role === "bot"
+                            ? "1px solid #e5e7eb"
+                            : "none",
+                      }}
                     >
 
                       <p className="whitespace-pre-wrap break-words">
@@ -914,7 +855,7 @@ Could you also share your email and phone number so our team can assist you bett
               )}
 
               {loading && (
-                <div className="text-xs text-gray-400 px-2">
+                <div className="text-xs text-gray-500 px-2">
                   {theme.botName} is typing...
                 </div>
               )}
@@ -930,13 +871,10 @@ Could you also share your email and phone number so our team can assist you bett
             className="
               p-4
               border-t
-              border-white/10
+              border-gray-200
+              bg-white
               shrink-0
             "
-            style={{
-              background:
-                theme.chatBg,
-            }}
           >
 
             <div className="flex items-center gap-2">
@@ -964,19 +902,14 @@ Could you also share your email and phone number so our team can assist you bett
                   h-12
                   px-4
                   rounded-2xl
+                  bg-white
                   border
-                  border-white/10
+                  border-gray-300
                   outline-none
                   text-sm
+                  text-black
                   placeholder:text-gray-400
                 "
-                style={{
-                  background:
-                    theme.botBubble,
-
-                  color:
-                    theme.textColor,
-                }}
               />
 
               <button
@@ -984,21 +917,16 @@ Could you also share your email and phone number so our team can assist you bett
                 disabled={loading}
                 className="
                   h-12
-                  px-5
+                  px-6
                   rounded-2xl
-                  font-medium
+                  bg-black
+                  text-white
+                  font-semibold
                   text-sm
                   transition-all
                   hover:scale-105
                   disabled:opacity-50
                 "
-                style={{
-                  background:
-                    theme.userBubble,
-
-                  color:
-                    "#000000",
-                }}
               >
                 Send
               </button>
