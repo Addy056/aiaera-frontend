@@ -27,6 +27,14 @@ export default function PublicChatbot() {
 
   /*
   ========================================
+  OPEN / CLOSE STATE
+  ========================================
+  */
+  const [isOpen, setIsOpen] =
+    useState(!isEmbedded);
+
+  /*
+  ========================================
   STATES
   ========================================
   */
@@ -69,6 +77,11 @@ export default function PublicChatbot() {
   const [leadAsked, setLeadAsked] =
     useState(false);
 
+  /*
+  ========================================
+  DEFAULT BLACK & WHITE THEME
+  ========================================
+  */
   const [theme, setTheme] =
     useState({
       botName:
@@ -77,16 +90,16 @@ export default function PublicChatbot() {
       logo: "",
 
       chatBg:
-        "#161126",
+        "#0B0B0F",
 
       botBubble:
-        "rgba(255,255,255,0.06)",
+        "rgba(255,255,255,0.08)",
 
       userBubble:
-        "#7f5af0",
+        "#FFFFFF",
 
       textColor:
-        "#ffffff",
+        "#FFFFFF",
     });
 
   /*
@@ -199,19 +212,19 @@ export default function PublicChatbot() {
 
           chatBg:
             bot.theme?.chatBg ||
-            "#161126",
+            "#0B0B0F",
 
           botBubble:
             bot.theme?.botBubble ||
-            "rgba(255,255,255,0.06)",
+            "rgba(255,255,255,0.08)",
 
           userBubble:
             bot.theme?.userBubble ||
-            "#7f5af0",
+            "#FFFFFF",
 
           textColor:
             bot.theme?.textColor ||
-            "#ffffff",
+            "#FFFFFF",
         });
 
       } catch (err) {
@@ -314,7 +327,9 @@ export default function PublicChatbot() {
                 "
                 style={{
                   color:
-                    theme.userBubble,
+                    theme.userBubble === "#FFFFFF"
+                      ? "#FFFFFF"
+                      : theme.userBubble,
                 }}
               >
                 {part}
@@ -345,11 +360,6 @@ export default function PublicChatbot() {
       let response =
         "";
 
-      /*
-      ========================================
-      BOOKING
-      ========================================
-      */
       if (
         type === "booking"
       ) {
@@ -372,11 +382,6 @@ export default function PublicChatbot() {
             : "Booking link not configured yet.";
       }
 
-      /*
-      ========================================
-      MAPS
-      ========================================
-      */
       if (
         type === "maps"
       ) {
@@ -440,11 +445,6 @@ export default function PublicChatbot() {
       const msg =
         input.trim();
 
-      /*
-      ========================================
-      DETECT LEAD INFO
-      ========================================
-      */
       if (
         containsLeadInfo(msg)
       ) {
@@ -519,11 +519,6 @@ export default function PublicChatbot() {
           data.reply ||
           "No response available.";
 
-        /*
-        ========================================
-        SMART LEAD ASKING
-        ========================================
-        */
         const userMessageCount =
           messages.filter(
             (m) =>
@@ -614,7 +609,7 @@ Could you also share your email and phone number so our team can assist you bett
   if (fetching) {
 
     return (
-      <div className="w-screen h-screen flex items-center justify-center bg-[#0B1120] text-white">
+      <div className="w-screen h-screen flex items-center justify-center bg-black text-white">
         Loading...
       </div>
     );
@@ -628,7 +623,7 @@ Could you also share your email and phone number so our team can assist you bett
   if (!chatbot) {
 
     return (
-      <div className="w-screen h-screen flex items-center justify-center bg-[#0B1120] text-white">
+      <div className="w-screen h-screen flex items-center justify-center bg-black text-white">
         Chatbot not found
       </div>
     );
@@ -636,267 +631,384 @@ Could you also share your email and phone number so our team can assist you bett
 
   return (
     <div
-      className={
-        isEmbedded
-          ? "w-screen h-screen overflow-hidden flex flex-col"
-          : "w-full min-h-screen flex items-center justify-center p-4"
-      }
-      style={{
-        background:
-          theme.chatBg,
-      }}
+      className={`
+        fixed
+        bottom-6
+        right-6
+        z-[999999]
+        flex
+        flex-col
+        items-end
+      `}
     >
 
-      <div
-        className={`
-          w-full
-          h-full
-          flex
-          flex-col
-          overflow-hidden
-          border
-          border-white/10
-          shadow-2xl
-          ${
-            isEmbedded
-              ? "rounded-none"
-              : "max-w-[390px] h-[700px] rounded-[28px]"
+      {/* FLOATING BUTTON */}
+      {!isOpen && (
+        <button
+          onClick={() =>
+            setIsOpen(true)
           }
-        `}
-        style={{
-          background:
-            theme.chatBg,
+          className="
+            w-16
+            h-16
+            rounded-full
+            shadow-2xl
+            border
+            border-white/10
+            flex
+            items-center
+            justify-center
+            text-black
+            text-xl
+            font-bold
+            transition-all
+            duration-300
+            hover:scale-110
+          "
+          style={{
+            background:
+              theme.userBubble,
+          }}
+        >
+          🤖
+        </button>
+      )}
 
-          color:
-            theme.textColor,
-        }}
-      >
-
-        {/* HEADER */}
+      {/* CHAT WINDOW */}
+      {isOpen && (
         <div
-          className="h-[72px] min-h-[72px] px-4 border-b border-white/10 flex items-center shrink-0"
+          className={`
+            w-[370px]
+            max-w-[calc(100vw-24px)]
+            h-[620px]
+            max-h-[calc(100vh-24px)]
+            rounded-[28px]
+            overflow-hidden
+            border
+            border-white/10
+            shadow-2xl
+            backdrop-blur-2xl
+            flex
+            flex-col
+            animate-in
+            fade-in
+            zoom-in-95
+            duration-300
+          `}
           style={{
             background:
               theme.chatBg,
+
+            color:
+              theme.textColor,
           }}
         >
 
-          <div className="flex items-center gap-3 min-w-0">
+          {/* HEADER */}
+          <div
+            className="
+              h-[74px]
+              px-5
+              border-b
+              border-white/10
+              flex
+              items-center
+              justify-between
+              shrink-0
+            "
+            style={{
+              background:
+                theme.chatBg,
+            }}
+          >
 
-            {theme.logo ? (
-              <img
-                src={theme.logo}
-                alt="logo"
-                className="w-11 h-11 rounded-2xl object-cover border border-white/10"
+            <div className="flex items-center gap-3 min-w-0">
+
+              {theme.logo ? (
+                <img
+                  src={theme.logo}
+                  alt="logo"
+                  className="w-11 h-11 rounded-2xl object-cover"
+                />
+              ) : (
+                <div
+                  className="w-11 h-11 rounded-2xl flex items-center justify-center font-bold"
+                  style={{
+                    background:
+                      theme.userBubble,
+
+                    color:
+                      "#000000",
+                  }}
+                >
+                  AI
+                </div>
+              )}
+
+              <div className="min-w-0">
+
+                <h2 className="text-[15px] font-semibold truncate">
+                  {theme.botName}
+                </h2>
+
+                <p className="text-green-400 text-xs">
+                  ● Online
+                </p>
+
+              </div>
+
+            </div>
+
+            <button
+              onClick={() =>
+                setIsOpen(false)
+              }
+              className="
+                w-9
+                h-9
+                rounded-xl
+                transition-all
+                text-lg
+              "
+              style={{
+                background:
+                  theme.botBubble,
+
+                color:
+                  theme.textColor,
+              }}
+            >
+              ✕
+            </button>
+
+          </div>
+
+          {/* CHAT AREA */}
+          <div
+            className="
+              flex-1
+              overflow-y-auto
+              px-4
+              py-4
+            "
+            style={{
+              background:
+                theme.chatBg,
+            }}
+          >
+
+            <div className="flex flex-col gap-3">
+
+              {/* QUICK ACTIONS */}
+              <div className="flex flex-wrap gap-2 mb-2">
+
+                <button
+                  onClick={() =>
+                    handleQuickAction(
+                      "booking",
+                      "Book Appointment"
+                    )
+                  }
+                  className="
+                    px-4
+                    py-2
+                    rounded-full
+                    text-xs
+                    border
+                    transition-all
+                  "
+                  style={{
+                    background:
+                      theme.botBubble,
+
+                    borderColor:
+                      "rgba(255,255,255,0.08)",
+
+                    color:
+                      theme.textColor,
+                  }}
+                >
+                  📅 Book Demo
+                </button>
+
+                <button
+                  onClick={() =>
+                    handleQuickAction(
+                      "maps",
+                      "Visit Office"
+                    )
+                  }
+                  className="
+                    px-4
+                    py-2
+                    rounded-full
+                    text-xs
+                    border
+                    transition-all
+                  "
+                  style={{
+                    background:
+                      theme.botBubble,
+
+                    borderColor:
+                      "rgba(255,255,255,0.08)",
+
+                    color:
+                      theme.textColor,
+                  }}
+                >
+                  📍 Visit Office
+                </button>
+
+              </div>
+
+              {messages.map(
+                (
+                  msg,
+                  index
+                ) => (
+
+                  <div
+                    key={index}
+                    className={`flex ${
+                      msg.role === "user"
+                        ? "justify-end"
+                        : "justify-start"
+                    }`}
+                  >
+
+                    <div
+                      style={{
+                        background:
+                          msg.role === "user"
+                            ? theme.userBubble
+                            : theme.botBubble,
+
+                        color:
+                          msg.role === "user"
+                            ? "#000000"
+                            : theme.textColor,
+                      }}
+                      className="
+                        max-w-[82%]
+                        px-4
+                        py-3
+                        rounded-2xl
+                        text-sm
+                        whitespace-pre-wrap
+                        break-words
+                        shadow-lg
+                      "
+                    >
+
+                      <p className="whitespace-pre-wrap break-words">
+                        {renderMessageWithLinks(
+                          msg.text
+                        )}
+                      </p>
+
+                    </div>
+
+                  </div>
+                )
+              )}
+
+              {loading && (
+                <div className="text-xs text-gray-400 px-2">
+                  {theme.botName} is typing...
+                </div>
+              )}
+
+              <div ref={chatEndRef} />
+
+            </div>
+
+          </div>
+
+          {/* INPUT */}
+          <div
+            className="
+              p-4
+              border-t
+              border-white/10
+              shrink-0
+            "
+            style={{
+              background:
+                theme.chatBg,
+            }}
+          >
+
+            <div className="flex items-center gap-2">
+
+              <input
+                type="text"
+                placeholder="Type your message..."
+                value={input}
+                onChange={(e) =>
+                  setInput(
+                    e.target.value
+                  )
+                }
+                onKeyDown={(e) => {
+
+                  if (
+                    e.key === "Enter"
+                  ) {
+
+                    sendMessage();
+                  }
+                }}
+                className="
+                  flex-1
+                  h-12
+                  px-4
+                  rounded-2xl
+                  border
+                  border-white/10
+                  outline-none
+                  text-sm
+                  placeholder:text-gray-400
+                "
+                style={{
+                  background:
+                    theme.botBubble,
+
+                  color:
+                    theme.textColor,
+                }}
               />
-            ) : (
-              <div
-                className="w-11 h-11 rounded-2xl flex items-center justify-center font-bold"
+
+              <button
+                onClick={sendMessage}
+                disabled={loading}
+                className="
+                  h-12
+                  px-5
+                  rounded-2xl
+                  font-medium
+                  text-sm
+                  transition-all
+                  hover:scale-105
+                  disabled:opacity-50
+                "
                 style={{
                   background:
                     theme.userBubble,
 
                   color:
-                    theme.textColor,
+                    "#000000",
                 }}
               >
-                AI
-              </div>
-            )}
-
-            <div className="min-w-0">
-
-              <h2 className="text-[15px] font-semibold truncate">
-                {theme.botName}
-              </h2>
-
-              <p className="text-green-400 text-xs">
-                ● Online
-              </p>
+                Send
+              </button>
 
             </div>
 
           </div>
 
         </div>
-
-        {/* QUICK ACTIONS */}
-        <div
-          className="px-3 py-3 border-b border-white/10 flex flex-wrap gap-2 shrink-0"
-          style={{
-            background:
-              theme.chatBg,
-          }}
-        >
-
-          <button
-            onClick={() =>
-              handleQuickAction(
-                "booking",
-                "Book Appointment"
-              )
-            }
-            className="px-4 h-10 rounded-full border text-xs transition-all"
-            style={{
-              background:
-                `${theme.userBubble}20`,
-
-              borderColor:
-                `${theme.userBubble}50`,
-
-              color:
-                theme.textColor,
-            }}
-          >
-            📅 Book Appointment
-          </button>
-
-          <button
-            onClick={() =>
-              handleQuickAction(
-                "maps",
-                "Visit Office"
-              )
-            }
-            className="px-4 h-10 rounded-full border text-xs transition-all"
-            style={{
-              background:
-                `${theme.userBubble}20`,
-
-              borderColor:
-                `${theme.userBubble}50`,
-
-              color:
-                theme.textColor,
-            }}
-          >
-            📍 Visit Office
-          </button>
-
-        </div>
-
-        {/* CHAT */}
-        <div
-          className="flex-1 min-h-0 overflow-y-auto px-3 py-4"
-          style={{
-            background:
-              theme.chatBg,
-          }}
-        >
-
-          <div className="flex flex-col gap-3">
-
-            {messages.map(
-              (
-                msg,
-                index
-              ) => (
-
-                <div
-                  key={index}
-                  className={`flex ${
-                    msg.role === "user"
-                      ? "justify-end"
-                      : "justify-start"
-                  }`}
-                >
-
-                  <div
-                    style={{
-                      background:
-                        msg.role === "user"
-                          ? theme.userBubble
-                          : theme.botBubble,
-
-                      color:
-                        theme.textColor,
-                    }}
-                    className="max-w-[82%] px-4 py-3 rounded-2xl text-sm border border-white/5 whitespace-pre-wrap break-words"
-                  >
-
-                    <p className="whitespace-pre-wrap break-words">
-                      {renderMessageWithLinks(
-                        msg.text
-                      )}
-                    </p>
-
-                  </div>
-
-                </div>
-              )
-            )}
-
-            {loading && (
-              <div className="text-xs text-gray-400 px-2">
-                {theme.botName} is typing...
-              </div>
-            )}
-
-            <div ref={chatEndRef} />
-
-          </div>
-
-        </div>
-
-        {/* INPUT */}
-        <div
-          className="p-3 border-t border-white/10 shrink-0"
-          style={{
-            background:
-              theme.chatBg,
-          }}
-        >
-
-          <div className="flex items-center gap-2">
-
-            <input
-              type="text"
-              placeholder="Type your message..."
-              value={input}
-              onChange={(e) =>
-                setInput(
-                  e.target.value
-                )
-              }
-              onKeyDown={(e) => {
-
-                if (
-                  e.key === "Enter"
-                ) {
-
-                  sendMessage();
-                }
-              }}
-              className="flex-1 h-11 px-4 rounded-xl border border-white/10 outline-none text-sm placeholder:text-gray-400"
-              style={{
-                background:
-                  "rgba(255,255,255,0.06)",
-
-                color:
-                  theme.textColor,
-              }}
-            />
-
-            <button
-              onClick={sendMessage}
-              disabled={loading}
-              className="h-11 px-5 rounded-xl font-medium text-sm disabled:opacity-50"
-              style={{
-                background:
-                  theme.userBubble,
-
-                color:
-                  theme.textColor,
-              }}
-            >
-              Send
-            </button>
-
-          </div>
-
-        </div>
-
-      </div>
+      )}
 
     </div>
   );
