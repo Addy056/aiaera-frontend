@@ -44,31 +44,11 @@ const Landing = () => {
     script.id =
       "aiaera-test-widget";
 
-    /*
-    ========================================
-    EMBED SCRIPT
-    ========================================
-    */
     script.src =
-      "https://aiaera-backend.onrender.com/embed.js";
-
-    /*
-    ========================================
-    CHATBOT ID
-    ========================================
-    */
-    script.setAttribute(
-      "data-chatbot-id",
-      "6cffa8c2-93e8-41eb-84c0-573bec375622"
-    );
+      "https://aiaera-backend.onrender.com/api/embed/6cffa8c2-93e8-41eb-84c0-573bec375622.js";
 
     script.async = true;
 
-    /*
-    ========================================
-    APPEND SCRIPT
-    ========================================
-    */
     document.body.appendChild(
       script
     );
