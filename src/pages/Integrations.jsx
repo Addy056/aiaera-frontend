@@ -162,12 +162,6 @@ export default function Integrations() {
             instagram_enabled:
               data.instagram_enabled || false,
 
-            /*
-            ====================================
-            GENERIC MEETING SUPPORT
-            ====================================
-            */
-
             provider:
               data.provider || "calendly",
 
@@ -623,34 +617,91 @@ export default function Integrations() {
                 Meeting Provider
               </label>
 
-              <select
-                name="provider"
-                value={form.provider}
-                onChange={handleChange}
-                className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-purple-500"
-              >
+              <div className="relative">
 
-                <option value="calendly">
-                  Calendly
-                </option>
+                <select
+                  name="provider"
+                  value={form.provider}
+                  onChange={handleChange}
+                  className="
+                    w-full
+                    h-[54px]
+                    rounded-2xl
+                    bg-[#0f172a]/90
+                    border
+                    border-purple-500/30
+                    px-4
+                    text-sm
+                    text-white
+                    outline-none
+                    appearance-none
+                    backdrop-blur-xl
+                    transition-all
+                    duration-300
+                    focus:border-purple-400
+                    focus:ring-2
+                    focus:ring-purple-500/20
+                    shadow-[0_0_20px_rgba(127,90,240,0.08)]
+                  "
+                >
 
-                <option value="zoom">
-                  Zoom
-                </option>
+                  <option
+                    value="calendly"
+                    className="bg-[#0f172a] text-white"
+                  >
+                    Calendly
+                  </option>
 
-                <option value="teams">
-                  Microsoft Teams
-                </option>
+                  <option
+                    value="zoom"
+                    className="bg-[#0f172a] text-white"
+                  >
+                    Zoom
+                  </option>
 
-                <option value="meet">
-                  Google Meet
-                </option>
+                  <option
+                    value="teams"
+                    className="bg-[#0f172a] text-white"
+                  >
+                    Microsoft Teams
+                  </option>
 
-                <option value="custom">
-                  Custom
-                </option>
+                  <option
+                    value="meet"
+                    className="bg-[#0f172a] text-white"
+                  >
+                    Google Meet
+                  </option>
 
-              </select>
+                  <option
+                    value="custom"
+                    className="bg-[#0f172a] text-white"
+                  >
+                    Custom
+                  </option>
+
+                </select>
+
+                <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-gray-400">
+
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 20 20"
+                    fill="none"
+                  >
+                    <path
+                      d="M5 7.5L10 12.5L15 7.5"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+
+                </div>
+
+              </div>
 
             </div>
 
