@@ -477,6 +477,65 @@ Could you also share your email and phone number so our team can assist you bett
 
   /*
   ========================================
+  RENDER MESSAGE
+  ========================================
+  */
+  const renderMessage =
+    (text) => {
+
+      return (
+        <div className="whitespace-pre-wrap break-words text-sm leading-relaxed">
+
+          {text
+            ?.split(
+              /(https?:\/\/[^\s]+)/g
+            )
+            .map(
+              (
+                part,
+                index
+              ) => {
+
+                const isLink =
+                  part.match(
+                    /^https?:\/\/[^\s]+$/
+                  );
+
+                if (isLink) {
+
+                  return (
+                    <a
+                      key={index}
+                      href={part}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="
+                        text-purple-500
+                        underline
+                        break-all
+                        hover:text-purple-400
+                        transition-all
+                      "
+                    >
+                      {part}
+                    </a>
+                  );
+                }
+
+                return (
+                  <span key={index}>
+                    {part}
+                  </span>
+                );
+              }
+            )}
+
+        </div>
+      );
+    };
+
+  /*
+  ========================================
   LOADING
   ========================================
   */
@@ -569,7 +628,7 @@ Could you also share your email and phone number so our team can assist you bett
               }
               className="px-4 py-2 rounded-full text-sm bg-white text-black font-medium border border-gray-200"
             >
-              📅 Book Demo
+              📅 Book Appointment
             </button>
 
             <button
@@ -620,7 +679,9 @@ Could you also share your email and phone number so our team can assist you bett
                         : "none",
                   }}
                 >
-                  {msg.text}
+                  {renderMessage(
+                    msg.text
+                  )}
                 </div>
 
               </div>
