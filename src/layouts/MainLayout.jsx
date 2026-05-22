@@ -8,12 +8,14 @@ import {
   LogOut,
   Menu,
   X,
+  Sparkles,
+  Crown,
+  ChevronRight,
 } from "lucide-react";
 
 import {
   NavLink,
   Outlet,
-  useNavigate,
 } from "react-router-dom";
 
 import {
@@ -27,33 +29,262 @@ import logo from "../assets/logo.png";
 
 export default function MainLayout() {
 
-  const navigate =
-    useNavigate();
-
+  /*
+  ========================================
+  STATES
+  ========================================
+  */
   const [userEmail, setUserEmail] =
     useState("");
 
   const [sidebarOpen, setSidebarOpen] =
     useState(false);
 
+  const [subscription, setSubscription] =
+    useState(null);
+
+  const [isExpired, setIsExpired] =
+    useState(false);
+
+  const [loading, setLoading] =
+    useState(true);
+
   /*
   ========================================
-  GET USER
+  LOAD USER
+  ========================================
+  */
+  const loadUser =
+    async () => {
+
+      try {
+
+        setLoading(true);
+
+        /*
+        ========================================
+        GET USER
+        ========================================
+        */
+        const {
+          data,
+          error,
+        } =
+          await supabase.auth.getUser();
+
+        /*
+        ========================================
+        NO USER
+        ========================================
+        */
+        if (
+          error ||
+          !data?.user
+        ) {
+
+          setUserEmail("");
+
+          setSubscription(
+            null
+          );
+
+          setIsExpired(
+            false
+          );
+
+          setLoading(
+            false
+          );
+
+          return;
+        }
+
+        /*
+        ========================================
+        USER EMAIL
+        ========================================
+        */
+        setUserEmail(
+          data.user.email || ""
+        );
+
+        /*
+        ========================================
+        GET SUBSCRIPTION
+        ========================================
+        */
+        const {
+          data: subData,
+          error: subError,
+        } =
+          await supabase
+            .from(
+              "user_subscriptions"
+            )
+            .select("*")
+            .eq(
+              "user_id",
+              data.user.id
+            )
+            .maybeSingle();
+
+        /*
+        ========================================
+        NO SUBSCRIPTION
+        ========================================
+        */
+        if (
+          subError ||
+          !subData
+        ) {
+
+          setSubscription(
+            null
+          );
+
+          setIsExpired(
+            false
+          );
+
+          setLoading(
+            false
+          );
+
+          return;
+        }
+
+        /*
+        ========================================
+        SET SUBSCRIPTION
+        ========================================
+        */
+        setSubscription(
+          subData
+        );
+
+        /*
+        ========================================
+        EXPIRED CHECK
+        ========================================
+        */
+        const expired =
+          subData?.expires_at
+            ? new Date(
+                subData.expires_at
+              ).getTime() <
+              Date.now()
+            : false;
+
+        setIsExpired(
+          expired
+        );
+
+      } catch (err) {
+
+        console.error(
+          "LOAD USER ERROR:",
+          err
+        );
+
+      } finally {
+
+        setLoading(
+          false
+        );
+      }
+    };
+
+  /*
+  ========================================
+  AUTH LISTENER
   ========================================
   */
   useEffect(() => {
 
-    supabase.auth
-      .getUser()
-      .then(({ data }) => {
+    loadUser();
 
-        if (data.user) {
+    const {
+      data:
+        authListener,
+    } =
+      supabase.auth.onAuthStateChange(
+        async (
+          event,
+          session
+        ) => {
 
-          setUserEmail(
-            data.user.email
-          );
+          /*
+          ========================================
+          SIGNED OUT
+          ========================================
+          */
+          if (
+            event ===
+            "SIGNED_OUT"
+          ) {
+
+            setUserEmail("");
+
+            setSubscription(
+              null
+            );
+
+            setIsExpired(
+              false
+            );
+
+            setSidebarOpen(
+              false
+            );
+
+            /*
+            ========================================
+            REDIRECT
+            ========================================
+            */
+            window.location.href =
+              "/";
+
+            return;
+          }
+
+          /*
+          ========================================
+          SIGNED IN
+          ========================================
+          */
+          if (
+            event ===
+              "SIGNED_IN" &&
+            session?.user
+          ) {
+
+            await loadUser();
+          }
+
+          /*
+          ========================================
+          TOKEN REFRESH
+          ========================================
+          */
+          if (
+            event ===
+            "TOKEN_REFRESHED"
+          ) {
+
+            console.log(
+              "Session refreshed"
+            );
+          }
         }
-      });
+      );
+
+    return () => {
+
+      authListener
+        ?.subscription
+        ?.unsubscribe();
+    };
 
   }, []);
 
@@ -65,14 +296,71 @@ export default function MainLayout() {
   const handleLogout =
     async () => {
 
-      await supabase.auth.signOut();
+      try {
 
-      navigate("/");
+        setSidebarOpen(
+          false
+        );
+
+        /*
+        ========================================
+        SIGN OUT
+        ========================================
+        */
+        const {
+          error,
+        } =
+          await supabase.auth.signOut({
+
+            scope:
+              "global",
+          });
+
+        if (error) {
+
+          console.error(
+            "Logout Error:",
+            error.message
+          );
+
+          return;
+        }
+
+        /*
+        ========================================
+        CLEAR STATES
+        ========================================
+        */
+        setUserEmail("");
+
+        setSubscription(
+          null
+        );
+
+        setIsExpired(
+          false
+        );
+
+        /*
+        ========================================
+        REDIRECT
+        ========================================
+        */
+        window.location.href =
+          "/";
+
+      } catch (err) {
+
+        console.error(
+          "Logout Failed:",
+          err
+        );
+      }
     };
 
   /*
   ========================================
-  NAVIGATION LINKS
+  LINKS
   ========================================
   */
   const workspaceLinks = [
@@ -111,50 +399,90 @@ export default function MainLayout() {
     },
   ];
 
+  /*
+  ========================================
+  LOADING
+  ========================================
+  */
+  if (loading) {
+
+    return (
+
+      <div className="min-h-screen bg-[#050816] flex items-center justify-center text-white">
+
+        <div className="flex flex-col items-center gap-4">
+
+          <div className="w-14 h-14 rounded-full border-4 border-purple-500/20 border-t-purple-500 animate-spin"></div>
+
+          <p className="text-sm text-gray-400">
+
+            Loading Workspace...
+
+          </p>
+
+        </div>
+
+      </div>
+    );
+  }
+
   return (
 
-    <div className="min-h-screen bg-[#081120] text-white flex">
+    <div className="min-h-screen bg-[#050816] text-white flex overflow-hidden">
 
-      {/* ========================================
-      MOBILE TOPBAR
-      ======================================== */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 z-50 bg-[#081120]/95 backdrop-blur-xl border-b border-white/5 flex items-center justify-between px-4">
+      {/* BACKGROUND */}
+      <div className="fixed top-[-200px] left-[-200px] w-[400px] h-[400px] bg-purple-600/10 blur-[140px] rounded-full"></div>
+
+      <div className="fixed bottom-[-200px] right-[-200px] w-[400px] h-[400px] bg-blue-600/10 blur-[140px] rounded-full"></div>
+
+      {/* MOBILE TOPBAR */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 z-50 bg-[#081120]/90 backdrop-blur-2xl border-b border-white/5 flex items-center justify-between px-4">
 
         {/* LOGO */}
         <div className="flex items-center gap-3">
 
-          <div className="w-10 h-10 rounded-2xl overflow-hidden bg-white/5 border border-white/10 shadow-[0_0_30px_rgba(127,90,240,0.35)]">
+          <div className="relative">
 
-            <img
-              src={logo}
-              alt="AIAERA Logo"
-              className="w-full h-full object-cover"
-            />
+            <div className="absolute inset-0 bg-purple-500/20 blur-[20px] rounded-2xl"></div>
+
+            <div className="relative w-11 h-11 rounded-2xl overflow-hidden bg-white/5 border border-white/10">
+
+              <img
+                src={logo}
+                alt="AIAERA"
+                className="w-full h-full object-cover"
+              />
+
+            </div>
 
           </div>
 
           <div>
 
-            <h1 className="text-lg font-bold tracking-tight text-white">
+            <h1 className="text-lg font-black tracking-tight">
+
               AIAERA
+
             </h1>
 
             <p className="text-[10px] text-gray-400">
+
               AI Workspace
+
             </p>
 
           </div>
 
         </div>
 
-        {/* MOBILE MENU */}
+        {/* MENU */}
         <button
           onClick={() =>
             setSidebarOpen(
               !sidebarOpen
             )
           }
-          className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/5 flex items-center justify-center"
+          className="w-11 h-11 rounded-2xl bg-white/[0.04] border border-white/5 flex items-center justify-center"
         >
 
           {sidebarOpen ? (
@@ -167,13 +495,11 @@ export default function MainLayout() {
 
       </div>
 
-      {/* ========================================
-      MOBILE OVERLAY
-      ======================================== */}
+      {/* MOBILE OVERLAY */}
       {sidebarOpen && (
 
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
           onClick={() =>
             setSidebarOpen(false)
           }
@@ -181,17 +507,17 @@ export default function MainLayout() {
 
       )}
 
-      {/* ========================================
-      SIDEBAR
-      ======================================== */}
+      {/* SIDEBAR */}
       <aside
         className={`
           fixed top-0 left-0 z-50
-          h-screen w-[255px]
-          bg-[#0B1120]
+          h-screen w-[280px]
+          bg-[#0B1120]/95
+          backdrop-blur-3xl
           border-r border-white/5
           flex flex-col
           transition-all duration-300
+          overflow-hidden
 
           ${
             sidebarOpen
@@ -203,169 +529,347 @@ export default function MainLayout() {
         `}
       >
 
-        {/* TOP */}
-        <div className="px-5 pt-6">
+        {/* GLOW */}
+        <div className="absolute top-[-80px] right-[-80px] w-[200px] h-[200px] bg-purple-500/10 blur-[100px] rounded-full"></div>
 
-          {/* DESKTOP LOGO */}
-          <div className="flex items-center gap-3 mb-10">
+        {/* LOGO */}
+        <div className="relative z-10 px-6 pt-6 pb-5 border-b border-white/5">
 
-            <div className="w-12 h-12 rounded-2xl overflow-hidden bg-white/5 border border-white/10 shadow-[0_0_30px_rgba(127,90,240,0.35)]">
+          <div className="flex items-center gap-4">
 
-              <img
-                src={logo}
-                alt="AIAERA Logo"
-                className="w-full h-full object-cover"
-              />
+            <div className="relative">
+
+              <div className="absolute inset-0 bg-purple-500/20 blur-[20px] rounded-3xl"></div>
+
+              <div className="relative w-14 h-14 rounded-3xl overflow-hidden border border-white/10 bg-white/5">
+
+                <img
+                  src={logo}
+                  alt="AIAERA"
+                  className="w-full h-full object-cover"
+                />
+
+              </div>
 
             </div>
 
             <div>
 
-              <h1 className="text-xl font-bold tracking-tight text-white">
+              <h1 className="text-2xl font-black tracking-tight">
+
                 AIAERA
+
               </h1>
 
-              <p className="text-xs text-gray-400">
-                AI Workspace
-              </p>
+              <div className="flex items-center gap-2 mt-1">
+
+                <Sparkles
+                  size={11}
+                  className="text-purple-300"
+                />
+
+                <span className="text-[11px] text-gray-400">
+
+                  AI Business Automation
+
+                </span>
+
+              </div>
 
             </div>
 
           </div>
 
+        </div>
+
+        {/* EXPIRED */}
+        {isExpired && (
+
+          <div className="mx-4 mt-4 rounded-2xl border border-red-500/20 bg-red-500/10 p-4">
+
+            <div className="flex items-start gap-3">
+
+              <div className="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center">
+
+                <Crown
+                  size={16}
+                  className="text-red-300"
+                />
+
+              </div>
+
+              <div>
+
+                <h3 className="text-sm font-semibold text-red-200 mb-1">
+
+                  Subscription Expired
+
+                </h3>
+
+                <p className="text-[11px] text-red-100/70 leading-relaxed">
+
+                  Features are temporarily paused until renewal.
+
+                </p>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        )}
+
+        {/* NAVIGATION */}
+        <div className="relative z-10 flex-1 overflow-y-auto px-4 py-5">
+
           {/* WORKSPACE */}
           <div className="mb-8">
 
-            <p className="text-[10px] uppercase tracking-[0.25em] text-gray-600 mb-3 px-3">
-              Workspace
-            </p>
+            <div className="px-3 mb-3">
 
-            <nav className="space-y-1">
+              <p className="text-[11px] uppercase tracking-[2px] text-gray-500 font-semibold">
+
+                Workspace
+
+              </p>
+
+            </div>
+
+            <div className="space-y-2">
 
               {workspaceLinks.map(
-                (link) => {
+                (item) => {
 
                   const Icon =
-                    link.icon;
+                    item.icon;
 
                   return (
 
                     <NavLink
-                      key={link.path}
-                      to={link.path}
+                      key={item.path}
+                      to={item.path}
                       onClick={() =>
                         setSidebarOpen(false)
                       }
                       className={({
                         isActive,
                       }) =>
-                        `group flex items-center gap-3 px-3 py-3 rounded-2xl transition-all duration-200 ${
-                          isActive
-                            ? "bg-gradient-to-r from-[#7f5af0] to-[#6c63ff] text-white shadow-lg shadow-purple-500/20"
-                            : "text-gray-400 hover:bg-white/[0.04] hover:text-white"
-                        }`
+                        `
+                          group
+                          flex
+                          items-center
+                          justify-between
+                          px-4
+                          h-[58px]
+                          rounded-2xl
+                          transition-all
+                          border
+                          ${
+                            isActive
+                              ? `
+                                bg-gradient-to-r
+                                from-[#7f5af0]
+                                to-blue-500
+                                border-purple-400/30
+                                shadow-[0_10px_40px_rgba(127,90,240,0.35)]
+                              `
+                              : `
+                                bg-white/[0.03]
+                                border-white/5
+                                hover:bg-white/[0.05]
+                              `
+                          }
+                        `
                       }
                     >
 
-                      <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-white/[0.04] group-hover:bg-white/[0.07] transition-all">
+                      <div className="flex items-center gap-4">
 
-                        <Icon size={17} />
+                        <div className="w-10 h-10 rounded-xl bg-black/20 flex items-center justify-center">
+
+                          <Icon size={18} />
+
+                        </div>
+
+                        <span className="font-medium">
+
+                          {item.name}
+
+                        </span>
 
                       </div>
 
-                      <span className="text-sm font-medium">
-                        {link.name}
-                      </span>
+                      <ChevronRight
+                        size={16}
+                        className="opacity-50 group-hover:translate-x-1 transition-all"
+                      />
 
                     </NavLink>
+
                   );
                 }
               )}
 
-            </nav>
+            </div>
 
           </div>
 
           {/* SETTINGS */}
           <div>
 
-            <p className="text-[10px] uppercase tracking-[0.25em] text-gray-600 mb-3 px-3">
-              Settings
-            </p>
+            <div className="px-3 mb-3">
 
-            <nav className="space-y-1">
+              <p className="text-[11px] uppercase tracking-[2px] text-gray-500 font-semibold">
+
+                Settings
+
+              </p>
+
+            </div>
+
+            <div className="space-y-2">
 
               {settingsLinks.map(
-                (link) => {
+                (item) => {
 
                   const Icon =
-                    link.icon;
+                    item.icon;
 
                   return (
 
                     <NavLink
-                      key={link.path}
-                      to={link.path}
+                      key={item.path}
+                      to={item.path}
                       onClick={() =>
                         setSidebarOpen(false)
                       }
                       className={({
                         isActive,
                       }) =>
-                        `group flex items-center gap-3 px-3 py-3 rounded-2xl transition-all duration-200 ${
-                          isActive
-                            ? "bg-gradient-to-r from-[#7f5af0] to-[#6c63ff] text-white shadow-lg shadow-purple-500/20"
-                            : "text-gray-400 hover:bg-white/[0.04] hover:text-white"
-                        }`
+                        `
+                          group
+                          flex
+                          items-center
+                          justify-between
+                          px-4
+                          h-[58px]
+                          rounded-2xl
+                          transition-all
+                          border
+                          ${
+                            isActive
+                              ? `
+                                bg-gradient-to-r
+                                from-[#7f5af0]
+                                to-blue-500
+                                border-purple-400/30
+                              `
+                              : `
+                                bg-white/[0.03]
+                                border-white/5
+                                hover:bg-white/[0.05]
+                              `
+                          }
+                        `
                       }
                     >
 
-                      <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-white/[0.04] group-hover:bg-white/[0.07] transition-all">
+                      <div className="flex items-center gap-4">
 
-                        <Icon size={17} />
+                        <div className="w-10 h-10 rounded-xl bg-black/20 flex items-center justify-center">
+
+                          <Icon size={18} />
+
+                        </div>
+
+                        <span className="font-medium">
+
+                          {item.name}
+
+                        </span>
 
                       </div>
 
-                      <span className="text-sm font-medium">
-                        {link.name}
-                      </span>
+                      <ChevronRight
+                        size={16}
+                        className="opacity-50 group-hover:translate-x-1 transition-all"
+                      />
 
                     </NavLink>
+
                   );
                 }
               )}
 
-            </nav>
+            </div>
 
           </div>
 
         </div>
 
-        {/* ========================================
-        BOTTOM
-        ======================================== */}
-        <div className="p-5 mt-auto border-t border-white/5">
+        {/* BOTTOM */}
+        <div className="relative z-10 p-4 border-t border-white/5">
 
-          {/* USER CARD */}
-          <div className="rounded-2xl bg-white/[0.03] border border-white/5 p-4 mb-3 backdrop-blur-xl">
+          {/* USER */}
+          <div className="rounded-3xl border border-white/5 bg-white/[0.03] p-4 mb-4">
 
-            <p className="text-[11px] text-gray-500 mb-1">
-              Logged in as
-            </p>
+            <div className="flex items-center gap-3">
 
-            <p className="text-sm font-medium truncate text-gray-200">
-              {userEmail || "Loading..."}
-            </p>
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#7f5af0] to-blue-500 flex items-center justify-center font-bold text-lg">
+
+                {userEmail?.charAt(0)?.toUpperCase() ||
+                  "A"}
+
+              </div>
+
+              <div className="min-w-0">
+
+                <h3 className="text-sm font-semibold truncate">
+
+                  {userEmail ||
+                    "User"}
+
+                </h3>
+
+                <p className="text-xs text-gray-400 truncate">
+
+                  {subscription?.plan ||
+                    "trial"}{" "}
+                  plan
+
+                </p>
+
+              </div>
+
+            </div>
 
           </div>
 
           {/* LOGOUT */}
           <button
-            onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-white/[0.03] border border-white/5 text-gray-300 hover:bg-red-500/10 hover:border-red-500/20 hover:text-red-300 transition-all duration-200"
+            onClick={
+              handleLogout
+            }
+            className="
+              w-full
+              h-[56px]
+              rounded-2xl
+              bg-red-500/10
+              border
+              border-red-500/10
+              hover:bg-red-500/20
+              transition-all
+              flex
+              items-center
+              justify-center
+              gap-3
+              text-red-300
+              font-medium
+            "
           >
 
-            <LogOut size={17} />
+            <LogOut size={18} />
 
             Logout
 
@@ -375,18 +879,10 @@ export default function MainLayout() {
 
       </aside>
 
-      {/* ========================================
-      MAIN CONTENT
-      ======================================== */}
-      <main className="flex-1 lg:ml-[255px] min-h-screen bg-[#0F172A]">
+      {/* MAIN */}
+      <main className="flex-1 lg:ml-[280px] min-h-screen">
 
-        {/* BG EFFECTS */}
-        <div className="fixed top-[-200px] right-[-100px] w-[350px] h-[350px] bg-purple-600/10 blur-[140px] rounded-full pointer-events-none"></div>
-
-        <div className="fixed bottom-[-200px] left-[-100px] w-[300px] h-[300px] bg-blue-600/10 blur-[120px] rounded-full pointer-events-none"></div>
-
-        {/* PAGE CONTENT */}
-        <div className="relative z-10 max-w-7xl mx-auto p-5 lg:p-8 pt-24 lg:pt-8 pb-32">
+        <div className="p-4 lg:p-8 pt-20 lg:pt-8 relative z-10">
 
           <Outlet />
 

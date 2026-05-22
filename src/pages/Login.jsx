@@ -10,8 +10,9 @@ import {
   Eye,
   EyeOff,
   ArrowRight,
-  Activity,
   CheckCircle2,
+  Clock3,
+  Zap,
 } from "lucide-react";
 
 import { motion } from "framer-motion";
@@ -20,37 +21,58 @@ import logo from "../assets/aiaera-logo.png";
 
 export default function Login() {
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] =
+    useState("");
 
-  const [loading, setLoading] = useState(false);
+  const [password, setPassword] =
+    useState("");
 
-  const [errorMsg, setErrorMsg] = useState("");
+  const [loading, setLoading] =
+    useState(false);
 
-  const [showPassword, setShowPassword] = useState(false);
+  const [errorMsg, setErrorMsg] =
+    useState("");
 
-  const [resetLoading, setResetLoading] = useState(false);
+  const [showPassword, setShowPassword] =
+    useState(false);
 
-  const [resetMessage, setResetMessage] = useState("");
+  const [resetLoading, setResetLoading] =
+    useState(false);
 
-  const navigate = useNavigate();
+  const [resetMessage, setResetMessage] =
+    useState("");
 
-  /* ========================================= */
-  /* AUTH CHECK */
-  /* ========================================= */
+  const [trialInfo, setTrialInfo] =
+    useState(null);
+
+  const navigate =
+    useNavigate();
+
+  /*
+  =========================================
+  AUTH CHECK
+  =========================================
+  */
   useEffect(() => {
 
     let mounted = true;
 
-    const checkUser = async () => {
+    const checkUser =
+      async () => {
 
-      const { data } = await supabase.auth.getUser();
+        const { data } =
+          await supabase.auth.getUser();
 
-      if (mounted && data.user) {
-        navigate("/app/dashboard");
-      }
+        if (
+          mounted &&
+          data.user
+        ) {
 
-    };
+          navigate(
+            "/app/dashboard"
+          );
+        }
+      };
 
     checkUser();
 
@@ -60,101 +82,107 @@ export default function Login() {
 
   }, [navigate]);
 
-  /* ========================================= */
-  /* LOGIN */
-  /* ========================================= */
-  const handleLogin = async (e) => {
+  /*
+  =========================================
+  LOGIN
+  =========================================
+  */
+  const handleLogin =
+    async (e) => {
 
-    e.preventDefault();
+      e.preventDefault();
 
-    setLoading(true);
-
-    setErrorMsg("");
-
-    try {
-
-      const { error } =
-        await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-      if (error) throw error;
-
-      navigate("/app/dashboard");
-
-    } catch (err) {
-
-      setErrorMsg(
-        err.message || "Login failed"
-      );
-
-    } finally {
-
-      setLoading(false);
-
-    }
-
-  };
-
-  /* ========================================= */
-  /* RESET PASSWORD */
-  /* ========================================= */
-  const handleForgotPassword = async () => {
-
-    if (!email) {
-
-      setErrorMsg(
-        "Please enter your email first"
-      );
-
-      return;
-    }
-
-    try {
-
-      setResetLoading(true);
+      setLoading(true);
 
       setErrorMsg("");
 
-      setResetMessage("");
+      try {
 
-      const { error } =
-        await supabase.auth.resetPasswordForEmail(
-          email,
-          {
-            redirectTo:
-              `${window.location.origin}/reset-password`,
-          }
+        const { error } =
+          await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+
+        if (error)
+          throw error;
+
+        navigate(
+          "/app/dashboard"
         );
 
-      if (error) throw error;
+      } catch (err) {
 
-      setResetMessage(
-        "Password reset email sent successfully!"
-      );
+        setErrorMsg(
+          err.message ||
+            "Login failed"
+        );
 
-    } catch (err) {
+      } finally {
 
-      setErrorMsg(
-        err.message ||
-        "Failed to send reset email"
-      );
+        setLoading(false);
+      }
+    };
 
-    } finally {
+  /*
+  =========================================
+  RESET PASSWORD
+  =========================================
+  */
+  const handleForgotPassword =
+    async () => {
 
-      setResetLoading(false);
+      if (!email) {
 
-    }
+        setErrorMsg(
+          "Please enter your email first"
+        );
 
-  };
+        return;
+      }
+
+      try {
+
+        setResetLoading(true);
+
+        setErrorMsg("");
+
+        setResetMessage("");
+
+        const { error } =
+          await supabase.auth.resetPasswordForEmail(
+            email,
+            {
+              redirectTo:
+                `${window.location.origin}/reset-password`,
+            }
+          );
+
+        if (error)
+          throw error;
+
+        setResetMessage(
+          "Password reset email sent successfully!"
+        );
+
+      } catch (err) {
+
+        setErrorMsg(
+          err.message ||
+            "Failed to send reset email"
+        );
+
+      } finally {
+
+        setResetLoading(false);
+      }
+    };
 
   return (
+
     <div className="min-h-screen bg-[#050816] relative overflow-hidden flex items-center justify-center px-6 py-10">
 
-      {/* ========================================= */}
       {/* BACKGROUND */}
-      {/* ========================================= */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
 
         <div className="absolute top-[-150px] left-[-120px] w-[450px] h-[450px] bg-purple-600/25 blur-[140px] rounded-full"></div>
@@ -172,14 +200,10 @@ export default function Login() {
 
       </div>
 
-      {/* ========================================= */}
       {/* MAIN */}
-      {/* ========================================= */}
       <div className="relative z-10 w-full max-w-7xl grid lg:grid-cols-2 gap-20 items-center">
 
-        {/* ========================================= */}
         {/* LEFT SIDE */}
-        {/* ========================================= */}
         <motion.div
           initial={{
             opacity: 0,
@@ -203,7 +227,7 @@ export default function Login() {
             />
 
             <span className="text-sm text-gray-300">
-              AI-Powered Customer Automation
+              AI Automation Platform
             </span>
 
           </div>
@@ -212,6 +236,7 @@ export default function Login() {
           <h1 className="text-7xl font-black leading-[0.92] tracking-[-4px] text-white mb-8">
 
             Welcome Back
+
             <span className="block bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
 
               To AIAERA
@@ -223,8 +248,10 @@ export default function Login() {
           {/* DESC */}
           <p className="text-gray-400 text-xl leading-relaxed mb-14 max-w-xl">
 
-            Manage AI chatbots, automate customer conversations,
-            capture leads, and scale support with intelligent AI.
+            Manage AI chatbots,
+            automate customer conversations,
+            capture leads,
+            and scale support with intelligent AI.
 
           </p>
 
@@ -235,33 +262,31 @@ export default function Login() {
               icon={
                 <Bot className="text-purple-400" />
               }
-              title="Smart AI Chatbots"
-              desc="Train AI using your business data"
+              title="Website AI Chatbots"
+              desc="Train AI using your business knowledge"
             />
 
             <FeatureCard
               icon={
                 <Rocket className="text-blue-400" />
               }
-              title="Deploy Everywhere"
-              desc="Website, WhatsApp & social integrations"
+              title="Lead & Appointment Automation"
+              desc="Capture and convert customers automatically"
             />
 
             <FeatureCard
               icon={
                 <ShieldCheck className="text-pink-400" />
               }
-              title="Enterprise Security"
-              desc="Protected with Supabase authentication"
+              title="WhatsApp & Social AI"
+              desc="Unlock omnichannel automation with Pro"
             />
 
           </div>
 
         </motion.div>
 
-        {/* ========================================= */}
         {/* RIGHT SIDE */}
-        {/* ========================================= */}
         <motion.div
           initial={{
             opacity: 0,
@@ -277,11 +302,7 @@ export default function Login() {
           className="w-full max-w-md mx-auto relative"
         >
 
-         
-
-          {/* ========================================= */}
           {/* LOGIN CARD */}
-          {/* ========================================= */}
           <div className="relative rounded-[36px] p-[1px] bg-gradient-to-br from-purple-500/30 via-white/10 to-blue-500/30 shadow-[0_20px_120px_rgba(0,0,0,0.55)]">
 
             <div className="relative bg-[#0B1120]/90 backdrop-blur-3xl rounded-[36px] p-8 overflow-hidden">
@@ -289,21 +310,15 @@ export default function Login() {
               {/* GLOW */}
               <div className="absolute top-[-120px] right-[-120px] w-[280px] h-[280px] bg-purple-500/20 blur-[120px] rounded-full"></div>
 
-              {/* ========================================= */}
               {/* LOGO */}
-              {/* ========================================= */}
               <div className="relative flex justify-center mb-10">
 
-                {/* PURPLE GLOW */}
                 <div className="absolute w-24 h-24 bg-purple-500/20 blur-[55px] rounded-[28px]"></div>
 
-                {/* SMALL PREMIUM BOX */}
                 <div className="relative w-[88px] h-[88px] rounded-[24px] border border-white/10 bg-[#0A0F1F] backdrop-blur-3xl flex items-center justify-center shadow-[0_20px_60px_rgba(124,58,237,0.35)]">
 
-                  {/* INNER LIGHT */}
                   <div className="absolute inset-[1px] rounded-[23px] bg-gradient-to-br from-white/5 to-transparent"></div>
 
-                  {/* LOGO */}
                   <img
                     src={logo}
                     alt="AIAERA"
@@ -317,25 +332,47 @@ export default function Login() {
               {/* HEADER */}
               <div className="text-center mb-8">
 
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-purple-500/20 bg-purple-500/10 mb-5">
+
+                  <Clock3
+                    size={15}
+                    className="text-purple-300"
+                  />
+
+                  <span className="text-sm text-purple-200 font-medium">
+                    Continue Your AI Journey
+                  </span>
+
+                </div>
+
                 <h2 className="text-5xl font-black text-white mb-3 tracking-[-2px]">
+
                   Login To AIAERA
+
                 </h2>
 
                 <p className="text-gray-400 leading-relaxed">
-                  Continue building your AI automation platform
+
+                  Access your AI automation dashboard
+
                 </p>
 
               </div>
 
               {/* ERROR */}
               {errorMsg && (
+
                 <div className="mb-5 p-4 rounded-2xl bg-red-500/15 border border-red-500/20 text-red-300 text-sm">
+
                   {errorMsg}
+
                 </div>
+
               )}
 
               {/* SUCCESS */}
               {resetMessage && (
+
                 <div className="mb-5 p-4 rounded-2xl bg-green-500/15 border border-green-500/20 text-green-300 text-sm flex items-center gap-2">
 
                   <CheckCircle2 size={16} />
@@ -343,6 +380,7 @@ export default function Login() {
                   {resetMessage}
 
                 </div>
+
               )}
 
               {/* FORM */}
@@ -352,7 +390,9 @@ export default function Login() {
                 <div className="mb-5">
 
                   <label className="block text-sm text-gray-300 mb-2">
+
                     Email Address
+
                   </label>
 
                   <input
@@ -361,7 +401,9 @@ export default function Login() {
                     className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:bg-white/10 transition-all"
                     value={email}
                     onChange={(e) =>
-                      setEmail(e.target.value)
+                      setEmail(
+                        e.target.value
+                      )
                     }
                     required
                   />
@@ -372,7 +414,9 @@ export default function Login() {
                 <div className="mb-3">
 
                   <label className="block text-sm text-gray-300 mb-2">
+
                     Password
+
                   </label>
 
                   <div className="relative">
@@ -387,7 +431,9 @@ export default function Login() {
                       className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 pr-14 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:bg-white/10 transition-all"
                       value={password}
                       onChange={(e) =>
-                        setPassword(e.target.value)
+                        setPassword(
+                          e.target.value
+                        )
                       }
                       required
                     />
@@ -434,40 +480,75 @@ export default function Login() {
 
                 </div>
 
-                {/* BUTTON */}
+                {/* LOGIN BUTTON */}
                 <button
                   disabled={loading}
                   className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:scale-[1.02] hover:shadow-xl hover:shadow-purple-500/20 transition-all duration-300 text-white font-semibold py-4 rounded-2xl flex items-center justify-center gap-2 disabled:opacity-50"
                 >
 
                   {loading ? (
+
                     <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+
                   ) : (
+
                     <>
                       Login
                       <ArrowRight size={18} />
                     </>
+
                   )}
 
                 </button>
 
               </form>
 
+              {/* TRIAL CTA */}
+              <div className="mt-6 p-4 rounded-2xl border border-purple-500/20 bg-purple-500/5">
+
+                <div className="flex items-start gap-3">
+
+                  <Sparkles
+                    size={18}
+                    className="text-purple-400 mt-0.5"
+                  />
+
+                  <div>
+
+                    <h4 className="text-sm font-semibold text-white mb-1">
+
+                      New To AIAERA?
+
+                    </h4>
+
+                    <p className="text-xs text-gray-400 leading-relaxed mb-3">
+
+                      Start your 7-day free trial and build AI chatbots for your business.
+
+                    </p>
+
+                    <Link
+                      to="/signup"
+                      className="inline-flex items-center gap-2 text-sm font-medium text-purple-300 hover:text-purple-200 transition"
+                    >
+
+                      Start Free Trial
+                      <ArrowRight size={14} />
+
+                    </Link>
+
+                  </div>
+
+                </div>
+
+              </div>
+
               {/* FOOTER */}
-              <div className="mt-8 text-center">
+              <div className="mt-8 flex items-center justify-center gap-2 text-xs text-gray-500">
 
-                <p className="text-gray-400">
+                <Zap size={14} />
 
-                  Don’t have an account?{" "}
-
-                  <Link
-                    to="/signup"
-                    className="text-purple-400 hover:text-purple-300 font-semibold transition"
-                  >
-                    Sign Up
-                  </Link>
-
-                </p>
+                AI-powered business automation platform
 
               </div>
 
@@ -490,6 +571,7 @@ function FeatureCard({
 }) {
 
   return (
+
     <motion.div
       whileHover={{
         y: -4,
@@ -506,11 +588,15 @@ function FeatureCard({
       <div>
 
         <h3 className="text-white font-semibold text-lg">
+
           {title}
+
         </h3>
 
         <p className="text-gray-400 text-sm">
+
           {desc}
+
         </p>
 
       </div>

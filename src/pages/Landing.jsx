@@ -13,22 +13,41 @@ const Landing = () => {
 
   /*
   ========================================
-  LOAD TEST CHATBOT
+  LOAD DEMO CHATBOT
   ========================================
   */
   useEffect(() => {
 
     /*
     ========================================
-    PREVENT DUPLICATE
+    REMOVE OLD INSTANCES
     ========================================
     */
-    if (
+    const oldScript =
       document.getElementById(
-        "aiaera-test-widget"
-      )
-    ) {
-      return;
+        "aiaera-demo-widget-script"
+      );
+
+    const oldIframe =
+      document.getElementById(
+        "aiaera-chatbot-widget"
+      );
+
+    const oldButton =
+      document.getElementById(
+        "aiaera-chatbot-button"
+      );
+
+    if (oldScript) {
+      oldScript.remove();
+    }
+
+    if (oldIframe) {
+      oldIframe.remove();
+    }
+
+    if (oldButton) {
+      oldButton.remove();
     }
 
     /*
@@ -42,12 +61,30 @@ const Landing = () => {
       );
 
     script.id =
-      "aiaera-test-widget";
+      "aiaera-demo-widget-script";
 
     script.src =
       "https://aiaera-backend.onrender.com/api/embed/6cffa8c2-93e8-41eb-84c0-573bec375622.js";
 
     script.async = true;
+
+    script.onload =
+      () => {
+
+        console.log(
+          "AIAERA demo chatbot loaded"
+        );
+
+      };
+
+    script.onerror =
+      () => {
+
+        console.error(
+          "Failed to load chatbot widget"
+        );
+
+      };
 
     document.body.appendChild(
       script
@@ -60,45 +97,61 @@ const Landing = () => {
     */
     return () => {
 
-      script.remove();
+      const widgetScript =
+        document.getElementById(
+          "aiaera-demo-widget-script"
+        );
 
-      const iframe =
+      const widgetIframe =
         document.getElementById(
           "aiaera-chatbot-widget"
         );
 
-      const button =
+      const widgetButton =
         document.getElementById(
           "aiaera-chatbot-button"
         );
 
-      if (iframe) {
-        iframe.remove();
+      if (widgetScript) {
+        widgetScript.remove();
       }
 
-      if (button) {
-        button.remove();
+      if (widgetIframe) {
+        widgetIframe.remove();
       }
+
+      if (widgetButton) {
+        widgetButton.remove();
+      }
+
     };
 
   }, []);
 
   return (
+
     <div className="min-h-screen bg-[#05010d] text-white overflow-hidden">
 
+      {/* NAVBAR */}
       <Navbar />
 
+      {/* HERO */}
       <HeroSection />
 
+      {/* FEATURES */}
       <FeaturesSection />
 
+      {/* PRICING */}
       <PricingSection />
 
+      {/* CTA */}
       <CTASection />
 
+      {/* FOOTER */}
       <Footer />
 
     </div>
+
   );
 };
 

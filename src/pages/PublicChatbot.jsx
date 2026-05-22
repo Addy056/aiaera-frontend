@@ -8,6 +8,18 @@ import {
   useParams,
 } from "react-router-dom";
 
+import {
+  Send,
+  Bot,
+  User,
+  Loader2,
+  Calendar,
+  MapPin,
+  Sparkles,
+  AlertTriangle,
+  ExternalLink,
+} from "lucide-react";
+
 const API_URL =
   import.meta.env.VITE_API_URL;
 
@@ -42,6 +54,9 @@ export default function PublicChatbot() {
   const [fetching, setFetching] =
     useState(true);
 
+  const [expired, setExpired] =
+    useState(false);
+
   const [integrations, setIntegrations] =
     useState({
       provider: "calendly",
@@ -49,88 +64,35 @@ export default function PublicChatbot() {
       maps: "",
     });
 
-  const [leadCollected, setLeadCollected] =
-    useState(false);
-
-  const [leadAsked, setLeadAsked] =
-    useState(false);
-
-  const [theme, setTheme] =
-    useState({
-      botName:
-        "Assistant",
-
-      logo: "",
-    });
-
-  /*
-  ========================================
-  REFS
-  ========================================
-  */
-  const chatEndRef =
+  const messagesEndRef =
     useRef(null);
 
   /*
   ========================================
-  SESSION
-  ========================================
-  */
-  const sessionId =
-    useRef(
-      sessionStorage.getItem(
-        `chat_session_${id}`
-      ) ||
-        crypto.randomUUID()
-    );
-
-  /*
-  ========================================
-  SAVE SESSION
+  SCROLL
   ========================================
   */
   useEffect(() => {
 
-    sessionStorage.setItem(
-      `chat_session_${id}`,
-      sessionId.current
-    );
-
-  }, [id]);
-
-  /*
-  ========================================
-  AUTO SCROLL
-  ========================================
-  */
-  useEffect(() => {
-
-    chatEndRef.current
+    messagesEndRef.current
       ?.scrollIntoView({
-        behavior: "smooth",
+        behavior:
+          "smooth",
       });
 
   }, [messages]);
 
   /*
   ========================================
-  LOAD DATA
+  FETCH CHATBOT
   ========================================
   */
   useEffect(() => {
 
-    if (!id) return;
-
     fetchChatbot();
-    fetchIntegrations();
 
   }, [id]);
 
-  /*
-  ========================================
-  FETCH CHATBOT
-  ========================================
-  */
   const fetchChatbot =
     async () => {
 
@@ -140,166 +102,61 @@ export default function PublicChatbot() {
 
         const response =
           await fetch(
-            `${API_URL}/api/embed/chatbot/${id}`
+            `${API_URL}/api/chatbot/public/${id}`
           );
 
         const data =
           await response.json();
 
+        /*
+        ========================================
+        EXPIRED
+        ========================================
+        */
         if (
-          !data.success ||
-          !data.chatbot
+          data.subscription_expired
         ) {
 
-          throw new Error(
-            "Chatbot not found"
-          );
+          setExpired(true);
+
+          setMessages([
+            {
+              role: "bot",
+              text:
+                "This chatbot is temporarily unavailable.",
+            },
+          ]);
+
+          return;
         }
 
-        const bot =
-          data.chatbot;
+        setChatbot(data.chatbot);
 
-        setChatbot(bot);
+        setIntegrations({
+          provider:
+            data.integrations
+              ?.provider ||
+            "calendly",
 
-        setTheme({
-          botName:
-            bot.bot_name ||
-            "Assistant",
-
-          logo:
-            bot.theme?.logo ||
+          meeting_link:
+            data.integrations
+              ?.meeting_link ||
             "",
+
+          maps:
+            data.integrations
+              ?.maps || "",
         });
 
-      } catch (err) {
+      } catch (error) {
 
-        console.error(
-          "CHATBOT LOAD ERROR:",
-          err
-        );
+        console.error(error);
 
       } finally {
 
         setFetching(false);
+
       }
-    };
-
-  /*
-  ========================================
-  FETCH INTEGRATIONS
-  ========================================
-  */
-  const fetchIntegrations =
-    async () => {
-
-      try {
-
-        const response =
-          await fetch(
-            `${API_URL}/api/integrations/public/${id}`
-          );
-
-        if (!response.ok) {
-          return;
-        }
-
-        const data =
-          await response.json();
-
-        if (data.success) {
-
-          setIntegrations({
-            provider:
-              data.integrations
-                ?.provider ||
-              "calendly",
-
-            meeting_link:
-              data.integrations
-                ?.meeting_link || "",
-
-            maps:
-              data.integrations
-                ?.maps || "",
-          });
-        }
-
-      } catch (err) {
-
-        console.error(
-          "INTEGRATIONS ERROR:",
-          err
-        );
-      }
-    };
-
-  /*
-  ========================================
-  QUICK ACTIONS
-  ========================================
-  */
-  const handleQuickAction =
-    (
-      type,
-      label
-    ) => {
-
-      let response =
-        "";
-
-      if (
-        type === "booking"
-      ) {
-
-        response =
-          integrations.meeting_link
-            ? `📅 Book here:\n${integrations.meeting_link}`
-            : "Booking link not configured yet.";
-      }
-
-      if (
-        type === "maps"
-      ) {
-
-        response =
-          integrations.maps
-            ? `📍 Visit us:\n${integrations.maps}`
-            : "Office location not configured yet.";
-      }
-
-      setMessages(
-        (prev) => [
-          ...prev,
-          {
-            role: "user",
-            text: label,
-          },
-          {
-            role: "bot",
-            text: response,
-          },
-        ]
-      );
-    };
-
-  /*
-  ========================================
-  EMAIL + PHONE DETECTION
-  ========================================
-  */
-  const containsLeadInfo =
-    (text) => {
-
-      const emailRegex =
-        /\S+@\S+\.\S+/;
-
-      const phoneRegex =
-        /(\+?\d[\d\s-]{7,})/;
-
-      return (
-        emailRegex.test(text) ||
-        phoneRegex.test(text)
-      );
     };
 
   /*
@@ -312,41 +169,40 @@ export default function PublicChatbot() {
 
       if (
         !input.trim() ||
-        loading
-      ) {
+        loading ||
+        expired
+      )
         return;
-      }
 
-      const msg =
-        input.trim();
+      const userMessage = {
+        role: "user",
+        text: input,
+      };
 
-      if (
-        containsLeadInfo(msg)
-      ) {
-
-        setLeadCollected(true);
-      }
+      const updatedMessages = [
+        ...messages,
+        userMessage,
+      ];
 
       setMessages(
-        (prev) => [
-          ...prev,
-          {
-            role: "user",
-            text: msg,
-          },
-        ]
+        updatedMessages
       );
 
+      const currentInput =
+        input;
+
       setInput("");
-      setLoading(true);
 
       try {
+
+        setLoading(true);
 
         const response =
           await fetch(
             `${API_URL}/api/chatbot/chat`,
             {
-              method: "POST",
+              method:
+                "POST",
 
               headers: {
                 "Content-Type":
@@ -355,14 +211,11 @@ export default function PublicChatbot() {
 
               body:
                 JSON.stringify({
-                  chatbot_id:
-                    id,
-
-                  session_id:
-                    sessionId.current,
-
+                  chatbotId: id,
                   message:
-                    msg,
+                    currentInput,
+                  messages:
+                    updatedMessages,
                 }),
             }
           );
@@ -370,19 +223,22 @@ export default function PublicChatbot() {
         const data =
           await response.json();
 
-        if (
-          !response.ok ||
-          !data.success
-        ) {
+        /*
+        ========================================
+        ERROR
+        ========================================
+        */
+        if (data.error) {
 
           setMessages(
-            (prev) => [
+            (
+              prev
+            ) => [
               ...prev,
               {
                 role: "bot",
                 text:
-                  data?.reply ||
-                  "⚠️ Server error",
+                  data.error,
               },
             ]
           );
@@ -390,81 +246,37 @@ export default function PublicChatbot() {
           return;
         }
 
-        let botReply =
-          data.reply ||
-          "No response available.";
-
-        const userMessageCount =
-          messages.filter(
-            (m) =>
-              m.role === "user"
-          ).length + 1;
-
-        const interestKeywords = [
-          "price",
-          "pricing",
-          "cost",
-          "service",
-          "demo",
-          "appointment",
-          "consultation",
-          "help",
-          "business",
-          "buy",
-          "call",
-          "zoom",
-          "meeting",
-          "schedule",
-        ];
-
-        const interested =
-          interestKeywords.some(
-            (word) =>
-              msg
-                .toLowerCase()
-                .includes(word)
-          );
-
-        if (
-          !leadCollected &&
-          !leadAsked &&
-          (
-            userMessageCount >= 3 ||
-            interested
-          )
-        ) {
-
-          botReply += `
-
-Could you also share your email and phone number so our team can assist you better?`;
-
-          setLeadAsked(true);
-        }
-
+        /*
+        ========================================
+        BOT MESSAGE
+        ========================================
+        */
         setMessages(
-          (prev) => [
+          (
+            prev
+          ) => [
             ...prev,
             {
               role: "bot",
               text:
-                botReply,
+                data.reply,
             },
           ]
         );
 
-      } catch (err) {
+      } catch (error) {
 
-        console.error(
-          "CHAT ERROR:",
-          err);
+        console.error(error);
 
         setMessages(
-          (prev) => [
+          (
+            prev
+          ) => [
             ...prev,
             {
               role: "bot",
               text:
-                "⚠️ Service temporarily unavailable.",
+                "Something went wrong. Please try again later.",
             },
           ]
         );
@@ -472,66 +284,27 @@ Could you also share your email and phone number so our team can assist you bett
       } finally {
 
         setLoading(false);
+
       }
     };
 
   /*
   ========================================
-  RENDER MESSAGE
+  ENTER
   ========================================
   */
-  const renderMessage =
-    (text) => {
+  const handleKeyDown =
+    (e) => {
 
-      return (
-        <div className="whitespace-pre-wrap break-words text-sm leading-relaxed">
+      if (
+        e.key ===
+        "Enter"
+      ) {
 
-          {text
-            ?.split(
-              /(https?:\/\/[^\s]+)/g
-            )
-            .map(
-              (
-                part,
-                index
-              ) => {
+        e.preventDefault();
 
-                const isLink =
-                  part.match(
-                    /^https?:\/\/[^\s]+$/
-                  );
-
-                if (isLink) {
-
-                  return (
-                    <a
-                      key={index}
-                      href={part}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="
-                        text-purple-500
-                        underline
-                        break-all
-                        hover:text-purple-400
-                        transition-all
-                      "
-                    >
-                      {part}
-                    </a>
-                  );
-                }
-
-                return (
-                  <span key={index}>
-                    {part}
-                  </span>
-                );
-              }
-            )}
-
-        </div>
-      );
+        sendMessage();
+      }
     };
 
   /*
@@ -542,197 +315,413 @@ Could you also share your email and phone number so our team can assist you bett
   if (fetching) {
 
     return (
-      <div className="w-full h-full flex items-center justify-center bg-white text-black">
-        Loading...
-      </div>
-    );
-  }
 
-  /*
-  ========================================
-  NOT FOUND
-  ========================================
-  */
-  if (!chatbot) {
+      <div className="min-h-screen bg-[#050816] flex items-center justify-center">
 
-    return (
-      <div className="w-full h-full flex items-center justify-center bg-white text-black">
-        Chatbot not found
+        <div className="flex flex-col items-center">
+
+          <Loader2
+            size={36}
+            className="animate-spin text-purple-400 mb-4"
+          />
+
+          <p className="text-sm text-gray-400">
+
+            Loading AI assistant...
+
+          </p>
+
+        </div>
+
       </div>
     );
   }
 
   return (
 
-    <div
-      className="
-        w-full
-        overflow-hidden
-        bg-white
-        flex
-        flex-col
-      "
-      style={{
-        height: "100dvh",
-        maxHeight: "100dvh",
-      }}
-    >
+    <div className="min-h-screen bg-[#050816] flex items-center justify-center p-4 overflow-hidden relative">
 
-      {/* HEADER */}
-      <div className="h-[74px] px-5 border-b border-gray-200 bg-white flex items-center justify-between shrink-0">
+      {/* BACKGROUND */}
+      <div className="absolute top-[-120px] left-[-120px] w-[300px] h-[300px] bg-purple-600/20 blur-[120px] rounded-full"></div>
 
-        <div className="flex items-center gap-3 min-w-0">
+      <div className="absolute bottom-[-120px] right-[-120px] w-[300px] h-[300px] bg-blue-600/20 blur-[120px] rounded-full"></div>
 
-          {theme.logo ? (
-            <img
-              src={theme.logo}
-              alt="logo"
-              className="w-11 h-11 rounded-2xl object-cover"
-            />
-          ) : (
-            <div className="w-11 h-11 rounded-2xl flex items-center justify-center font-bold bg-black text-white">
-              AI
+      {/* CHATBOT */}
+      <div className="relative w-full max-w-5xl h-[92vh] rounded-[36px] border border-white/10 bg-[#0B1120]/90 backdrop-blur-3xl overflow-hidden shadow-[0_20px_120px_rgba(0,0,0,0.55)]">
+
+        {/* HEADER */}
+        <div className="h-[90px] border-b border-white/10 px-6 flex items-center justify-between bg-white/[0.02]">
+
+          {/* LEFT */}
+          <div className="flex items-center gap-4">
+
+            <div className="relative">
+
+              <div className="absolute inset-0 bg-purple-500/20 blur-[20px] rounded-2xl"></div>
+
+              <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-[#7f5af0] to-blue-500 flex items-center justify-center border border-white/10">
+
+                <Bot
+                  size={24}
+                  className="text-white"
+                />
+
+              </div>
+
             </div>
-          )}
 
-          <div className="min-w-0">
+            <div>
 
-            <h2 className="text-[15px] font-semibold truncate text-black">
-              {theme.botName}
-            </h2>
+              <div className="flex items-center gap-2 mb-1">
 
-            <p className="text-green-500 text-xs">
-              ● Online
-            </p>
+                <h2 className="text-lg font-bold text-white">
+
+                  {chatbot?.bot_name ||
+                    "AI Assistant"}
+
+                </h2>
+
+                <div className="w-2 h-2 rounded-full bg-green-400"></div>
+
+              </div>
+
+              <p className="text-sm text-gray-400">
+
+                AI-powered customer assistant
+
+              </p>
+
+            </div>
+
+          </div>
+
+          {/* BADGE */}
+          <div className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/20">
+
+            <Sparkles
+              size={14}
+              className="text-purple-300"
+            />
+
+            <span className="text-xs text-purple-200">
+
+              Powered by AIAERA
+
+            </span>
 
           </div>
 
         </div>
 
-      </div>
+        {/* EXPIRED */}
+        {expired && (
 
-      {/* CHAT AREA */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 bg-[#f5f5f5]">
+          <div className="mx-6 mt-5 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 flex items-start gap-3">
 
-        <div className="flex flex-col gap-3 min-h-full">
+            <div className="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center">
 
-          {/* QUICK ACTIONS */}
-          <div className="flex flex-wrap gap-2 mb-2">
+              <AlertTriangle
+                size={18}
+                className="text-red-300"
+              />
 
-            <button
-              onClick={() =>
-                handleQuickAction(
-                  "booking",
-                  "Book Appointment"
-                )
-              }
-              className="px-4 py-2 rounded-full text-sm bg-white text-black font-medium border border-gray-200"
-            >
-              📅 Book Appointment
-            </button>
+            </div>
 
-            <button
-              onClick={() =>
-                handleQuickAction(
-                  "maps",
-                  "Visit Office"
-                )
-              }
-              className="px-4 py-2 rounded-full text-sm bg-white text-black font-medium border border-gray-200"
-            >
-              📍 Visit Office
-            </button>
+            <div>
+
+              <h3 className="font-semibold text-red-200 mb-1">
+
+                Chatbot Unavailable
+
+              </h3>
+
+              <p className="text-sm text-red-100/80">
+
+                The subscription for this chatbot has expired.
+
+              </p>
+
+            </div>
 
           </div>
 
+        )}
+
+        {/* MESSAGES */}
+        <div className="h-[calc(100%-180px)] overflow-y-auto px-6 py-6 space-y-5">
+
           {messages.map(
             (
-              msg,
+              message,
               index
             ) => (
 
               <div
                 key={index}
                 className={`flex ${
-                  msg.role === "user"
+                  message.role ===
+                  "user"
                     ? "justify-end"
                     : "justify-start"
                 }`}
               >
 
                 <div
-                  className="max-w-[82%] px-4 py-3 rounded-2xl text-sm whitespace-pre-wrap break-words"
-                  style={{
-                    background:
-                      msg.role === "user"
-                        ? "#000000"
-                        : "#FFFFFF",
-
-                    color:
-                      msg.role === "user"
-                        ? "#FFFFFF"
-                        : "#111111",
-
-                    border:
-                      msg.role === "bot"
-                        ? "1px solid #e5e7eb"
-                        : "none",
-                  }}
+                  className={`
+                    max-w-[85%]
+                    rounded-[28px]
+                    px-5
+                    py-4
+                    border
+                    backdrop-blur-xl
+                    ${
+                      message.role ===
+                      "user"
+                        ? `
+                          bg-gradient-to-br
+                          from-[#7f5af0]
+                          to-blue-500
+                          border-purple-400/30
+                          text-white
+                        `
+                        : `
+                          bg-white/[0.04]
+                          border-white/10
+                          text-gray-200
+                        `
+                    }
+                  `}
                 >
-                  {renderMessage(
-                    msg.text
-                  )}
+
+                  <div className="flex items-start gap-3">
+
+                    {/* ICON */}
+                    <div className={`
+                      min-w-[36px]
+                      h-[36px]
+                      rounded-xl
+                      flex
+                      items-center
+                      justify-center
+                      ${
+                        message.role ===
+                        "user"
+                          ? "bg-white/20"
+                          : "bg-purple-500/10"
+                      }
+                    `}>
+
+                      {message.role ===
+                      "user" ? (
+
+                        <User
+                          size={16}
+                        />
+
+                      ) : (
+
+                        <Bot
+                          size={16}
+                          className="text-purple-300"
+                        />
+
+                      )}
+
+                    </div>
+
+                    {/* TEXT */}
+                    <div className="leading-relaxed text-sm whitespace-pre-wrap">
+
+                      {message.text}
+
+                    </div>
+
+                  </div>
+
                 </div>
 
               </div>
+
             )
           )}
 
+          {/* LOADING */}
           {loading && (
-            <div className="text-xs text-gray-500 px-2">
-              {theme.botName} is typing...
+
+            <div className="flex justify-start">
+
+              <div className="rounded-[28px] px-5 py-4 border border-white/10 bg-white/[0.04]">
+
+                <div className="flex items-center gap-3">
+
+                  <Loader2
+                    size={16}
+                    className="animate-spin text-purple-300"
+                  />
+
+                  <span className="text-sm text-gray-300">
+
+                    AI is typing...
+
+                  </span>
+
+                </div>
+
+              </div>
+
             </div>
+
           )}
 
-          <div ref={chatEndRef} />
+          <div ref={messagesEndRef} />
 
         </div>
 
-      </div>
+        {/* FOOTER */}
+        <div className="border-t border-white/10 p-5 bg-white/[0.02]">
 
-      {/* INPUT */}
-      <div className="p-4 border-t border-gray-200 bg-white shrink-0">
+          {/* QUICK ACTIONS */}
+          {(integrations.meeting_link ||
+            integrations.maps) && (
 
-        <div className="flex items-center gap-2">
+            <div className="flex flex-wrap gap-3 mb-4">
 
-          <input
-            type="text"
-            placeholder="Type your message..."
-            value={input}
-            onChange={(e) =>
-              setInput(
-                e.target.value
-              )
-            }
-            onKeyDown={(e) => {
+              {/* APPOINTMENT */}
+              {integrations.meeting_link && (
 
-              if (
-                e.key === "Enter"
-              ) {
+                <a
+                  href={
+                    integrations.meeting_link
+                  }
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 h-11 px-5 rounded-2xl bg-purple-500/10 border border-purple-500/20 hover:bg-purple-500/20 transition-all text-sm"
+                >
 
-                sendMessage();
+                  <Calendar
+                    size={15}
+                    className="text-purple-300"
+                  />
+
+                  Book Appointment
+
+                  <ExternalLink
+                    size={14}
+                  />
+
+                </a>
+
+              )}
+
+              {/* MAPS */}
+              {integrations.maps && (
+
+                <a
+                  href={
+                    integrations.maps
+                  }
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 h-11 px-5 rounded-2xl bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 transition-all text-sm"
+                >
+
+                  <MapPin
+                    size={15}
+                    className="text-blue-300"
+                  />
+
+                  View Location
+
+                  <ExternalLink
+                    size={14}
+                  />
+
+                </a>
+
+              )}
+
+            </div>
+
+          )}
+
+          {/* INPUT */}
+          <div className="flex items-center gap-4">
+
+            <div className="flex-1 relative">
+
+              <input
+                type="text"
+                value={input}
+                onChange={(e) =>
+                  setInput(
+                    e.target.value
+                  )
+                }
+                onKeyDown={
+                  handleKeyDown
+                }
+                disabled={
+                  loading ||
+                  expired
+                }
+                placeholder={
+                  expired
+                    ? "Chatbot unavailable"
+                    : "Type your message..."
+                }
+                className="
+                  w-full
+                  h-[60px]
+                  rounded-2xl
+                  bg-[#111827]
+                  border
+                  border-white/10
+                  px-5
+                  pr-14
+                  text-white
+                  placeholder:text-gray-500
+                  outline-none
+                  focus:border-purple-500
+                  transition-all
+                "
+              />
+
+            </div>
+
+            <button
+              onClick={
+                sendMessage
               }
-            }}
-            className="flex-1 h-12 px-4 rounded-2xl bg-white border border-gray-300 outline-none text-sm text-black placeholder:text-gray-400"
-          />
+              disabled={
+                loading ||
+                expired ||
+                !input.trim()
+              }
+              className={`
+                min-w-[60px]
+                h-[60px]
+                rounded-2xl
+                flex
+                items-center
+                justify-center
+                transition-all
+                ${
+                  loading ||
+                  expired ||
+                  !input.trim()
+                    ? "bg-white/5 text-gray-500 cursor-not-allowed"
+                    : "bg-gradient-to-br from-[#7f5af0] to-blue-500 hover:scale-[1.03] shadow-[0_10px_40px_rgba(127,90,240,0.35)]"
+                }
+              `}
+            >
 
-          <button
-            onClick={sendMessage}
-            disabled={loading}
-            className="h-12 px-6 rounded-2xl bg-black text-white font-semibold text-sm transition-all hover:scale-105 disabled:opacity-50"
-          >
-            Send
-          </button>
+              <Send
+                size={18}
+              />
+
+            </button>
+
+          </div>
 
         </div>
 
