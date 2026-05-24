@@ -381,7 +381,7 @@ export default function PublicChatbot() {
       <div className="absolute bottom-[-120px] right-[-120px] w-[300px] h-[300px] bg-blue-600/20 blur-[120px] rounded-full"></div>
 
       {/* CHATBOT */}
-      <div className="relative w-full max-w-5xl h-[92vh] rounded-[36px] border border-white/10 bg-[#0B1120]/90 backdrop-blur-3xl overflow-hidden shadow-[0_20px_120px_rgba(0,0,0,0.55)]">
+      <div className="relative w-full max-w-5xl h-[92vh] flex flex-col rounded-[36px] border border-white/10 bg-[#0B1120]/90 backdrop-blur-3xl overflow-hidden shadow-[0_20px_120px_rgba(0,0,0,0.55)]">
 
         {/* HEADER */}
         <div className="h-[90px] border-b border-white/10 px-6 flex items-center justify-between bg-white/[0.02]">
@@ -482,7 +482,7 @@ export default function PublicChatbot() {
         )}
 
         {/* MESSAGES */}
-        <div className="h-[calc(100%-180px)] overflow-y-auto px-6 py-6 space-y-5">
+        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5 min-h-0">
 
           {messages.map(
             (
