@@ -134,11 +134,6 @@ export default function PublicChatbot() {
         const data =
           await response.json();
 
-        /*
-        ========================================
-        EXPIRED
-        ========================================
-        */
         if (
           data.subscription_expired
         ) {
@@ -169,11 +164,16 @@ export default function PublicChatbot() {
           meeting_link:
             data.integrations
               ?.meeting_link ||
+            data.integrations
+              ?.calendly_link ||
             "",
 
           maps:
             data.integrations
-              ?.maps || "",
+              ?.maps ||
+            data.integrations
+              ?.google_maps_link ||
+            "",
         });
 
       } catch (error) {
@@ -254,11 +254,6 @@ export default function PublicChatbot() {
         const data =
           await response.json();
 
-        /*
-        ========================================
-        ERROR
-        ========================================
-        */
         if (
           data.error
         ) {
@@ -279,11 +274,6 @@ export default function PublicChatbot() {
           return;
         }
 
-        /*
-        ========================================
-        BOT MESSAGE
-        ========================================
-        */
         setMessages(
           (
             prev
@@ -344,11 +334,6 @@ export default function PublicChatbot() {
       }
     };
 
-  /*
-  ========================================
-  INPUT RTL
-  ========================================
-  */
   const inputIsRTL =
     isRTLText(
       input
@@ -356,14 +341,14 @@ export default function PublicChatbot() {
 
   /*
   ========================================
-  LOADING SCREEN
+  LOADING
   ========================================
   */
   if (fetching) {
 
     return (
 
-      <div className="w-full h-full bg-[#050816] flex items-center justify-center">
+      <div className="w-screen h-[100dvh] bg-[#050816] flex items-center justify-center">
 
         <div className="flex flex-col items-center">
 
@@ -389,7 +374,7 @@ export default function PublicChatbot() {
     <div
       className={
         isEmbed
-          ? "w-full h-full bg-[#050816] overflow-hidden relative"
+          ? "w-screen h-[100dvh] bg-[#050816] overflow-hidden relative"
           : "min-h-screen bg-[#050816] flex items-center justify-center p-4 overflow-hidden relative"
       }
     >
@@ -407,7 +392,7 @@ export default function PublicChatbot() {
       <div className={`
         relative
         w-full
-        h-full
+        h-[100dvh]
         flex
         flex-col
         overflow-hidden
@@ -423,9 +408,8 @@ export default function PublicChatbot() {
       `}>
 
         {/* HEADER */}
-        <div className="min-h-[90px] border-b border-white/10 px-6 flex items-center justify-between bg-white/[0.02] shrink-0">
+        <div className="h-[92px] border-b border-white/10 px-6 flex items-center justify-between bg-white/[0.02] shrink-0">
 
-          {/* LEFT */}
           <div className="flex items-center gap-4">
 
             <div className="relative">
@@ -468,7 +452,6 @@ export default function PublicChatbot() {
 
           </div>
 
-          {/* BADGE */}
           <div className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/20">
 
             <Sparkles
@@ -486,42 +469,8 @@ export default function PublicChatbot() {
 
         </div>
 
-        {/* EXPIRED */}
-        {expired && (
-
-          <div className="mx-6 mt-5 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 flex items-start gap-3 shrink-0">
-
-            <div className="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center">
-
-              <AlertTriangle
-                size={18}
-                className="text-red-300"
-              />
-
-            </div>
-
-            <div>
-
-              <h3 className="font-semibold text-red-200 mb-1">
-
-                Chatbot Unavailable
-
-              </h3>
-
-              <p className="text-sm text-red-100/80">
-
-                The subscription for this chatbot has expired.
-
-              </p>
-
-            </div>
-
-          </div>
-
-        )}
-
         {/* MESSAGES */}
-        <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5 min-h-0">
+        <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5 min-h-0 pb-8">
 
           {messages.map(
             (
@@ -585,7 +534,6 @@ export default function PublicChatbot() {
                       }
                     `}>
 
-                      {/* ICON */}
                       <div className={`
                         min-w-[36px]
                         h-[36px]
@@ -620,7 +568,6 @@ export default function PublicChatbot() {
 
                       </div>
 
-                      {/* TEXT */}
                       <div
                         dir={
                           rtl
@@ -656,7 +603,6 @@ export default function PublicChatbot() {
             }
           )}
 
-          {/* LOADING */}
           {loading && (
 
             <div className="flex justify-start">
@@ -689,7 +635,7 @@ export default function PublicChatbot() {
         </div>
 
         {/* FOOTER */}
-        <div className="border-t border-white/10 p-4 bg-white/[0.02] shrink-0">
+        <div className="border-t border-white/10 p-4 bg-[#0B1120] shrink-0">
 
           {/* QUICK ACTIONS */}
           {(integrations.meeting_link ||
@@ -697,7 +643,6 @@ export default function PublicChatbot() {
 
             <div className="flex flex-wrap gap-3 mb-4">
 
-              {/* APPOINTMENT */}
               {integrations.meeting_link && (
 
                 <a
@@ -706,7 +651,7 @@ export default function PublicChatbot() {
                   }
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 h-11 px-5 rounded-2xl bg-purple-500/10 border border-purple-500/20 hover:bg-purple-500/20 transition-all text-sm"
+                  className="inline-flex items-center gap-2 h-11 px-5 rounded-2xl bg-purple-500/10 border border-purple-500/20 hover:bg-purple-500/20 transition-all text-sm text-white"
                 >
 
                   <Calendar
@@ -714,17 +659,12 @@ export default function PublicChatbot() {
                     className="text-purple-300"
                   />
 
-                  Book Appointment
-
-                  <ExternalLink
-                    size={14}
-                  />
+                  Book Meeting
 
                 </a>
 
               )}
 
-              {/* MAPS */}
               {integrations.maps && (
 
                 <a
@@ -733,7 +673,7 @@ export default function PublicChatbot() {
                   }
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 h-11 px-5 rounded-2xl bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 transition-all text-sm"
+                  className="inline-flex items-center gap-2 h-11 px-5 rounded-2xl bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 transition-all text-sm text-white"
                 >
 
                   <MapPin
@@ -741,11 +681,7 @@ export default function PublicChatbot() {
                     className="text-blue-300"
                   />
 
-                  View Location
-
-                  <ExternalLink
-                    size={14}
-                  />
+                  Visit Us
 
                 </a>
 
@@ -758,55 +694,51 @@ export default function PublicChatbot() {
           {/* INPUT */}
           <div className="flex items-center gap-3">
 
-            <div className="flex-1 relative">
-
-              <input
-                type="text"
-                dir={
+            <input
+              type="text"
+              dir={
+                inputIsRTL
+                  ? "rtl"
+                  : "ltr"
+              }
+              value={input}
+              onChange={(e) =>
+                setInput(
+                  e.target.value
+                )
+              }
+              onKeyDown={
+                handleKeyDown
+              }
+              disabled={
+                loading ||
+                expired
+              }
+              placeholder={
+                expired
+                  ? "Chatbot unavailable"
+                  : "Type your message..."
+              }
+              className={`
+                flex-1
+                h-[58px]
+                rounded-2xl
+                bg-[#111827]
+                border
+                border-white/10
+                px-5
+                text-white
+                placeholder:text-gray-500
+                outline-none
+                focus:border-purple-500
+                transition-all
+                ${
                   inputIsRTL
-                    ? "rtl"
-                    : "ltr"
+                    ? "text-right"
+                    : "text-left"
                 }
-                value={input}
-                onChange={(e) =>
-                  setInput(
-                    e.target.value
-                  )
-                }
-                onKeyDown={
-                  handleKeyDown
-                }
-                disabled={
-                  loading ||
-                  expired
-                }
-                placeholder={
-                  expired
-                    ? "Chatbot unavailable"
-                    : "Type your message..."
-                }
-                className={`
-                  w-full
-                  h-[58px]
-                  rounded-2xl
-                  bg-[#111827]
-                  border
-                  border-white/10
-                  px-5
-                  text-white
-                  placeholder:text-gray-500
-                  outline-none
-                  focus:border-purple-500
-                  transition-all
-                  ${
-                    inputIsRTL
-                      ? "text-right"
-                      : "text-left"
-                  }
-                `}
-              />
-
-            </div>
+              `}
+            />
 
             <button
               onClick={
@@ -831,7 +763,7 @@ export default function PublicChatbot() {
                   expired ||
                   !input.trim()
                     ? "bg-white/5 text-gray-500 cursor-not-allowed"
-                    : "bg-gradient-to-br from-[#7f5af0] to-blue-500 hover:scale-[1.03] shadow-[0_10px_40px_rgba(127,90,240,0.35)]"
+                    : "bg-gradient-to-br from-[#7f5af0] to-blue-500 hover:scale-[1.03]"
                 }
               `}
             >
