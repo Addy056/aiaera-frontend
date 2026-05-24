@@ -46,6 +46,16 @@ export default function PublicChatbot() {
 
   /*
   ========================================
+  EMBED MODE
+  ========================================
+  */
+  const isEmbed =
+    new URLSearchParams(
+      window.location.search
+    ).get("embed");
+
+  /*
+  ========================================
   STATES
   ========================================
   */
@@ -85,7 +95,7 @@ export default function PublicChatbot() {
 
   /*
   ========================================
-  SCROLL
+  AUTO SCROLL
   ========================================
   */
   useEffect(() => {
@@ -169,6 +179,7 @@ export default function PublicChatbot() {
       } catch (error) {
 
         console.error(
+          "FETCH CHATBOT ERROR:",
           error
         );
 
@@ -281,7 +292,8 @@ export default function PublicChatbot() {
             {
               role: "bot",
               text:
-                data.reply,
+                data.reply ||
+                "No response generated.",
             },
           ]
         );
@@ -289,6 +301,7 @@ export default function PublicChatbot() {
       } catch (error) {
 
         console.error(
+          "CHAT ERROR:",
           error
         );
 
@@ -314,7 +327,7 @@ export default function PublicChatbot() {
 
   /*
   ========================================
-  ENTER
+  ENTER KEY
   ========================================
   */
   const handleKeyDown =
@@ -343,14 +356,14 @@ export default function PublicChatbot() {
 
   /*
   ========================================
-  LOADING
+  LOADING SCREEN
   ========================================
   */
   if (fetching) {
 
     return (
 
-      <div className="min-h-screen bg-[#050816] flex items-center justify-center">
+      <div className="w-full h-full bg-[#050816] flex items-center justify-center">
 
         <div className="flex flex-col items-center">
 
@@ -373,18 +386,44 @@ export default function PublicChatbot() {
 
   return (
 
-    <div className="min-h-screen bg-[#050816] flex items-center justify-center p-4 overflow-hidden relative">
+    <div
+      className={
+        isEmbed
+          ? "w-full h-full bg-[#050816] overflow-hidden relative"
+          : "min-h-screen bg-[#050816] flex items-center justify-center p-4 overflow-hidden relative"
+      }
+    >
 
       {/* BACKGROUND */}
-      <div className="absolute top-[-120px] left-[-120px] w-[300px] h-[300px] bg-purple-600/20 blur-[120px] rounded-full"></div>
+      {!isEmbed && (
+        <>
+          <div className="absolute top-[-120px] left-[-120px] w-[300px] h-[300px] bg-purple-600/20 blur-[120px] rounded-full"></div>
 
-      <div className="absolute bottom-[-120px] right-[-120px] w-[300px] h-[300px] bg-blue-600/20 blur-[120px] rounded-full"></div>
+          <div className="absolute bottom-[-120px] right-[-120px] w-[300px] h-[300px] bg-blue-600/20 blur-[120px] rounded-full"></div>
+        </>
+      )}
 
       {/* CHATBOT */}
-      <div className="relative w-full max-w-5xl h-[92vh] flex flex-col rounded-[36px] border border-white/10 bg-[#0B1120]/90 backdrop-blur-3xl overflow-hidden shadow-[0_20px_120px_rgba(0,0,0,0.55)]">
+      <div className={`
+        relative
+        w-full
+        h-full
+        flex
+        flex-col
+        overflow-hidden
+        bg-[#0B1120]/95
+        border
+        border-white/10
+        shadow-[0_20px_120px_rgba(0,0,0,0.55)]
+        ${
+          isEmbed
+            ? "rounded-none"
+            : "max-w-5xl rounded-[36px]"
+        }
+      `}>
 
         {/* HEADER */}
-        <div className="h-[90px] border-b border-white/10 px-6 flex items-center justify-between bg-white/[0.02]">
+        <div className="min-h-[90px] border-b border-white/10 px-6 flex items-center justify-between bg-white/[0.02] shrink-0">
 
           {/* LEFT */}
           <div className="flex items-center gap-4">
@@ -450,7 +489,7 @@ export default function PublicChatbot() {
         {/* EXPIRED */}
         {expired && (
 
-          <div className="mx-6 mt-5 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 flex items-start gap-3">
+          <div className="mx-6 mt-5 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 flex items-start gap-3 shrink-0">
 
             <div className="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center">
 
@@ -482,7 +521,7 @@ export default function PublicChatbot() {
         )}
 
         {/* MESSAGES */}
-        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5 min-h-0">
+        <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5 min-h-0">
 
           {messages.map(
             (
@@ -509,7 +548,8 @@ export default function PublicChatbot() {
 
                   <div
                     className={`
-                      max-w-[85%]
+                      max-w-[88%]
+                      overflow-hidden
                       rounded-[28px]
                       px-5
                       py-4
@@ -553,6 +593,7 @@ export default function PublicChatbot() {
                         flex
                         items-center
                         justify-center
+                        shrink-0
                         ${
                           message.role ===
                           "user"
@@ -587,10 +628,12 @@ export default function PublicChatbot() {
                             : "ltr"
                         }
                         className={`
+                          flex-1
                           leading-relaxed
                           text-sm
                           whitespace-pre-wrap
                           break-words
+                          overflow-hidden
                           ${
                             rtl
                               ? "text-right"
@@ -646,7 +689,7 @@ export default function PublicChatbot() {
         </div>
 
         {/* FOOTER */}
-        <div className="border-t border-white/10 p-5 bg-white/[0.02]">
+        <div className="border-t border-white/10 p-4 bg-white/[0.02] shrink-0">
 
           {/* QUICK ACTIONS */}
           {(integrations.meeting_link ||
@@ -713,7 +756,7 @@ export default function PublicChatbot() {
           )}
 
           {/* INPUT */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
 
             <div className="flex-1 relative">
 
@@ -744,13 +787,12 @@ export default function PublicChatbot() {
                 }
                 className={`
                   w-full
-                  h-[60px]
+                  h-[58px]
                   rounded-2xl
                   bg-[#111827]
                   border
                   border-white/10
                   px-5
-                  pr-14
                   text-white
                   placeholder:text-gray-500
                   outline-none
@@ -776,13 +818,14 @@ export default function PublicChatbot() {
                 !input.trim()
               }
               className={`
-                min-w-[60px]
-                h-[60px]
+                min-w-[58px]
+                h-[58px]
                 rounded-2xl
                 flex
                 items-center
                 justify-center
                 transition-all
+                shrink-0
                 ${
                   loading ||
                   expired ||
