@@ -105,40 +105,128 @@ export default function Login() {
 
       e.preventDefault();
 
+      /*
+      =========================================
+      PREVENT MULTIPLE CLICKS
+      =========================================
+      */
+      if (loading)
+        return;
+
       setLoading(true);
 
       setErrorMsg("");
 
       try {
 
-        const {
-          error,
-        } =
-          await supabase.auth.signInWithPassword({
+        /*
+        =========================================
+        LOGIN REQUEST
+        =========================================
+        */
+        const loginPromise =
+          supabase.auth.signInWithPassword({
 
-            email,
-            password,
+            email:
+              email.trim(),
+
+            password:
+              password.trim(),
           });
-
-        if (error)
-          throw error;
 
         /*
         =========================================
-        WAIT FOR SESSION SAVE
+        TIMEOUT PROTECTION
+        =========================================
+        */
+        const timeoutPromise =
+          new Promise(
+            (_, reject) =>
+
+              setTimeout(() => {
+
+                reject(
+                  new Error(
+                    "Login request timed out. Please try again."
+                  )
+                );
+
+              }, 10000)
+          );
+
+        /*
+        =========================================
+        WAIT FOR LOGIN
+        =========================================
+        */
+        const result =
+          await Promise.race([
+            loginPromise,
+            timeoutPromise,
+          ]);
+
+        console.log(
+          "LOGIN RESULT:",
+          result
+        );
+
+        /*
+        =========================================
+        ERROR CHECK
+        =========================================
+        */
+        if (
+          result?.error
+        ) {
+
+          throw result.error;
+        }
+
+        /*
+        =========================================
+        VERIFY SESSION
+        =========================================
+        */
+        const {
+          data: sessionData,
+        } =
+          await supabase.auth.getSession();
+
+        console.log(
+          "SESSION:",
+          sessionData
+        );
+
+        /*
+        =========================================
+        SESSION FAILED
+        =========================================
+        */
+        if (
+          !sessionData?.session
+        ) {
+
+          throw new Error(
+            "Session could not be created."
+          );
+        }
+
+        /*
+        =========================================
+        WAIT FOR STORAGE
         =========================================
         */
         await new Promise(
           (resolve) =>
             setTimeout(
               resolve,
-              700
+              1200
             )
         );
 
         /*
         =========================================
-        FULL PAGE REDIRECT
+        REDIRECT
         =========================================
         */
         window.location.href =
@@ -152,7 +240,7 @@ export default function Login() {
         );
 
         setErrorMsg(
-          err.message ||
+          err?.message ||
             "Login failed"
         );
 
@@ -648,6 +736,5 @@ function FeatureCard({
       </div>
 
     </motion.div>
-
   );
 }
