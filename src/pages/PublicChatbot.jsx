@@ -23,6 +23,22 @@ import {
 const API_URL =
   import.meta.env.VITE_API_URL;
 
+/*
+========================================
+RTL LANGUAGE DETECTION
+========================================
+*/
+const isRTLText =
+  (text = "") => {
+
+    const rtlRegex =
+      /[\u0591-\u07FF\uFB1D-\uFDFD\uFE70-\uFEFC]/;
+
+    return rtlRegex.test(
+      text
+    );
+  };
+
 export default function PublicChatbot() {
 
   const { id } =
@@ -130,7 +146,9 @@ export default function PublicChatbot() {
           return;
         }
 
-        setChatbot(data.chatbot);
+        setChatbot(
+          data.chatbot
+        );
 
         setIntegrations({
           provider:
@@ -150,7 +168,9 @@ export default function PublicChatbot() {
 
       } catch (error) {
 
-        console.error(error);
+        console.error(
+          error
+        );
 
       } finally {
 
@@ -228,7 +248,9 @@ export default function PublicChatbot() {
         ERROR
         ========================================
         */
-        if (data.error) {
+        if (
+          data.error
+        ) {
 
           setMessages(
             (
@@ -266,7 +288,9 @@ export default function PublicChatbot() {
 
       } catch (error) {
 
-        console.error(error);
+        console.error(
+          error
+        );
 
         setMessages(
           (
@@ -306,6 +330,16 @@ export default function PublicChatbot() {
         sendMessage();
       }
     };
+
+  /*
+  ========================================
+  INPUT RTL
+  ========================================
+  */
+  const inputIsRTL =
+    isRTLText(
+      input
+    );
 
   /*
   ========================================
@@ -387,7 +421,7 @@ export default function PublicChatbot() {
 
               <p className="text-sm text-gray-400">
 
-                AI-powered customer assistant
+                Multilingual AI assistant
 
               </p>
 
@@ -454,85 +488,120 @@ export default function PublicChatbot() {
             (
               message,
               index
-            ) => (
+            ) => {
 
-              <div
-                key={index}
-                className={`flex ${
-                  message.role ===
-                  "user"
-                    ? "justify-end"
-                    : "justify-start"
-                }`}
-              >
+              const rtl =
+                isRTLText(
+                  message.text
+                );
+
+              return (
 
                 <div
-                  className={`
-                    max-w-[85%]
-                    rounded-[28px]
-                    px-5
-                    py-4
-                    border
-                    backdrop-blur-xl
-                    ${
-                      message.role ===
-                      "user"
-                        ? `
-                          bg-gradient-to-br
-                          from-[#7f5af0]
-                          to-blue-500
-                          border-purple-400/30
-                          text-white
-                        `
-                        : `
-                          bg-white/[0.04]
-                          border-white/10
-                          text-gray-200
-                        `
-                    }
-                  `}
+                  key={index}
+                  className={`flex ${
+                    message.role ===
+                    "user"
+                      ? "justify-end"
+                      : "justify-start"
+                  }`}
                 >
 
-                  <div className="flex items-start gap-3">
-
-                    {/* ICON */}
-                    <div className={`
-                      min-w-[36px]
-                      h-[36px]
-                      rounded-xl
-                      flex
-                      items-center
-                      justify-center
+                  <div
+                    className={`
+                      max-w-[85%]
+                      rounded-[28px]
+                      px-5
+                      py-4
+                      border
+                      backdrop-blur-xl
                       ${
                         message.role ===
                         "user"
-                          ? "bg-white/20"
-                          : "bg-purple-500/10"
+                          ? `
+                            bg-gradient-to-br
+                            from-[#7f5af0]
+                            to-blue-500
+                            border-purple-400/30
+                            text-white
+                          `
+                          : `
+                            bg-white/[0.04]
+                            border-white/10
+                            text-gray-200
+                          `
+                      }
+                    `}
+                  >
+
+                    <div className={`
+                      flex
+                      items-start
+                      gap-3
+                      ${
+                        rtl
+                          ? "flex-row-reverse"
+                          : ""
                       }
                     `}>
 
-                      {message.role ===
-                      "user" ? (
+                      {/* ICON */}
+                      <div className={`
+                        min-w-[36px]
+                        h-[36px]
+                        rounded-xl
+                        flex
+                        items-center
+                        justify-center
+                        ${
+                          message.role ===
+                          "user"
+                            ? "bg-white/20"
+                            : "bg-purple-500/10"
+                        }
+                      `}>
 
-                        <User
-                          size={16}
-                        />
+                        {message.role ===
+                        "user" ? (
 
-                      ) : (
+                          <User
+                            size={16}
+                          />
 
-                        <Bot
-                          size={16}
-                          className="text-purple-300"
-                        />
+                        ) : (
 
-                      )}
+                          <Bot
+                            size={16}
+                            className="text-purple-300"
+                          />
 
-                    </div>
+                        )}
 
-                    {/* TEXT */}
-                    <div className="leading-relaxed text-sm whitespace-pre-wrap">
+                      </div>
 
-                      {message.text}
+                      {/* TEXT */}
+                      <div
+                        dir={
+                          rtl
+                            ? "rtl"
+                            : "ltr"
+                        }
+                        className={`
+                          leading-relaxed
+                          text-sm
+                          whitespace-pre-wrap
+                          break-words
+                          ${
+                            rtl
+                              ? "text-right"
+                              : "text-left"
+                          }
+                        `}
+                      >
+
+                        {message.text}
+
+                      </div>
 
                     </div>
 
@@ -540,9 +609,8 @@ export default function PublicChatbot() {
 
                 </div>
 
-              </div>
-
-            )
+              );
+            }
           )}
 
           {/* LOADING */}
@@ -651,6 +719,11 @@ export default function PublicChatbot() {
 
               <input
                 type="text"
+                dir={
+                  inputIsRTL
+                    ? "rtl"
+                    : "ltr"
+                }
                 value={input}
                 onChange={(e) =>
                   setInput(
@@ -669,7 +742,7 @@ export default function PublicChatbot() {
                     ? "Chatbot unavailable"
                     : "Type your message..."
                 }
-                className="
+                className={`
                   w-full
                   h-[60px]
                   rounded-2xl
@@ -683,7 +756,12 @@ export default function PublicChatbot() {
                   outline-none
                   focus:border-purple-500
                   transition-all
-                "
+                  ${
+                    inputIsRTL
+                      ? "text-right"
+                      : "text-left"
+                  }
+                `}
               />
 
             </div>

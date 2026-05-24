@@ -64,8 +64,7 @@ const Landing = () => {
       "aiaera-demo-widget-script";
 
     script.src =
-      "https://aiaera-backend.onrender.com/api/embed/6cffa8c2-93e8-41eb-84c0-573bec375622.js";
-
+  "https://aiaera-backend.onrender.com/api/embed/1b6ffa18-7b85-47fb-9cf7-e8c89c91b6bc.js";
     script.async = true;
 
     script.onload =

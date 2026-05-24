@@ -54,16 +54,39 @@ export default function Signup() {
     const checkUser =
       async () => {
 
-        const { data } =
-          await supabase.auth.getUser();
+        try {
 
-        if (
-          mounted &&
-          data.user
-        ) {
+          const {
+            data,
+            error,
+          } =
+            await supabase.auth.getUser();
 
-          navigate(
-            "/app/dashboard"
+          console.log(
+            "GET USER:",
+            data
+          );
+
+          console.log(
+            "GET USER ERROR:",
+            error
+          );
+
+          if (
+            mounted &&
+            data?.user
+          ) {
+
+            navigate(
+              "/app/dashboard"
+            );
+          }
+
+        } catch (err) {
+
+          console.log(
+            "CHECK USER ERROR:",
+            err
           );
         }
       };
@@ -94,6 +117,11 @@ export default function Signup() {
 
       try {
 
+        /*
+        =========================================
+        CREATE AUTH USER
+        =========================================
+        */
         const {
           data,
           error,
@@ -103,55 +131,99 @@ export default function Signup() {
             password,
           });
 
+        console.log(
+          "SIGNUP DATA:",
+          data
+        );
+
+        console.log(
+          "SIGNUP ERROR:",
+          error
+        );
+
         if (error)
           throw error;
 
         const user =
-          data.user;
+          data?.user;
+
+        if (!user) {
+
+          throw new Error(
+            "User creation failed"
+          );
+        }
 
         /*
         =========================================
         CREATE 7 DAY TRIAL
         =========================================
         */
-        if (user) {
+        const expiresAt =
+          new Date();
 
-          const expiresAt =
-            new Date();
+        expiresAt.setDate(
+          expiresAt.getDate() +
+            7
+        );
 
-          expiresAt.setDate(
-            expiresAt.getDate() +
-              7
-          );
-
+        const {
+          data: subData,
+          error: subError,
+        } =
           await supabase
             .from(
               "user_subscriptions"
             )
-            .upsert({
-              user_id:
-                user.id,
+            .upsert(
+              {
+                user_id:
+                  user.id,
 
-              plan:
-                "trial",
+                plan:
+                  "trial",
 
-              status:
-                "active",
+                status:
+                  "active",
 
-              messages_used:
-                0,
+                messages_used:
+                  0,
 
-              messages_limit:
-                200,
+                messages_limit:
+                  200,
 
-              started_at:
-                new Date().toISOString(),
+                started_at:
+                  new Date().toISOString(),
 
-              expires_at:
-                expiresAt.toISOString(),
-            });
+                expires_at:
+                  expiresAt.toISOString(),
+              },
+              {
+                onConflict:
+                  "user_id",
+              }
+            );
+
+        console.log(
+          "SUBSCRIPTION DATA:",
+          subData
+        );
+
+        console.log(
+          "SUBSCRIPTION ERROR:",
+          subError
+        );
+
+        if (subError) {
+
+          throw subError;
         }
 
+        /*
+        =========================================
+        SUCCESS
+        =========================================
+        */
         setSuccessMsg(
           "🎉 Your 7-day free trial has started! Please verify your email."
         );
@@ -166,8 +238,13 @@ export default function Signup() {
 
       } catch (err) {
 
+        console.log(
+          "FINAL SIGNUP ERROR:",
+          err
+        );
+
         setErrorMsg(
-          err.message ||
+          err?.message ||
             "Signup failed"
         );
 
@@ -383,7 +460,6 @@ export default function Signup() {
               {/* FORM */}
               <form onSubmit={handleSignup}>
 
-                {/* EMAIL */}
                 <div className="mb-5">
 
                   <label className="block text-sm text-gray-300 mb-2">
@@ -407,7 +483,6 @@ export default function Signup() {
 
                 </div>
 
-                {/* PASSWORD */}
                 <div className="mb-6">
 
                   <label className="block text-sm text-gray-300 mb-2">
@@ -457,7 +532,6 @@ export default function Signup() {
 
                 </div>
 
-                {/* TRIAL INFO */}
                 <div className="mb-6 p-4 rounded-2xl border border-purple-500/20 bg-purple-500/5">
 
                   <div className="flex items-start gap-3">
@@ -505,7 +579,6 @@ export default function Signup() {
 
                 </div>
 
-                {/* BUTTON */}
                 <button
                   disabled={loading}
                   className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:scale-[1.02] hover:shadow-xl hover:shadow-purple-500/20 transition-all duration-300 text-white font-semibold py-4 rounded-2xl flex items-center justify-center gap-2 disabled:opacity-50"
@@ -528,7 +601,6 @@ export default function Signup() {
 
               </form>
 
-              {/* TERMS */}
               <div className="mt-5 flex items-center justify-center gap-2 text-xs text-gray-500">
 
                 <Zap size={14} />
@@ -537,7 +609,6 @@ export default function Signup() {
 
               </div>
 
-              {/* FOOTER */}
               <div className="mt-8 text-center">
 
                 <p className="text-gray-400">
