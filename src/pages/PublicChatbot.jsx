@@ -16,8 +16,6 @@ import {
   Calendar,
   MapPin,
   Sparkles,
-  AlertTriangle,
-  ExternalLink,
 } from "lucide-react";
 
 const API_URL =
@@ -359,7 +357,7 @@ export default function PublicChatbot() {
 
           <p className="text-sm text-gray-400">
 
-            Loading AI assistant...
+            Loading {chatbot?.bot_name || "Assistant"}...
 
           </p>
 
@@ -379,7 +377,6 @@ export default function PublicChatbot() {
       }
     >
 
-      {/* BACKGROUND */}
       {!isEmbed && (
         <>
           <div className="absolute top-[-120px] left-[-120px] w-[300px] h-[300px] bg-purple-600/20 blur-[120px] rounded-full"></div>
@@ -388,7 +385,6 @@ export default function PublicChatbot() {
         </>
       )}
 
-      {/* CHATBOT */}
       <div className={`
         relative
         w-full
@@ -416,12 +412,24 @@ export default function PublicChatbot() {
 
               <div className="absolute inset-0 bg-purple-500/20 blur-[20px] rounded-2xl"></div>
 
-              <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-[#7f5af0] to-blue-500 flex items-center justify-center border border-white/10">
+              <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-[#7f5af0] to-blue-500 flex items-center justify-center border border-white/10 overflow-hidden">
 
-                <Bot
-                  size={24}
-                  className="text-white"
-                />
+                {chatbot?.theme?.logo ? (
+
+                  <img
+                    src={chatbot.theme.logo}
+                    alt="Business Logo"
+                    className="w-full h-full object-cover"
+                  />
+
+                ) : (
+
+                  <Bot
+                    size={24}
+                    className="text-white"
+                  />
+
+                )}
 
               </div>
 
@@ -534,6 +542,7 @@ export default function PublicChatbot() {
                       }
                     `}>
 
+                      {/* ICON */}
                       <div className={`
                         min-w-[36px]
                         h-[36px]
@@ -541,6 +550,7 @@ export default function PublicChatbot() {
                         flex
                         items-center
                         justify-center
+                        overflow-hidden
                         shrink-0
                         ${
                           message.role ===
@@ -557,6 +567,16 @@ export default function PublicChatbot() {
                             size={16}
                           />
 
+                        ) : chatbot?.theme?.logo ? (
+
+                          <img
+                            src={
+                              chatbot.theme.logo
+                            }
+                            alt="Bot Logo"
+                            className="w-full h-full object-cover"
+                          />
+
                         ) : (
 
                           <Bot
@@ -568,6 +588,7 @@ export default function PublicChatbot() {
 
                       </div>
 
+                      {/* TEXT */}
                       <div
                         dir={
                           rtl
@@ -603,11 +624,12 @@ export default function PublicChatbot() {
             }
           )}
 
+          {/* LOADING */}
           {loading && (
 
             <div className="flex justify-start">
 
-              <div className="rounded-[28px] px-5 py-4 border border-white/10 bg-white/[0.04]">
+              <div className="rounded-[28px] px-5 py-4 border border-white/10 bg-white/[0.04] max-w-[85%]">
 
                 <div className="flex items-center gap-3">
 
@@ -618,7 +640,7 @@ export default function PublicChatbot() {
 
                   <span className="text-sm text-gray-300">
 
-                    AI is typing...
+                    {chatbot?.bot_name || "Assistant"} is typing...
 
                   </span>
 
@@ -637,7 +659,6 @@ export default function PublicChatbot() {
         {/* FOOTER */}
         <div className="border-t border-white/10 p-4 bg-[#0B1120] shrink-0">
 
-          {/* QUICK ACTIONS */}
           {(integrations.meeting_link ||
             integrations.maps) && (
 
