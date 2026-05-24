@@ -63,23 +63,18 @@ export default function MainLayout() {
 
         /*
         ========================================
-        GET USER
+        GET SESSION
         ========================================
         */
         const {
-          data,
+          data: { session },
           error,
         } =
-          await supabase.auth.getUser();
+          await supabase.auth.getSession();
 
-        /*
-        ========================================
-        NO USER
-        ========================================
-        */
         if (
           error ||
-          !data?.user
+          !session?.user
         ) {
 
           setUserEmail("");
@@ -99,18 +94,21 @@ export default function MainLayout() {
           return;
         }
 
+        const user =
+          session.user;
+
         /*
         ========================================
         USER EMAIL
         ========================================
         */
         setUserEmail(
-          data.user.email || ""
+          user.email || ""
         );
 
         /*
         ========================================
-        GET SUBSCRIPTION
+        FETCH SUBSCRIPTION
         ========================================
         */
         const {
@@ -124,7 +122,7 @@ export default function MainLayout() {
             .select("*")
             .eq(
               "user_id",
-              data.user.id
+              user.id
             )
             .maybeSingle();
 
@@ -155,7 +153,7 @@ export default function MainLayout() {
 
         /*
         ========================================
-        SET SUBSCRIPTION
+        SAVE SUBSCRIPTION
         ========================================
         */
         setSubscription(
@@ -164,7 +162,7 @@ export default function MainLayout() {
 
         /*
         ========================================
-        EXPIRED CHECK
+        CHECK EXPIRY
         ========================================
         */
         const expired =
@@ -201,8 +199,20 @@ export default function MainLayout() {
   */
   useEffect(() => {
 
+    let mounted = true;
+
+    /*
+    ========================================
+    INITIAL LOAD
+    ========================================
+    */
     loadUser();
 
+    /*
+    ========================================
+    AUTH STATE CHANGES
+    ========================================
+    */
     const {
       data:
         authListener,
@@ -212,6 +222,14 @@ export default function MainLayout() {
           event,
           session
         ) => {
+
+          if (!mounted)
+            return;
+
+          console.log(
+            "AUTH EVENT:",
+            event
+          );
 
           /*
           ========================================
@@ -236,14 +254,6 @@ export default function MainLayout() {
             setSidebarOpen(
               false
             );
-
-            /*
-            ========================================
-            REDIRECT
-            ========================================
-            */
-            window.location.href =
-              "/";
 
             return;
           }
@@ -279,7 +289,14 @@ export default function MainLayout() {
         }
       );
 
+    /*
+    ========================================
+    CLEANUP
+    ========================================
+    */
     return () => {
+
+      mounted = false;
 
       authListener
         ?.subscription
@@ -302,11 +319,6 @@ export default function MainLayout() {
           false
         );
 
-        /*
-        ========================================
-        SIGN OUT
-        ========================================
-        */
         const {
           error,
         } =
@@ -328,7 +340,7 @@ export default function MainLayout() {
 
         /*
         ========================================
-        CLEAR STATES
+        RESET STATE
         ========================================
         */
         setUserEmail("");
@@ -408,13 +420,25 @@ export default function MainLayout() {
 
     return (
 
-      <div className="min-h-screen bg-[#050816] flex items-center justify-center text-white">
+      <div className="min-h-screen bg-[#050816] flex items-center justify-center text-white overflow-hidden relative">
 
-        <div className="flex flex-col items-center gap-4">
+        {/* GLOW */}
+        <div className="absolute top-[-140px] left-[-140px] w-[320px] h-[320px] bg-purple-600/20 blur-[140px] rounded-full"></div>
 
-          <div className="w-14 h-14 rounded-full border-4 border-purple-500/20 border-t-purple-500 animate-spin"></div>
+        <div className="absolute bottom-[-140px] right-[-140px] w-[320px] h-[320px] bg-blue-600/20 blur-[140px] rounded-full"></div>
 
-          <p className="text-sm text-gray-400">
+        {/* CONTENT */}
+        <div className="relative z-10 flex flex-col items-center gap-5">
+
+          <div className="relative">
+
+            <div className="absolute inset-0 bg-purple-500/20 blur-[35px] rounded-full"></div>
+
+            <div className="relative w-16 h-16 rounded-full border-[5px] border-purple-500/10 border-t-purple-500 animate-spin"></div>
+
+          </div>
+
+          <p className="text-sm text-gray-400 tracking-wide">
 
             Loading Workspace...
 
@@ -431,12 +455,12 @@ export default function MainLayout() {
     <div className="min-h-screen bg-[#050816] text-white flex overflow-hidden">
 
       {/* BACKGROUND */}
-      <div className="fixed top-[-200px] left-[-200px] w-[400px] h-[400px] bg-purple-600/10 blur-[140px] rounded-full"></div>
+      <div className="fixed top-[-220px] left-[-220px] w-[450px] h-[450px] bg-purple-600/10 blur-[160px] rounded-full"></div>
 
-      <div className="fixed bottom-[-200px] right-[-200px] w-[400px] h-[400px] bg-blue-600/10 blur-[140px] rounded-full"></div>
+      <div className="fixed bottom-[-220px] right-[-220px] w-[450px] h-[450px] bg-blue-600/10 blur-[160px] rounded-full"></div>
 
       {/* MOBILE TOPBAR */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 z-50 bg-[#081120]/90 backdrop-blur-2xl border-b border-white/5 flex items-center justify-between px-4">
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 z-50 bg-[rgba(11,17,32,0.78)] backdrop-blur-3xl border-b border-white/[0.06] flex items-center justify-between px-4 shadow-[0_10px_40px_rgba(0,0,0,0.35)]">
 
         {/* LOGO */}
         <div className="flex items-center gap-3">
@@ -445,7 +469,20 @@ export default function MainLayout() {
 
             <div className="absolute inset-0 bg-purple-500/20 blur-[20px] rounded-2xl"></div>
 
-            <div className="relative w-11 h-11 rounded-2xl overflow-hidden bg-white/5 border border-white/10">
+            <div className="
+              relative
+              w-11
+              h-11
+              rounded-2xl
+              overflow-hidden
+              border
+              border-white/10
+              bg-gradient-to-br
+              from-white/[0.08]
+              to-white/[0.02]
+              backdrop-blur-xl
+              shadow-[0_10px_30px_rgba(127,90,240,0.18)]
+            ">
 
               <img
                 src={logo}
@@ -482,7 +519,19 @@ export default function MainLayout() {
               !sidebarOpen
             )
           }
-          className="w-11 h-11 rounded-2xl bg-white/[0.04] border border-white/5 flex items-center justify-center"
+          className="
+            w-11
+            h-11
+            rounded-2xl
+            bg-white/[0.04]
+            border
+            border-white/[0.06]
+            flex
+            items-center
+            justify-center
+            backdrop-blur-xl
+            shadow-[0_10px_25px_rgba(0,0,0,0.25)]
+          "
         >
 
           {sidebarOpen ? (
@@ -499,7 +548,7 @@ export default function MainLayout() {
       {sidebarOpen && (
 
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+          className="fixed inset-0 bg-black/70 backdrop-blur-md z-40 lg:hidden"
           onClick={() =>
             setSidebarOpen(false)
           }
@@ -511,10 +560,11 @@ export default function MainLayout() {
       <aside
         className={`
           fixed top-0 left-0 z-50
-          h-screen w-[280px]
-          bg-[#0B1120]/95
+          h-screen w-[290px]
+          bg-[rgba(11,17,32,0.82)]
           backdrop-blur-3xl
-          border-r border-white/5
+          border-r border-white/[0.06]
+          shadow-[0_0_60px_rgba(0,0,0,0.45)]
           flex flex-col
           transition-all duration-300
           overflow-hidden
@@ -530,10 +580,13 @@ export default function MainLayout() {
       >
 
         {/* GLOW */}
-        <div className="absolute top-[-80px] right-[-80px] w-[200px] h-[200px] bg-purple-500/10 blur-[100px] rounded-full"></div>
+        <div className="absolute top-[-80px] right-[-80px] w-[220px] h-[220px] bg-purple-500/10 blur-[120px] rounded-full"></div>
+
+        {/* GLASS OVERLAY */}
+        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.03] to-transparent pointer-events-none"></div>
 
         {/* LOGO */}
-        <div className="relative z-10 px-6 pt-6 pb-5 border-b border-white/5">
+        <div className="relative z-10 px-6 pt-6 pb-5 border-b border-white/[0.05]">
 
           <div className="flex items-center gap-4">
 
@@ -541,7 +594,20 @@ export default function MainLayout() {
 
               <div className="absolute inset-0 bg-purple-500/20 blur-[20px] rounded-3xl"></div>
 
-              <div className="relative w-14 h-14 rounded-3xl overflow-hidden border border-white/10 bg-white/5">
+              <div className="
+                relative
+                w-14
+                h-14
+                rounded-[22px]
+                overflow-hidden
+                border
+                border-white/10
+                bg-gradient-to-br
+                from-white/[0.08]
+                to-white/[0.02]
+                shadow-[0_10px_30px_rgba(127,90,240,0.18)]
+                backdrop-blur-xl
+              ">
 
                 <img
                   src={logo}
@@ -585,7 +651,7 @@ export default function MainLayout() {
         {/* EXPIRED */}
         {isExpired && (
 
-          <div className="mx-4 mt-4 rounded-2xl border border-red-500/20 bg-red-500/10 p-4">
+          <div className="mx-4 mt-4 rounded-[26px] border border-red-500/20 bg-gradient-to-br from-red-500/10 to-red-500/5 p-4 backdrop-blur-xl shadow-[0_10px_30px_rgba(239,68,68,0.08)]">
 
             <div className="flex items-start gap-3">
 
@@ -661,23 +727,25 @@ export default function MainLayout() {
                           items-center
                           justify-between
                           px-4
-                          h-[58px]
-                          rounded-2xl
+                          h-[60px]
+                          rounded-[22px]
                           transition-all
+                          duration-300
                           border
                           ${
                             isActive
                               ? `
-                                bg-gradient-to-r
-                                from-[#7f5af0]
-                                to-blue-500
-                                border-purple-400/30
-                                shadow-[0_10px_40px_rgba(127,90,240,0.35)]
+                                bg-[linear-gradient(135deg,rgba(127,90,240,0.28),rgba(59,130,246,0.22))]
+                                border-purple-400/20
+                                shadow-[0_10px_50px_rgba(127,90,240,0.28)]
+                                backdrop-blur-xl
                               `
                               : `
-                                bg-white/[0.03]
-                                border-white/5
+                                bg-white/[0.025]
+                                border-white/[0.04]
                                 hover:bg-white/[0.05]
+                                hover:border-white/[0.08]
+                                hover:translate-x-[2px]
                               `
                           }
                         `
@@ -686,7 +754,20 @@ export default function MainLayout() {
 
                       <div className="flex items-center gap-4">
 
-                        <div className="w-10 h-10 rounded-xl bg-black/20 flex items-center justify-center">
+                        <div className="
+                          w-10
+                          h-10
+                          rounded-xl
+                          bg-gradient-to-br
+                          from-white/[0.08]
+                          to-white/[0.02]
+                          border
+                          border-white/[0.05]
+                          backdrop-blur-xl
+                          flex
+                          items-center
+                          justify-center
+                        ">
 
                           <Icon size={18} />
 
@@ -753,22 +834,25 @@ export default function MainLayout() {
                           items-center
                           justify-between
                           px-4
-                          h-[58px]
-                          rounded-2xl
+                          h-[60px]
+                          rounded-[22px]
                           transition-all
+                          duration-300
                           border
                           ${
                             isActive
                               ? `
-                                bg-gradient-to-r
-                                from-[#7f5af0]
-                                to-blue-500
-                                border-purple-400/30
+                                bg-[linear-gradient(135deg,rgba(127,90,240,0.28),rgba(59,130,246,0.22))]
+                                border-purple-400/20
+                                shadow-[0_10px_50px_rgba(127,90,240,0.28)]
+                                backdrop-blur-xl
                               `
                               : `
-                                bg-white/[0.03]
-                                border-white/5
+                                bg-white/[0.025]
+                                border-white/[0.04]
                                 hover:bg-white/[0.05]
+                                hover:border-white/[0.08]
+                                hover:translate-x-[2px]
                               `
                           }
                         `
@@ -777,7 +861,20 @@ export default function MainLayout() {
 
                       <div className="flex items-center gap-4">
 
-                        <div className="w-10 h-10 rounded-xl bg-black/20 flex items-center justify-center">
+                        <div className="
+                          w-10
+                          h-10
+                          rounded-xl
+                          bg-gradient-to-br
+                          from-white/[0.08]
+                          to-white/[0.02]
+                          border
+                          border-white/[0.05]
+                          backdrop-blur-xl
+                          flex
+                          items-center
+                          justify-center
+                        ">
 
                           <Icon size={18} />
 
@@ -809,14 +906,36 @@ export default function MainLayout() {
         </div>
 
         {/* BOTTOM */}
-        <div className="relative z-10 p-4 border-t border-white/5">
+        <div className="relative z-10 p-4 border-t border-white/[0.05]">
 
           {/* USER */}
-          <div className="rounded-3xl border border-white/5 bg-white/[0.03] p-4 mb-4">
+          <div className="
+            rounded-[28px]
+            border
+            border-white/[0.06]
+            bg-gradient-to-br
+            from-white/[0.06]
+            to-white/[0.02]
+            backdrop-blur-2xl
+            p-4
+            mb-4
+            shadow-[0_10px_40px_rgba(0,0,0,0.25)]
+          ">
 
             <div className="flex items-center gap-3">
 
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#7f5af0] to-blue-500 flex items-center justify-center font-bold text-lg">
+              <div className="
+                w-12
+                h-12
+                rounded-2xl
+                bg-[linear-gradient(135deg,#7f5af0,#5b8cff)]
+                shadow-[0_10px_30px_rgba(127,90,240,0.35)]
+                flex
+                items-center
+                justify-center
+                font-bold
+                text-lg
+              ">
 
                 {userEmail?.charAt(0)?.toUpperCase() ||
                   "A"}
@@ -853,13 +972,18 @@ export default function MainLayout() {
             }
             className="
               w-full
-              h-[56px]
-              rounded-2xl
-              bg-red-500/10
+              h-[58px]
+              rounded-[22px]
+              bg-gradient-to-br
+              from-red-500/12
+              to-red-500/5
               border
-              border-red-500/10
-              hover:bg-red-500/20
+              border-red-500/15
+              hover:from-red-500/20
+              hover:to-red-500/10
+              shadow-[0_8px_30px_rgba(239,68,68,0.12)]
               transition-all
+              duration-300
               flex
               items-center
               justify-center
@@ -880,9 +1004,9 @@ export default function MainLayout() {
       </aside>
 
       {/* MAIN */}
-      <main className="flex-1 lg:ml-[280px] min-h-screen">
+      <main className="flex-1 lg:ml-[290px] min-h-screen">
 
-        <div className="p-4 lg:p-8 pt-20 lg:pt-8 relative z-10">
+        <div className="p-4 lg:p-10 pt-20 lg:pt-10 relative z-10">
 
           <Outlet />
 

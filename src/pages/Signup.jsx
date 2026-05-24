@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
+
 import { supabase } from "../lib/supabase";
-import { useNavigate, Link } from "react-router-dom";
+
+import { Link } from "react-router-dom";
 
 import {
   Bot,
@@ -21,6 +23,11 @@ import logo from "../assets/aiaera-logo.png";
 
 export default function Signup() {
 
+  /*
+  =========================================
+  STATES
+  =========================================
+  */
   const [email, setEmail] =
     useState("");
 
@@ -39,9 +46,6 @@ export default function Signup() {
   const [showPassword, setShowPassword] =
     useState(false);
 
-  const navigate =
-    useNavigate();
-
   /*
   =========================================
   REDIRECT IF LOGGED IN
@@ -57,29 +61,17 @@ export default function Signup() {
         try {
 
           const {
-            data,
-            error,
+            data: { session },
           } =
-            await supabase.auth.getUser();
-
-          console.log(
-            "GET USER:",
-            data
-          );
-
-          console.log(
-            "GET USER ERROR:",
-            error
-          );
+            await supabase.auth.getSession();
 
           if (
             mounted &&
-            data?.user
+            session?.user
           ) {
 
-            navigate(
-              "/app/dashboard"
-            );
+            window.location.href =
+              "/app/dashboard";
           }
 
         } catch (err) {
@@ -94,10 +86,11 @@ export default function Signup() {
     checkUser();
 
     return () => {
+
       mounted = false;
     };
 
-  }, [navigate]);
+  }, []);
 
   /*
   =========================================
@@ -131,16 +124,6 @@ export default function Signup() {
             password,
           });
 
-        console.log(
-          "SIGNUP DATA:",
-          data
-        );
-
-        console.log(
-          "SIGNUP ERROR:",
-          error
-        );
-
         if (error)
           throw error;
 
@@ -168,7 +151,6 @@ export default function Signup() {
         );
 
         const {
-          data: subData,
           error: subError,
         } =
           await supabase
@@ -204,16 +186,6 @@ export default function Signup() {
               }
             );
 
-        console.log(
-          "SUBSCRIPTION DATA:",
-          subData
-        );
-
-        console.log(
-          "SUBSCRIPTION ERROR:",
-          subError
-        );
-
         if (subError) {
 
           throw subError;
@@ -225,16 +197,29 @@ export default function Signup() {
         =========================================
         */
         setSuccessMsg(
-          "🎉 Your 7-day free trial has started! Please verify your email."
+          "🎉 Your 7-day free trial has started successfully!"
         );
 
-        setTimeout(() => {
+        /*
+        =========================================
+        WAIT FOR SESSION SAVE
+        =========================================
+        */
+        await new Promise(
+          (resolve) =>
+            setTimeout(
+              resolve,
+              1200
+            )
+        );
 
-          navigate(
-            "/login"
-          );
-
-        }, 2500);
+        /*
+        =========================================
+        FULL REDIRECT
+        =========================================
+        */
+        window.location.href =
+          "/app/dashboard";
 
       } catch (err) {
 
@@ -295,7 +280,6 @@ export default function Signup() {
           className="hidden lg:block"
         >
 
-          {/* BADGE */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/5 backdrop-blur-xl mb-8">
 
             <Sparkles className="w-4 h-4 text-purple-400" />
@@ -306,7 +290,6 @@ export default function Signup() {
 
           </div>
 
-          {/* HEADING */}
           <h1 className="text-7xl font-black leading-[0.92] tracking-[-4px] text-white mb-8">
 
             Build Your
@@ -319,7 +302,6 @@ export default function Signup() {
 
           </h1>
 
-          {/* DESC */}
           <p className="text-gray-400 text-xl leading-relaxed mb-14 max-w-xl">
 
             Create AI assistants trained on your business,
@@ -329,7 +311,6 @@ export default function Signup() {
 
           </p>
 
-          {/* FEATURES */}
           <div className="space-y-5">
 
             <FeatureCard
@@ -376,15 +357,12 @@ export default function Signup() {
           className="w-full max-w-md mx-auto relative"
         >
 
-          {/* SIGNUP CARD */}
           <div className="relative rounded-[36px] p-[1px] bg-gradient-to-br from-purple-500/30 via-white/10 to-blue-500/30 shadow-[0_20px_120px_rgba(0,0,0,0.55)]">
 
             <div className="relative bg-[#0B1120]/90 backdrop-blur-3xl rounded-[36px] p-8 overflow-hidden">
 
-              {/* GLOW */}
               <div className="absolute top-[-120px] right-[-120px] w-[280px] h-[280px] bg-purple-500/20 blur-[120px] rounded-full"></div>
 
-              {/* LOGO */}
               <div className="relative flex justify-center mb-10">
 
                 <div className="absolute w-24 h-24 bg-purple-500/20 blur-[55px] rounded-[28px]"></div>
@@ -403,7 +381,6 @@ export default function Signup() {
 
               </div>
 
-              {/* HEADER */}
               <div className="text-center mb-8">
 
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-purple-500/20 bg-purple-500/10 mb-5">
@@ -433,7 +410,6 @@ export default function Signup() {
 
               </div>
 
-              {/* ERROR */}
               {errorMsg && (
 
                 <div className="mb-5 p-4 rounded-2xl bg-red-500/15 border border-red-500/20 text-red-300 text-sm">
@@ -444,7 +420,6 @@ export default function Signup() {
 
               )}
 
-              {/* SUCCESS */}
               {successMsg && (
 
                 <div className="mb-5 p-4 rounded-2xl bg-green-500/15 border border-green-500/20 text-green-300 text-sm flex items-center gap-2">
@@ -457,7 +432,6 @@ export default function Signup() {
 
               )}
 
-              {/* FORM */}
               <form onSubmit={handleSignup}>
 
                 <div className="mb-5">
@@ -527,53 +501,6 @@ export default function Signup() {
                       )}
 
                     </button>
-
-                  </div>
-
-                </div>
-
-                <div className="mb-6 p-4 rounded-2xl border border-purple-500/20 bg-purple-500/5">
-
-                  <div className="flex items-start gap-3">
-
-                    <Sparkles
-                      size={18}
-                      className="text-purple-400 mt-0.5"
-                    />
-
-                    <div>
-
-                      <h4 className="text-sm font-semibold text-white mb-1">
-
-                        Included In Your Trial
-
-                      </h4>
-
-                      <ul className="space-y-1 text-xs text-gray-400">
-
-                        <li>
-                          • AI Website Chatbot
-                        </li>
-
-                        <li>
-                          • Lead Collection
-                        </li>
-
-                        <li>
-                          • Appointment Booking
-                        </li>
-
-                        <li>
-                          • Multi-language AI
-                        </li>
-
-                        <li>
-                          • 200 AI Messages
-                        </li>
-
-                      </ul>
-
-                    </div>
 
                   </div>
 

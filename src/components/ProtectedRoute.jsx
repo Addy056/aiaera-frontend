@@ -23,18 +23,23 @@ export default function ProtectedRoute({
   children,
 }) {
 
+  /*
+  ========================================
+  STATES
+  ========================================
+  */
   const [loading, setLoading] =
     useState(true);
 
-  const [user, setUser] =
-    useState(null);
+  const [authenticated, setAuthenticated] =
+    useState(false);
 
   const location =
     useLocation();
 
   /*
   ========================================
-  CHECK AUTH SESSION
+  CHECK AUTH
   ========================================
   */
   useEffect(() => {
@@ -43,55 +48,52 @@ export default function ProtectedRoute({
 
     /*
     ========================================
-    LOAD SESSION
+    VERIFY SESSION
     ========================================
     */
-    const loadSession =
+    const verifySession =
       async () => {
 
         try {
 
           const {
-            data,
+            data: { session },
             error,
-          } = await supabase.auth.getSession();
+          } =
+            await supabase.auth.getSession();
 
+          /*
+          ========================================
+          SESSION ERROR
+          ========================================
+          */
           if (error) {
+
             console.error(
-              "SESSION ERROR:",
+              "AUTH SESSION ERROR:",
               error
             );
 
             if (mounted) {
-              setUser(null);
+
+              setAuthenticated(
+                false
+              );
             }
 
             return;
           }
 
-          const session =
-            data?.session;
-
           /*
           ========================================
-          USER FOUND
+          AUTH STATE
           ========================================
           */
-          if (
-            session?.user
-          ) {
+          if (mounted) {
 
-            if (mounted) {
-              setUser(
-                session.user
-              );
-            }
-
-          } else {
-
-            if (mounted) {
-              setUser(null);
-            }
+            setAuthenticated(
+              !!session
+            );
           }
 
         } catch (err) {
@@ -102,23 +104,43 @@ export default function ProtectedRoute({
           );
 
           if (mounted) {
-            setUser(null);
+
+            setAuthenticated(
+              false
+            );
           }
 
         } finally {
 
           if (mounted) {
-            setLoading(false);
+
+            /*
+            ========================================
+            SMALL DELAY
+            Prevents redirect flashing
+            on slower devices
+            ========================================
+            */
+            setTimeout(() => {
+
+              if (mounted) {
+
+                setLoading(
+                  false
+                );
+              }
+
+            }, 300);
           }
         }
       };
 
     /*
     ========================================
-    INITIAL LOAD
+    INITIAL SESSION CHECK
     ========================================
     */
-    loadSession();
+    verifySession();
 
     /*
     ========================================
@@ -136,7 +158,34 @@ export default function ProtectedRoute({
           session
         ) => {
 
-          if (!mounted) return;
+          if (!mounted)
+            return;
+
+          console.log(
+            "AUTH EVENT:",
+            event
+          );
+
+          /*
+          ========================================
+          SIGNED IN
+          ========================================
+          */
+          if (
+            event ===
+              "SIGNED_IN" ||
+            event ===
+              "TOKEN_REFRESHED"
+          ) {
+
+            setAuthenticated(
+              !!session
+            );
+
+            setLoading(
+              false
+            );
+          }
 
           /*
           ========================================
@@ -148,22 +197,34 @@ export default function ProtectedRoute({
             "SIGNED_OUT"
           ) {
 
-            setUser(null);
+            setAuthenticated(
+              false
+            );
 
-            return;
+            setLoading(
+              false
+            );
           }
-
-          /*
-          ========================================
-          SESSION ACTIVE
-          ========================================
-          */
-          setUser(
-            session?.user ||
-              null
-          );
         }
       );
+
+    /*
+    ========================================
+    FAILSAFE
+    Prevent infinite loading
+    ========================================
+    */
+    const failsafe =
+      setTimeout(() => {
+
+        if (mounted) {
+
+          setLoading(
+            false
+          );
+        }
+
+      }, 5000);
 
     /*
     ========================================
@@ -173,6 +234,10 @@ export default function ProtectedRoute({
     return () => {
 
       mounted = false;
+
+      clearTimeout(
+        failsafe
+      );
 
       subscription?.unsubscribe();
     };
@@ -187,24 +252,37 @@ export default function ProtectedRoute({
   if (loading) {
 
     return (
-      <div className="min-h-screen bg-[#060816] flex items-center justify-center overflow-hidden relative">
 
-        {/* BACKGROUND GLOW */}
-        <div className="absolute top-[-120px] left-[-120px] w-[320px] h-[320px] bg-purple-600/20 blur-[140px] rounded-full"></div>
+      <div className="min-h-screen bg-[#050816] flex items-center justify-center overflow-hidden relative">
 
-        <div className="absolute bottom-[-120px] right-[-120px] w-[320px] h-[320px] bg-blue-600/20 blur-[140px] rounded-full"></div>
+        {/* GLOW */}
+        <div className="absolute top-[-150px] left-[-150px] w-[340px] h-[340px] bg-purple-600/20 blur-[160px] rounded-full"></div>
+
+        <div className="absolute bottom-[-150px] right-[-150px] w-[340px] h-[340px] bg-blue-600/20 blur-[160px] rounded-full"></div>
 
         {/* CONTENT */}
         <div className="relative z-10 flex flex-col items-center">
 
-          <div className="w-16 h-16 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin mb-6"></div>
+          {/* SPINNER */}
+          <div className="relative mb-6">
 
-          <h2 className="text-white text-2xl font-bold">
+            <div className="absolute inset-0 bg-purple-500/20 blur-[30px] rounded-full"></div>
+
+            <div className="relative w-16 h-16 rounded-full border-[5px] border-purple-500/10 border-t-purple-500 animate-spin"></div>
+
+          </div>
+
+          {/* TEXT */}
+          <h2 className="text-white text-2xl font-bold mb-2">
+
             Loading AIAERA...
+
           </h2>
 
-          <p className="text-gray-400 text-sm mt-2">
+          <p className="text-gray-400 text-sm">
+
             Verifying your session
+
           </p>
 
         </div>
@@ -218,9 +296,10 @@ export default function ProtectedRoute({
   NOT AUTHENTICATED
   ========================================
   */
-  if (!user) {
+  if (!authenticated) {
 
     return (
+
       <Navigate
         to="/login"
         replace
@@ -229,6 +308,7 @@ export default function ProtectedRoute({
             location.pathname,
         }}
       />
+
     );
   }
 

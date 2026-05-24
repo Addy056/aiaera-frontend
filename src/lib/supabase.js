@@ -30,6 +30,17 @@ if (
 
 /*
 ========================================
+SAFE STORAGE
+========================================
+*/
+const safeStorage =
+  typeof window !==
+  "undefined"
+    ? window.localStorage
+    : undefined;
+
+/*
+========================================
 SUPABASE CLIENT
 ========================================
 */
@@ -42,7 +53,7 @@ export const supabase =
 
         /*
         ========================================
-        AUTH
+        SESSION
         ========================================
         */
         persistSession:
@@ -56,14 +67,11 @@ export const supabase =
 
         /*
         ========================================
-        FIX LOCK ISSUES
+        SAFE STORAGE
         ========================================
         */
         storage:
-          window.localStorage,
-
-        flowType:
-          "pkce",
+          safeStorage,
       },
 
       /*
@@ -80,7 +88,7 @@ export const supabase =
 
       /*
       ========================================
-      GLOBAL FETCH
+      GLOBAL HEADERS
       ========================================
       */
       global: {

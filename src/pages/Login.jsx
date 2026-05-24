@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
+
 import { supabase } from "../lib/supabase";
-import { useNavigate, Link } from "react-router-dom";
+
+import { Link } from "react-router-dom";
 
 import {
   Bot,
@@ -21,6 +23,11 @@ import logo from "../assets/aiaera-logo.png";
 
 export default function Login() {
 
+  /*
+  =========================================
+  STATES
+  =========================================
+  */
   const [email, setEmail] =
     useState("");
 
@@ -42,12 +49,6 @@ export default function Login() {
   const [resetMessage, setResetMessage] =
     useState("");
 
-  const [trialInfo, setTrialInfo] =
-    useState(null);
-
-  const navigate =
-    useNavigate();
-
   /*
   =========================================
   AUTH CHECK
@@ -60,16 +61,27 @@ export default function Login() {
     const checkUser =
       async () => {
 
-        const { data } =
-          await supabase.auth.getUser();
+        try {
 
-        if (
-          mounted &&
-          data.user
-        ) {
+          const {
+            data: { session },
+          } =
+            await supabase.auth.getSession();
 
-          navigate(
-            "/app/dashboard"
+          if (
+            mounted &&
+            session?.user
+          ) {
+
+            window.location.href =
+              "/app/dashboard";
+          }
+
+        } catch (err) {
+
+          console.error(
+            "AUTH CHECK ERROR:",
+            err
           );
         }
       };
@@ -77,10 +89,11 @@ export default function Login() {
     checkUser();
 
     return () => {
+
       mounted = false;
     };
 
-  }, [navigate]);
+  }, []);
 
   /*
   =========================================
@@ -98,8 +111,11 @@ export default function Login() {
 
       try {
 
-        const { error } =
+        const {
+          error,
+        } =
           await supabase.auth.signInWithPassword({
+
             email,
             password,
           });
@@ -107,11 +123,33 @@ export default function Login() {
         if (error)
           throw error;
 
-        navigate(
-          "/app/dashboard"
+        /*
+        =========================================
+        WAIT FOR SESSION SAVE
+        =========================================
+        */
+        await new Promise(
+          (resolve) =>
+            setTimeout(
+              resolve,
+              700
+            )
         );
 
+        /*
+        =========================================
+        FULL PAGE REDIRECT
+        =========================================
+        */
+        window.location.href =
+          "/app/dashboard";
+
       } catch (err) {
+
+        console.error(
+          "LOGIN ERROR:",
+          err
+        );
 
         setErrorMsg(
           err.message ||
@@ -149,7 +187,9 @@ export default function Login() {
 
         setResetMessage("");
 
-        const { error } =
+        const {
+          error,
+        } =
           await supabase.auth.resetPasswordForEmail(
             email,
             {
@@ -166,6 +206,11 @@ export default function Login() {
         );
 
       } catch (err) {
+
+        console.error(
+          "RESET ERROR:",
+          err
+        );
 
         setErrorMsg(
           err.message ||
@@ -482,6 +527,7 @@ export default function Login() {
 
                 {/* LOGIN BUTTON */}
                 <button
+                  type="submit"
                   disabled={loading}
                   className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:scale-[1.02] hover:shadow-xl hover:shadow-purple-500/20 transition-all duration-300 text-white font-semibold py-4 rounded-2xl flex items-center justify-center gap-2 disabled:opacity-50"
                 >
@@ -602,5 +648,6 @@ function FeatureCard({
       </div>
 
     </motion.div>
+
   );
 }
