@@ -23,8 +23,8 @@ if (
   !supabaseAnonKey
 ) {
 
-  console.error(
-    "Missing Supabase environment variables"
+  throw new Error(
+    "❌ Missing Supabase environment variables"
   );
 }
 
@@ -41,72 +41,135 @@ const safeStorage =
 
 /*
 ========================================
-SUPABASE CLIENT
+PREVENT MULTIPLE CLIENTS
+========================================
+*/
+let supabaseInstance =
+  null;
+
+/*
+========================================
+CREATE CLIENT
+========================================
+*/
+const createSupabaseClient =
+  () => {
+
+    if (
+      supabaseInstance
+    ) {
+
+      return supabaseInstance;
+    }
+
+    supabaseInstance =
+      createClient(
+        supabaseUrl,
+        supabaseAnonKey,
+        {
+
+          auth: {
+
+            /*
+            ========================================
+            SESSION
+            ========================================
+            */
+            persistSession:
+              true,
+
+            /*
+            ========================================
+            AUTO REFRESH
+            ========================================
+            */
+            autoRefreshToken:
+              true,
+
+            /*
+            ========================================
+            URL DETECTION
+            ========================================
+            */
+            detectSessionInUrl:
+              false,
+
+            /*
+            ========================================
+            STORAGE
+            ========================================
+            */
+            storage:
+              safeStorage,
+
+            /*
+            ========================================
+            STORAGE KEY
+            ========================================
+            */
+            storageKey:
+              "aiaera-auth",
+
+            /*
+            ========================================
+            FLOW TYPE
+            ========================================
+            */
+            flowType:
+              "pkce",
+          },
+
+          /*
+          ========================================
+          REALTIME
+          ========================================
+          */
+          realtime: {
+
+            params: {
+
+              eventsPerSecond:
+                5,
+            },
+          },
+
+          /*
+          ========================================
+          GLOBAL HEADERS
+          ========================================
+          */
+          global: {
+
+            headers: {
+
+              "X-Client-Info":
+                "aiaera-web",
+            },
+          },
+        }
+      );
+
+    return supabaseInstance;
+  };
+
+/*
+========================================
+EXPORT CLIENT
 ========================================
 */
 export const supabase =
-  createClient(
-    supabaseUrl,
-    supabaseAnonKey,
-    {
-      auth: {
-
-        /*
-        ========================================
-        SESSION
-        ========================================
-        */
-        persistSession:
-          true,
-
-        autoRefreshToken:
-          true,
-
-        detectSessionInUrl:
-          true,
-
-        /*
-        ========================================
-        SAFE STORAGE
-        ========================================
-        */
-        storage:
-          safeStorage,
-      },
-
-      /*
-      ========================================
-      REALTIME
-      ========================================
-      */
-      realtime: {
-        params: {
-          eventsPerSecond:
-            10,
-        },
-      },
-
-      /*
-      ========================================
-      GLOBAL HEADERS
-      ========================================
-      */
-      global: {
-
-        headers: {
-          "X-Client-Info":
-            "aiaera-web",
-        },
-      },
-    }
-  );
+  createSupabaseClient();
 
 /*
 ========================================
 DEBUG
 ========================================
 */
-console.log(
-  "Supabase Initialized:",
-  !!supabase
-);
+if (
+  import.meta.env.DEV
+) {
+
+  console.log(
+    "✅ Supabase Initialized"
+  );
+}

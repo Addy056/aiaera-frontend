@@ -25,7 +25,6 @@ SAFETY CHECK
 ========================================
 */
 if (!rootElement) {
-
   throw new Error(
     "❌ Root element not found"
   );
@@ -33,31 +32,44 @@ if (!rootElement) {
 
 /*
 ========================================
-REMOVE DUPLICATE CHATBOT ELEMENTS
+PREVENT DUPLICATE CHATBOT WIDGETS
 ========================================
 */
 const duplicateElements = [
-
   "aiaera-chatbot-widget",
-
   "aiaera-chatbot-button",
-
   "aiaera-chatbot-iframe",
-
 ];
 
 duplicateElements.forEach(
   (id) => {
-
     const element =
       document.getElementById(id);
 
     if (element) {
-
       element.remove();
     }
   }
 );
+
+/*
+========================================
+CLEAR BROKEN WIDGET CONTAINERS
+========================================
+*/
+document
+  .querySelectorAll(
+    '[id^="aiaera-widget"]'
+  )
+  .forEach((el) => {
+    if (
+      !duplicateElements.includes(
+        el.id
+      )
+    ) {
+      el.remove();
+    }
+  });
 
 /*
 ========================================
@@ -70,26 +82,22 @@ const root =
 /*
 ========================================
 ROOT RENDER
-========================================
 
 React.StrictMode intentionally removed
 because it causes:
 
-- duplicate widget injection
 - duplicate API calls
-- Supabase auth lock errors
+- duplicate auth requests
+- Supabase auth lock issues
 - duplicate useEffect execution
-- multiple chatbot renders
-- iframe duplication
-- chatbot flashing issue
+- duplicate chatbot widgets
+- iframe flashing
+- multiple renders
 
 ========================================
 */
 root.render(
-
   <AuthProvider>
-
     <App />
-
   </AuthProvider>
 );

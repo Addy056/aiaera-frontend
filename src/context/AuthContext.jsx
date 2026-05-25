@@ -2,6 +2,8 @@ import {
   createContext,
   useEffect,
   useState,
+  useRef,
+  useCallback,
 } from "react";
 
 import { supabase } from "../lib/supabase";
@@ -37,6 +39,14 @@ export default function AuthProvider({
 
   /*
   ========================================
+  PREVENT DUPLICATE REQUESTS
+  ========================================
+  */
+  const loadingRef =
+    useRef(false);
+
+  /*
+  ========================================
   ADMIN EMAILS
   ========================================
   */
@@ -46,31 +56,245 @@ export default function AuthProvider({
 
   /*
   ========================================
+  LOAD SUBSCRIPTION
+  ========================================
+  */
+  const loadSubscription =
+    useCallback(
+      async (userId) => {
+
+        if (!userId) return;
+
+        try {
+
+          const {
+            data,
+            error,
+          } =
+            await supabase
+              .from(
+                "user_subscriptions"
+              )
+              .select("*")
+              .eq(
+                "user_id",
+                userId
+              )
+              .maybeSingle();
+
+          if (error) {
+
+            console.log(
+              "SUBSCRIPTION ERROR:",
+              error
+            );
+
+            return;
+          }
+
+          setSubscription(
+            data || null
+          );
+
+          /*
+          ========================================
+          EXPIRED CHECK
+          ========================================
+          */
+          if (
+            data?.expires_at
+          ) {
+
+            const expired =
+              new Date(
+                data.expires_at
+              ) < new Date();
+
+            setIsExpired(
+              expired
+            );
+
+          } else {
+
+            setIsExpired(
+              false
+            );
+          }
+
+        } catch (err) {
+
+          console.log(
+            "LOAD SUBSCRIPTION ERROR:",
+            err
+          );
+
+          setSubscription(
+            null
+          );
+
+          setIsExpired(
+            false
+          );
+        }
+      },
+      []
+    );
+
+  /*
+  ========================================
   LOAD USER
+  ========================================
+  */
+  const loadUser =
+    useCallback(
+      async () => {
+
+        /*
+        ========================================
+        PREVENT DUPLICATE CALLS
+        ========================================
+        */
+        if (
+          loadingRef.current
+        ) {
+          return;
+        }
+
+        loadingRef.current =
+          true;
+
+        try {
+
+          setLoading(true);
+
+          /*
+          ========================================
+          GET SESSION
+          ========================================
+          */
+          const {
+            data: { session },
+            error,
+          } =
+            await supabase.auth.getSession();
+
+          if (error) {
+
+            console.log(
+              "SESSION ERROR:",
+              error
+            );
+
+            return;
+          }
+
+          const currentUser =
+            session?.user ||
+            null;
+
+          /*
+          ========================================
+          SET USER
+          ========================================
+          */
+          setUser(
+            currentUser
+          );
+
+          /*
+          ========================================
+          ADMIN
+          ========================================
+          */
+          setIsAdmin(
+            ADMIN_EMAILS.includes(
+              currentUser?.email
+            )
+          );
+
+          /*
+          ========================================
+          LOAD SUBSCRIPTION
+          ========================================
+          */
+          if (
+            currentUser
+          ) {
+
+            await loadSubscription(
+              currentUser.id
+            );
+
+          } else {
+
+            setSubscription(
+              null
+            );
+
+            setIsExpired(
+              false
+            );
+          }
+
+        } catch (err) {
+
+          console.log(
+            "LOAD USER ERROR:",
+            err
+          );
+
+        } finally {
+
+          setLoading(false);
+
+          loadingRef.current =
+            false;
+        }
+      },
+      [loadSubscription]
+    );
+
+  /*
+  ========================================
+  INITIAL LOAD
   ========================================
   */
   useEffect(() => {
 
     loadUser();
 
-    /*
-    ========================================
-    AUTH CHANGES
-    ========================================
-    */
+  }, [loadUser]);
+
+  /*
+  ========================================
+  AUTH LISTENER
+  ========================================
+  */
+  useEffect(() => {
+
     const {
-      data: listener,
+      data: authListener,
     } =
       supabase.auth.onAuthStateChange(
         async (
-          _event,
+          event,
           session
         ) => {
+
+          console.log(
+            "AUTH EVENT:",
+            event
+          );
 
           const currentUser =
             session?.user ||
             null;
 
+          /*
+          ========================================
+          SET USER
+          ========================================
+          */
           setUser(
             currentUser
           );
@@ -109,155 +333,28 @@ export default function AuthProvider({
               false
             );
           }
+
+          /*
+          ========================================
+          LOADING COMPLETE
+          ========================================
+          */
+          setLoading(false);
         }
       );
 
+    /*
+    ========================================
+    CLEANUP
+    ========================================
+    */
     return () => {
 
-      listener.subscription.unsubscribe();
+      authListener?.subscription?.unsubscribe();
 
     };
 
-  }, []);
-
-  /*
-  ========================================
-  LOAD USER
-  ========================================
-  */
-  const loadUser =
-    async () => {
-
-      try {
-
-        setLoading(true);
-
-        const {
-          data,
-        } =
-          await supabase.auth.getUser();
-
-        const currentUser =
-          data.user;
-
-        setUser(
-          currentUser
-        );
-
-        /*
-        ========================================
-        ADMIN
-        ========================================
-        */
-        setIsAdmin(
-          ADMIN_EMAILS.includes(
-            currentUser?.email
-          )
-        );
-
-        /*
-        ========================================
-        SUBSCRIPTION
-        ========================================
-        */
-        if (
-          currentUser
-        ) {
-
-          await loadSubscription(
-            currentUser.id
-          );
-
-        }
-
-      } catch (err) {
-
-        console.error(
-          err
-        );
-
-      } finally {
-
-        setLoading(false);
-
-      }
-    };
-
-  /*
-  ========================================
-  LOAD SUBSCRIPTION
-  ========================================
-  */
-  const loadSubscription =
-    async (
-      userId
-    ) => {
-
-      try {
-
-        const {
-          data,
-          error,
-        } =
-          await supabase
-            .from(
-              "user_subscriptions"
-            )
-            .select("*")
-            .eq(
-              "user_id",
-              userId
-            )
-            .maybeSingle();
-
-        if (error)
-          throw error;
-
-        setSubscription(
-          data || null
-        );
-
-        /*
-        ========================================
-        EXPIRED
-        ========================================
-        */
-        if (
-          data?.expires_at
-        ) {
-
-          const expired =
-            new Date(
-              data.expires_at
-            ) <
-            new Date();
-
-          setIsExpired(
-            expired
-          );
-
-        } else {
-
-          setIsExpired(
-            false
-          );
-        }
-
-      } catch (err) {
-
-        console.error(
-          err
-        );
-
-        setSubscription(
-          null
-        );
-
-        setIsExpired(
-          false
-        );
-      }
-    };
+  }, [loadSubscription]);
 
   /*
   ========================================
@@ -267,8 +364,7 @@ export default function AuthProvider({
   const refreshSubscription =
     async () => {
 
-      if (!user)
-        return;
+      if (!user) return;
 
       await loadSubscription(
         user.id
