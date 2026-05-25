@@ -39,10 +39,10 @@ export default function AuthProvider({
 
   /*
   ========================================
-  PREVENT DUPLICATE REQUESTS
+  PREVENT MULTIPLE INITIAL LOADS
   ========================================
   */
-  const loadingRef =
+  const initializedRef =
     useRef(false);
 
   /*
@@ -63,7 +63,8 @@ export default function AuthProvider({
     useCallback(
       async (userId) => {
 
-        if (!userId) return;
+        if (!userId)
+          return;
 
         try {
 
@@ -89,9 +90,22 @@ export default function AuthProvider({
               error
             );
 
+            setSubscription(
+              null
+            );
+
+            setIsExpired(
+              false
+            );
+
             return;
           }
 
+          /*
+          ========================================
+          SAVE SUBSCRIPTION
+          ========================================
+          */
           setSubscription(
             data || null
           );
@@ -149,20 +163,6 @@ export default function AuthProvider({
     useCallback(
       async () => {
 
-        /*
-        ========================================
-        PREVENT DUPLICATE CALLS
-        ========================================
-        */
-        if (
-          loadingRef.current
-        ) {
-          return;
-        }
-
-        loadingRef.current =
-          true;
-
         try {
 
           setLoading(true);
@@ -173,7 +173,9 @@ export default function AuthProvider({
           ========================================
           */
           const {
-            data: { session },
+            data: {
+              session,
+            },
             error,
           } =
             await supabase.auth.getSession();
@@ -184,6 +186,8 @@ export default function AuthProvider({
               "SESSION ERROR:",
               error
             );
+
+            setUser(null);
 
             return;
           }
@@ -203,7 +207,7 @@ export default function AuthProvider({
 
           /*
           ========================================
-          ADMIN
+          ADMIN CHECK
           ========================================
           */
           setIsAdmin(
@@ -243,12 +247,16 @@ export default function AuthProvider({
             err
           );
 
+          setUser(null);
+
         } finally {
 
+          /*
+          ========================================
+          STOP LOADING ALWAYS
+          ========================================
+          */
           setLoading(false);
-
-          loadingRef.current =
-            false;
         }
       },
       [loadSubscription]
@@ -256,10 +264,19 @@ export default function AuthProvider({
 
   /*
   ========================================
-  INITIAL LOAD
+  INITIAL SESSION LOAD
   ========================================
   */
   useEffect(() => {
+
+    if (
+      initializedRef.current
+    ) {
+      return;
+    }
+
+    initializedRef.current =
+      true;
 
     loadUser();
 
@@ -273,7 +290,7 @@ export default function AuthProvider({
   useEffect(() => {
 
     const {
-      data: authListener,
+      data: listener,
     } =
       supabase.auth.onAuthStateChange(
         async (
@@ -292,7 +309,7 @@ export default function AuthProvider({
 
           /*
           ========================================
-          SET USER
+          UPDATE USER
           ========================================
           */
           setUser(
@@ -301,7 +318,7 @@ export default function AuthProvider({
 
           /*
           ========================================
-          ADMIN
+          ADMIN CHECK
           ========================================
           */
           setIsAdmin(
@@ -312,7 +329,7 @@ export default function AuthProvider({
 
           /*
           ========================================
-          SUBSCRIPTION
+          LOAD SUBSCRIPTION
           ========================================
           */
           if (
@@ -336,21 +353,16 @@ export default function AuthProvider({
 
           /*
           ========================================
-          LOADING COMPLETE
+          FINISH LOADING
           ========================================
           */
           setLoading(false);
         }
       );
 
-    /*
-    ========================================
-    CLEANUP
-    ========================================
-    */
     return () => {
 
-      authListener?.subscription?.unsubscribe();
+      listener?.subscription?.unsubscribe();
 
     };
 
@@ -364,7 +376,8 @@ export default function AuthProvider({
   const refreshSubscription =
     async () => {
 
-      if (!user) return;
+      if (!user)
+        return;
 
       await loadSubscription(
         user.id
@@ -376,46 +389,16 @@ export default function AuthProvider({
     <AuthContext.Provider
       value={{
 
-        /*
-        ========================================
-        USER
-        ========================================
-        */
         user,
 
-        /*
-        ========================================
-        LOADING
-        ========================================
-        */
         loading,
 
-        /*
-        ========================================
-        SUBSCRIPTION
-        ========================================
-        */
         subscription,
 
-        /*
-        ========================================
-        EXPIRED
-        ========================================
-        */
         isExpired,
 
-        /*
-        ========================================
-        ADMIN
-        ========================================
-        */
         isAdmin,
 
-        /*
-        ========================================
-        REFRESH
-        ========================================
-        */
         refreshSubscription,
 
       }}
@@ -424,6 +407,5 @@ export default function AuthProvider({
       {children}
 
     </AuthContext.Provider>
-
   );
 }
