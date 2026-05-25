@@ -49,52 +49,7 @@ export default function Login() {
   const [resetMessage, setResetMessage] =
     useState("");
 
-  /*
-  =========================================
-  AUTH CHECK
-  =========================================
-  */
-  useEffect(() => {
-
-    let mounted = true;
-
-    const checkUser =
-      async () => {
-
-        try {
-
-          const {
-            data: { session },
-          } =
-            await supabase.auth.getSession();
-
-          if (
-            mounted &&
-            session?.user
-          ) {
-
-            window.location.replace(
-              "/app/dashboard"
-            );
-          }
-
-        } catch (err) {
-
-          console.error(
-            "AUTH CHECK ERROR:",
-            err
-          );
-        }
-      };
-
-    checkUser();
-
-    return () => {
-
-      mounted = false;
-    };
-
-  }, []);
+ 
 
   /*
   =========================================

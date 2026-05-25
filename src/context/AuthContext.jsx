@@ -2,8 +2,6 @@ import {
   createContext,
   useEffect,
   useState,
-  useRef,
-  useCallback,
 } from "react";
 
 import { supabase } from "../lib/supabase";
@@ -39,14 +37,6 @@ export default function AuthProvider({
 
   /*
   ========================================
-  PREVENT MULTIPLE INITIAL LOADS
-  ========================================
-  */
-  const initializedRef =
-    useRef(false);
-
-  /*
-  ========================================
   ADMIN EMAILS
   ========================================
   */
@@ -60,137 +50,122 @@ export default function AuthProvider({
   ========================================
   */
   const loadSubscription =
-    useCallback(
-      async (userId) => {
+    async (userId) => {
 
-        if (!userId)
-          return;
+      if (!userId) {
 
-        try {
+        setSubscription(null);
+        setIsExpired(false);
 
-          const {
-            data,
-            error,
-          } =
-            await supabase
-              .from(
-                "user_subscriptions"
-              )
-              .select("*")
-              .eq(
-                "user_id",
-                userId
-              )
-              .maybeSingle();
+        return;
+      }
 
-          if (error) {
+      try {
 
-            console.log(
-              "SUBSCRIPTION ERROR:",
-              error
-            );
+        const {
+          data,
+          error,
+        } =
+          await supabase
+            .from(
+              "user_subscriptions"
+            )
+            .select("*")
+            .eq(
+              "user_id",
+              userId
+            )
+            .maybeSingle();
 
-            setSubscription(
-              null
-            );
-
-            setIsExpired(
-              false
-            );
-
-            return;
-          }
-
-          /*
-          ========================================
-          SAVE SUBSCRIPTION
-          ========================================
-          */
-          setSubscription(
-            data || null
-          );
-
-          /*
-          ========================================
-          EXPIRED CHECK
-          ========================================
-          */
-          if (
-            data?.expires_at
-          ) {
-
-            const expired =
-              new Date(
-                data.expires_at
-              ) < new Date();
-
-            setIsExpired(
-              expired
-            );
-
-          } else {
-
-            setIsExpired(
-              false
-            );
-          }
-
-        } catch (err) {
+        if (error) {
 
           console.log(
-            "LOAD SUBSCRIPTION ERROR:",
-            err
+            "SUBSCRIPTION ERROR:",
+            error
           );
 
-          setSubscription(
-            null
+          setSubscription(null);
+
+          setIsExpired(false);
+
+          return;
+        }
+
+        /*
+        ========================================
+        SAVE SUBSCRIPTION
+        ========================================
+        */
+        setSubscription(
+          data || null
+        );
+
+        /*
+        ========================================
+        CHECK EXPIRY
+        ========================================
+        */
+        if (
+          data?.expires_at
+        ) {
+
+          const expired =
+            new Date(
+              data.expires_at
+            ) < new Date();
+
+          setIsExpired(
+            expired
           );
+
+        } else {
 
           setIsExpired(
             false
           );
         }
-      },
-      []
-    );
+
+      } catch (err) {
+
+        console.log(
+          "LOAD SUBSCRIPTION ERROR:",
+          err
+        );
+
+        setSubscription(null);
+
+        setIsExpired(false);
+      }
+    };
 
   /*
   ========================================
-  LOAD USER
+  INITIAL SESSION
   ========================================
   */
-  const loadUser =
-    useCallback(
+  useEffect(() => {
+
+    let mounted = true;
+
+    const initialize =
       async () => {
 
         try {
 
-          setLoading(true);
-
           /*
           ========================================
-          GET SESSION
+          GET SESSION ONLY ONCE
           ========================================
           */
           const {
             data: {
               session,
             },
-            error,
           } =
             await supabase.auth.getSession();
 
-          if (error) {
-
-            console.log(
-              "SESSION ERROR:",
-              error
-            );
-
-            setUser(null);
-
+          if (!mounted)
             return;
-          }
 
           const currentUser =
             session?.user ||
@@ -198,7 +173,7 @@ export default function AuthProvider({
 
           /*
           ========================================
-          SET USER
+          USER
           ========================================
           */
           setUser(
@@ -207,7 +182,7 @@ export default function AuthProvider({
 
           /*
           ========================================
-          ADMIN CHECK
+          ADMIN
           ========================================
           */
           setIsAdmin(
@@ -218,7 +193,7 @@ export default function AuthProvider({
 
           /*
           ========================================
-          LOAD SUBSCRIPTION
+          SUBSCRIPTION
           ========================================
           */
           if (
@@ -228,69 +203,33 @@ export default function AuthProvider({
             await loadSubscription(
               currentUser.id
             );
-
-          } else {
-
-            setSubscription(
-              null
-            );
-
-            setIsExpired(
-              false
-            );
           }
 
         } catch (err) {
 
           console.log(
-            "LOAD USER ERROR:",
+            "INITIAL AUTH ERROR:",
             err
           );
 
-          setUser(null);
-
         } finally {
 
-          /*
-          ========================================
-          STOP LOADING ALWAYS
-          ========================================
-          */
-          setLoading(false);
+          if (mounted) {
+
+            setLoading(false);
+          }
         }
-      },
-      [loadSubscription]
-    );
+      };
 
-  /*
-  ========================================
-  INITIAL SESSION LOAD
-  ========================================
-  */
-  useEffect(() => {
+    initialize();
 
-    if (
-      initializedRef.current
-    ) {
-      return;
-    }
-
-    initializedRef.current =
-      true;
-
-    loadUser();
-
-  }, [loadUser]);
-
-  /*
-  ========================================
-  AUTH LISTENER
-  ========================================
-  */
-  useEffect(() => {
-
+    /*
+    ========================================
+    AUTH LISTENER
+    ========================================
+    */
     const {
-      data: listener,
+      data: authListener,
     } =
       supabase.auth.onAuthStateChange(
         async (
@@ -303,13 +242,16 @@ export default function AuthProvider({
             event
           );
 
+          if (!mounted)
+            return;
+
           const currentUser =
             session?.user ||
             null;
 
           /*
           ========================================
-          UPDATE USER
+          USER
           ========================================
           */
           setUser(
@@ -318,7 +260,7 @@ export default function AuthProvider({
 
           /*
           ========================================
-          ADMIN CHECK
+          ADMIN
           ========================================
           */
           setIsAdmin(
@@ -329,7 +271,7 @@ export default function AuthProvider({
 
           /*
           ========================================
-          LOAD SUBSCRIPTION
+          SUBSCRIPTION
           ========================================
           */
           if (
@@ -353,20 +295,28 @@ export default function AuthProvider({
 
           /*
           ========================================
-          FINISH LOADING
+          LOADING COMPLETE
           ========================================
           */
-          setLoading(false);
+          setLoading(
+            false
+          );
         }
       );
 
+    /*
+    ========================================
+    CLEANUP
+    ========================================
+    */
     return () => {
 
-      listener?.subscription?.unsubscribe();
+      mounted = false;
 
+      authListener?.subscription?.unsubscribe();
     };
 
-  }, [loadSubscription]);
+  }, []);
 
   /*
   ========================================
