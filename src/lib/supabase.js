@@ -92,7 +92,7 @@ const createSupabaseClient =
             ========================================
             */
             detectSessionInUrl:
-              false,
+            true,
 
             /*
             ========================================

@@ -25,6 +25,7 @@ SAFETY CHECK
 ========================================
 */
 if (!rootElement) {
+
   throw new Error(
     "❌ Root element not found"
   );
@@ -36,17 +37,28 @@ PREVENT DUPLICATE CHATBOT WIDGETS
 ========================================
 */
 const duplicateElements = [
+
   "aiaera-chatbot-widget",
+
   "aiaera-chatbot-button",
+
   "aiaera-chatbot-iframe",
+
 ];
 
+/*
+========================================
+REMOVE DUPLICATES
+========================================
+*/
 duplicateElements.forEach(
   (id) => {
+
     const element =
       document.getElementById(id);
 
     if (element) {
+
       element.remove();
     }
   }
@@ -62,11 +74,13 @@ document
     '[id^="aiaera-widget"]'
   )
   .forEach((el) => {
+
     if (
       !duplicateElements.includes(
         el.id
       )
     ) {
+
       el.remove();
     }
   });
@@ -97,7 +111,10 @@ because it causes:
 ========================================
 */
 root.render(
+
   <AuthProvider>
+
     <App />
+
   </AuthProvider>
 );

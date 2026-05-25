@@ -52,16 +52,31 @@ export default function AuthProvider({
   const loadSubscription =
     async (userId) => {
 
+      /*
+      ========================================
+      NO USER
+      ========================================
+      */
       if (!userId) {
 
-        setSubscription(null);
-        setIsExpired(false);
+        setSubscription(
+          null
+        );
+
+        setIsExpired(
+          false
+        );
 
         return;
       }
 
       try {
 
+        /*
+        ========================================
+        GET SUBSCRIPTION
+        ========================================
+        */
         const {
           data,
           error,
@@ -77,6 +92,11 @@ export default function AuthProvider({
             )
             .maybeSingle();
 
+        /*
+        ========================================
+        QUERY ERROR
+        ========================================
+        */
         if (error) {
 
           console.log(
@@ -84,9 +104,13 @@ export default function AuthProvider({
             error
           );
 
-          setSubscription(null);
+          setSubscription(
+            null
+          );
 
-          setIsExpired(false);
+          setIsExpired(
+            false
+          );
 
           return;
         }
@@ -132,38 +156,69 @@ export default function AuthProvider({
           err
         );
 
-        setSubscription(null);
+        setSubscription(
+          null
+        );
 
-        setIsExpired(false);
+        setIsExpired(
+          false
+        );
       }
     };
 
   /*
   ========================================
-  INITIAL SESSION
+  INITIAL AUTH + LISTENER
   ========================================
   */
   useEffect(() => {
 
-    let mounted = true;
+    let mounted =
+      true;
 
-    const initialize =
+    /*
+    ========================================
+    INITIAL SESSION
+    ========================================
+    */
+    const initializeAuth =
       async () => {
 
         try {
 
           /*
           ========================================
-          GET SESSION ONLY ONCE
+          GET SESSION
           ========================================
           */
           const {
             data: {
               session,
             },
+            error,
           } =
             await supabase.auth.getSession();
 
+          /*
+          ========================================
+          SESSION ERROR
+          ========================================
+          */
+          if (error) {
+
+            console.log(
+              "SESSION ERROR:",
+              error
+            );
+
+            return;
+          }
+
+          /*
+          ========================================
+          COMPONENT UNMOUNTED
+          ========================================
+          */
           if (!mounted)
             return;
 
@@ -173,7 +228,7 @@ export default function AuthProvider({
 
           /*
           ========================================
-          USER
+          SET USER
           ========================================
           */
           setUser(
@@ -182,7 +237,7 @@ export default function AuthProvider({
 
           /*
           ========================================
-          ADMIN
+          ADMIN CHECK
           ========================================
           */
           setIsAdmin(
@@ -193,7 +248,7 @@ export default function AuthProvider({
 
           /*
           ========================================
-          SUBSCRIPTION
+          LOAD SUBSCRIPTION
           ========================================
           */
           if (
@@ -202,6 +257,16 @@ export default function AuthProvider({
 
             await loadSubscription(
               currentUser.id
+            );
+
+          } else {
+
+            setSubscription(
+              null
+            );
+
+            setIsExpired(
+              false
             );
           }
 
@@ -214,18 +279,30 @@ export default function AuthProvider({
 
         } finally {
 
+          /*
+          ========================================
+          FINISH LOADING
+          ========================================
+          */
           if (mounted) {
 
-            setLoading(false);
+            setLoading(
+              false
+            );
           }
         }
       };
 
-    initialize();
+    /*
+    ========================================
+    RUN INITIAL AUTH
+    ========================================
+    */
+    initializeAuth();
 
     /*
     ========================================
-    AUTH LISTENER
+    AUTH STATE LISTENER
     ========================================
     */
     const {
@@ -242,6 +319,11 @@ export default function AuthProvider({
             event
           );
 
+          /*
+          ========================================
+          COMPONENT UNMOUNTED
+          ========================================
+          */
           if (!mounted)
             return;
 
@@ -251,7 +333,7 @@ export default function AuthProvider({
 
           /*
           ========================================
-          USER
+          UPDATE USER
           ========================================
           */
           setUser(
@@ -260,7 +342,7 @@ export default function AuthProvider({
 
           /*
           ========================================
-          ADMIN
+          ADMIN CHECK
           ========================================
           */
           setIsAdmin(
@@ -271,7 +353,7 @@ export default function AuthProvider({
 
           /*
           ========================================
-          SUBSCRIPTION
+          LOAD SUBSCRIPTION
           ========================================
           */
           if (
@@ -295,7 +377,7 @@ export default function AuthProvider({
 
           /*
           ========================================
-          LOADING COMPLETE
+          STOP LOADING
           ========================================
           */
           setLoading(
@@ -311,7 +393,8 @@ export default function AuthProvider({
     */
     return () => {
 
-      mounted = false;
+      mounted =
+        false;
 
       authListener?.subscription?.unsubscribe();
     };
@@ -339,16 +422,46 @@ export default function AuthProvider({
     <AuthContext.Provider
       value={{
 
+        /*
+        ========================================
+        USER
+        ========================================
+        */
         user,
 
+        /*
+        ========================================
+        LOADING
+        ========================================
+        */
         loading,
 
+        /*
+        ========================================
+        SUBSCRIPTION
+        ========================================
+        */
         subscription,
 
+        /*
+        ========================================
+        EXPIRED
+        ========================================
+        */
         isExpired,
 
+        /*
+        ========================================
+        ADMIN
+        ========================================
+        */
         isAdmin,
 
+        /*
+        ========================================
+        REFRESH
+        ========================================
+        */
         refreshSubscription,
 
       }}

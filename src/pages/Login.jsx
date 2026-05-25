@@ -1,8 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 import { supabase } from "../lib/supabase";
 
-import { Link } from "react-router-dom";
+import {
+  Link,
+  useNavigate,
+} from "react-router-dom";
 
 import {
   Bot,
@@ -22,6 +25,14 @@ import { motion } from "framer-motion";
 import logo from "../assets/aiaera-logo.png";
 
 export default function Login() {
+
+  /*
+  =========================================
+  NAVIGATION
+  =========================================
+  */
+  const navigate =
+    useNavigate();
 
   /*
   =========================================
@@ -49,8 +60,6 @@ export default function Login() {
   const [resetMessage, setResetMessage] =
     useState("");
 
- 
-
   /*
   =========================================
   LOGIN
@@ -76,7 +85,6 @@ export default function Login() {
         =========================================
         */
         const {
-          data,
           error,
         } =
           await supabase.auth.signInWithPassword({
@@ -88,11 +96,6 @@ export default function Login() {
               password.trim(),
           });
 
-        console.log(
-          "LOGIN DATA:",
-          data
-        );
-
         /*
         =========================================
         AUTH ERROR
@@ -103,54 +106,8 @@ export default function Login() {
           throw error;
         }
 
-        /*
-        =========================================
-        VERIFY SESSION
-        =========================================
-        */
-        const {
-          data: {
-            session,
-          },
-          error: sessionError,
-        } =
-          await supabase.auth.getSession();
-
         console.log(
-          "SESSION:",
-          session
-        );
-
-        if (
-          sessionError
-        ) {
-
-          throw sessionError;
-        }
-
-        /*
-        =========================================
-        SESSION NOT FOUND
-        =========================================
-        */
-        if (!session) {
-
-          throw new Error(
-            "Login successful but session not found."
-          );
-        }
-
-        /*
-        =========================================
-        SMALL DELAY FOR STORAGE SYNC
-        =========================================
-        */
-        await new Promise(
-          (resolve) =>
-            setTimeout(
-              resolve,
-              500
-            )
+          "LOGIN SUCCESS"
         );
 
         /*
@@ -158,7 +115,7 @@ export default function Login() {
         REDIRECT
         =========================================
         */
-        window.location.replace(
+        navigate(
           "/app/dashboard"
         );
 

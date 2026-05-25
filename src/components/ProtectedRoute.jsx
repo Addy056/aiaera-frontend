@@ -47,7 +47,7 @@ export default function ProtectedRoute({
 
   /*
   ========================================
-  LOADING STATE
+  LOADING SCREEN
   ========================================
   */
   if (loading) {
@@ -56,7 +56,7 @@ export default function ProtectedRoute({
 
       <div className="min-h-screen bg-[#050816] flex items-center justify-center overflow-hidden relative">
 
-        {/* BACKGROUND GLOW */}
+        {/* BACKGROUND */}
         <div className="absolute top-[-150px] left-[-150px] w-[340px] h-[340px] bg-purple-600/20 blur-[160px] rounded-full"></div>
 
         <div className="absolute bottom-[-150px] right-[-150px] w-[340px] h-[340px] bg-blue-600/20 blur-[160px] rounded-full"></div>
@@ -73,13 +73,14 @@ export default function ProtectedRoute({
 
           </div>
 
-          {/* TEXT */}
+          {/* TITLE */}
           <h2 className="text-white text-2xl font-bold mb-2">
 
             Loading Workspace...
 
           </h2>
 
+          {/* DESC */}
           <p className="text-gray-400 text-sm">
 
             Verifying your session
@@ -94,10 +95,14 @@ export default function ProtectedRoute({
 
   /*
   ========================================
-  NOT LOGGED IN
+  USER NOT FOUND
   ========================================
   */
   if (!user) {
+
+    console.log(
+      "NO USER FOUND - REDIRECT LOGIN"
+    );
 
     return (
 
