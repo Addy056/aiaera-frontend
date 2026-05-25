@@ -13,7 +13,6 @@ import {
   EyeOff,
   ArrowRight,
   CheckCircle2,
-  Zap,
   Clock3,
 } from "lucide-react";
 
@@ -22,18 +21,23 @@ import { motion } from "framer-motion";
 import logo from "../assets/aiaera-logo.png";
 
 export default function Signup() {
-  const navigate = useNavigate();
+
+  const navigate =
+    useNavigate();
 
   /*
   =========================================
   STATES
   =========================================
   */
-  const [email, setEmail] = useState("");
+  const [email, setEmail] =
+    useState("");
 
-  const [password, setPassword] = useState("");
+  const [password, setPassword] =
+    useState("");
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] =
+    useState(false);
 
   const [checkingAuth, setCheckingAuth] =
     useState(true);
@@ -49,7 +53,7 @@ export default function Signup() {
 
   /*
   =========================================
-  PREVENT MULTIPLE REQUESTS
+  PREVENT DUPLICATE REQUESTS
   =========================================
   */
   const signupInProgress =
@@ -61,20 +65,29 @@ export default function Signup() {
   =========================================
   */
   useEffect(() => {
+
     let mounted = true;
 
     const checkSession =
       async () => {
+
         try {
+
           const {
             data: { session },
           } =
             await supabase.auth.getSession();
 
+          /*
+          =========================================
+          ALREADY LOGGED IN
+          =========================================
+          */
           if (
             mounted &&
             session?.user
           ) {
+
             navigate(
               "/app/dashboard",
               {
@@ -82,14 +95,21 @@ export default function Signup() {
               }
             );
           }
+
         } catch (err) {
+
           console.log(
             "SESSION CHECK ERROR:",
             err
           );
+
         } finally {
+
           if (mounted) {
-            setCheckingAuth(false);
+
+            setCheckingAuth(
+              false
+            );
           }
         }
       };
@@ -97,8 +117,10 @@ export default function Signup() {
     checkSession();
 
     return () => {
+
       mounted = false;
     };
+
   }, [navigate]);
 
   /*
@@ -108,17 +130,19 @@ export default function Signup() {
   */
   const handleSignup =
     async (e) => {
+
       e.preventDefault();
 
       /*
       =========================================
-      BLOCK DUPLICATE REQUESTS
+      BLOCK MULTIPLE CLICKS
       =========================================
       */
       if (
         loading ||
         signupInProgress.current
       ) {
+
         return;
       }
 
@@ -132,9 +156,12 @@ export default function Signup() {
       setSuccessMsg("");
 
       try {
+
         /*
         =========================================
-        CREATE USER
+        CREATE ACCOUNT
+        IMPORTANT:
+        DO NOT AUTO LOGIN
         =========================================
         */
         const {
@@ -146,9 +173,44 @@ export default function Signup() {
               email.trim(),
 
             password,
+
+            options: {
+
+              /*
+              =========================================
+              PREVENT SESSION RACE CONDITION
+              =========================================
+              */
+              emailRedirectTo:
+                undefined,
+            },
           });
 
+        /*
+        =========================================
+        ERROR
+        =========================================
+        */
         if (error) {
+
+          /*
+          =========================================
+          USER EXISTS
+          =========================================
+          */
+          if (
+            error.message
+              ?.toLowerCase()
+              .includes(
+                "already registered"
+              )
+          ) {
+
+            throw new Error(
+              "Account already exists. Please login instead."
+            );
+          }
+
           throw error;
         }
 
@@ -156,8 +218,9 @@ export default function Signup() {
           data?.user;
 
         if (!user) {
+
           throw new Error(
-            "User creation failed"
+            "Failed to create account"
           );
         }
 
@@ -175,7 +238,7 @@ export default function Signup() {
         );
 
         const {
-          error: subError,
+          error: subscriptionError,
         } =
           await supabase
             .from(
@@ -210,10 +273,18 @@ export default function Signup() {
               }
             );
 
-        if (subError) {
+        /*
+        =========================================
+        SUBSCRIPTION ERROR
+        =========================================
+        */
+        if (
+          subscriptionError
+        ) {
+
           console.log(
             "SUBSCRIPTION ERROR:",
-            subError
+            subscriptionError
           );
         }
 
@@ -223,44 +294,65 @@ export default function Signup() {
         =========================================
         */
         setSuccessMsg(
-          "🎉 Account created successfully!"
+          "🎉 Account created successfully! Redirecting to login..."
         );
 
         /*
         =========================================
-        WAIT FOR SESSION
+        CLEAR FORM
         =========================================
         */
-        await new Promise(
-          (resolve) =>
-            setTimeout(
-              resolve,
-              1000
-            )
-        );
+        setEmail("");
+
+        setPassword("");
 
         /*
         =========================================
-        REDIRECT
+        REDIRECT TO LOGIN
         =========================================
         */
-        navigate(
-          "/app/dashboard",
-          {
-            replace: true,
-          }
-        );
+        setTimeout(() => {
+
+          navigate(
+            "/login"
+          );
+
+        }, 1800);
+
       } catch (err) {
+
         console.log(
-          "SIGNUP ERROR:",
+          "FINAL SIGNUP ERROR:",
           err
         );
 
-        setErrorMsg(
-          err?.message ||
-            "Signup failed"
-        );
+        /*
+        =========================================
+        HANDLE LOCK ERROR
+        =========================================
+        */
+        if (
+          err?.message
+            ?.toLowerCase()
+            .includes(
+              "lock"
+            )
+        ) {
+
+          setErrorMsg(
+            "Authentication conflict detected. Please refresh and try again."
+          );
+
+        } else {
+
+          setErrorMsg(
+            err?.message ||
+              "Signup failed"
+          );
+        }
+
       } finally {
+
         setLoading(false);
 
         signupInProgress.current =
@@ -270,18 +362,23 @@ export default function Signup() {
 
   /*
   =========================================
-  LOADING SCREEN
+  LOADING
   =========================================
   */
   if (checkingAuth) {
+
     return (
+
       <div className="min-h-screen bg-[#050816] flex items-center justify-center">
+
         <div className="w-10 h-10 border-2 border-white/20 border-t-purple-500 rounded-full animate-spin"></div>
+
       </div>
     );
   }
 
   return (
+
     <div className="min-h-screen bg-[#050816] relative overflow-hidden flex items-center justify-center px-6 py-10">
 
       {/* BACKGROUND */}
@@ -400,7 +497,36 @@ export default function Signup() {
 
             <div className="relative bg-[#0B1120]/90 backdrop-blur-3xl rounded-[36px] p-8 overflow-hidden">
 
+              <div className="relative flex justify-center mb-10">
+
+                <div className="absolute w-24 h-24 bg-purple-500/20 blur-[55px] rounded-[28px]"></div>
+
+                <div className="relative w-[88px] h-[88px] rounded-[24px] border border-white/10 bg-[#0A0F1F] backdrop-blur-3xl flex items-center justify-center shadow-[0_20px_60px_rgba(124,58,237,0.35)]">
+
+                  <img
+                    src={logo}
+                    alt="AIAERA"
+                    className="w-16 h-16 object-contain"
+                  />
+
+                </div>
+
+              </div>
+
               <div className="text-center mb-8">
+
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-purple-500/20 bg-purple-500/10 mb-5">
+
+                  <Clock3
+                    size={15}
+                    className="text-purple-300"
+                  />
+
+                  <span className="text-sm text-purple-200 font-medium">
+                    7-Day Free Trial
+                  </span>
+
+                </div>
 
                 <h2 className="text-5xl font-black text-white mb-3 tracking-[-2px]">
 
@@ -417,15 +543,22 @@ export default function Signup() {
               </div>
 
               {errorMsg && (
+
                 <div className="mb-5 p-4 rounded-2xl bg-red-500/15 border border-red-500/20 text-red-300 text-sm">
+
                   {errorMsg}
+
                 </div>
               )}
 
               {successMsg && (
+
                 <div className="mb-5 p-4 rounded-2xl bg-green-500/15 border border-green-500/20 text-green-300 text-sm flex items-center gap-2">
+
                   <CheckCircle2 size={16} />
+
                   {successMsg}
+
                 </div>
               )}
 
@@ -441,7 +574,7 @@ export default function Signup() {
 
                   <input
                     type="email"
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white"
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
                     value={email}
                     onChange={(e) =>
                       setEmail(
@@ -469,7 +602,7 @@ export default function Signup() {
                           ? "text"
                           : "password"
                       }
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 pr-14 text-white"
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 pr-14 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
                       value={password}
                       onChange={(e) =>
                         setPassword(
@@ -486,7 +619,7 @@ export default function Signup() {
                           !showPassword
                         )
                       }
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition"
                     >
 
                       {showPassword ? (
@@ -504,16 +637,20 @@ export default function Signup() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold py-4 rounded-2xl flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:scale-[1.02] transition-all duration-300 text-white font-semibold py-4 rounded-2xl flex items-center justify-center gap-2 disabled:opacity-50"
                 >
 
                   {loading ? (
+
                     <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+
                   ) : (
+
                     <>
                       Start Free Trial
                       <ArrowRight size={18} />
                     </>
+
                   )}
 
                 </button>
@@ -528,7 +665,7 @@ export default function Signup() {
 
                   <Link
                     to="/login"
-                    className="text-purple-400 font-semibold"
+                    className="text-purple-400 font-semibold hover:text-purple-300"
                   >
                     Login
                   </Link>
@@ -554,7 +691,9 @@ function FeatureCard({
   title,
   desc,
 }) {
+
   return (
+
     <motion.div
       whileHover={{
         y: -4,
