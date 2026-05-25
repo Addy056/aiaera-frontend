@@ -73,8 +73,9 @@ export default function Login() {
             session?.user
           ) {
 
-            window.location.href =
-              "/app/dashboard";
+            window.location.replace(
+              "/app/dashboard"
+            );
           }
 
         } catch (err) {
@@ -105,11 +106,6 @@ export default function Login() {
 
       e.preventDefault();
 
-      /*
-      =========================================
-      PREVENT MULTIPLE CLICKS
-      =========================================
-      */
       if (loading)
         return;
 
@@ -121,11 +117,14 @@ export default function Login() {
 
         /*
         =========================================
-        LOGIN REQUEST
+        LOGIN USER
         =========================================
         */
-        const loginPromise =
-          supabase.auth.signInWithPassword({
+        const {
+          data,
+          error,
+        } =
+          await supabase.auth.signInWithPassword({
 
             email:
               email.trim(),
@@ -134,52 +133,19 @@ export default function Login() {
               password.trim(),
           });
 
-        /*
-        =========================================
-        TIMEOUT PROTECTION
-        =========================================
-        */
-        const timeoutPromise =
-          new Promise(
-            (_, reject) =>
-
-              setTimeout(() => {
-
-                reject(
-                  new Error(
-                    "Login request timed out. Please try again."
-                  )
-                );
-
-              }, 10000)
-          );
-
-        /*
-        =========================================
-        WAIT FOR LOGIN
-        =========================================
-        */
-        const result =
-          await Promise.race([
-            loginPromise,
-            timeoutPromise,
-          ]);
-
         console.log(
-          "LOGIN RESULT:",
-          result
+          "LOGIN DATA:",
+          data
         );
 
         /*
         =========================================
-        ERROR CHECK
+        AUTH ERROR
         =========================================
         */
-        if (
-          result?.error
-        ) {
+        if (error) {
 
-          throw result.error;
+          throw error;
         }
 
         /*
@@ -188,39 +154,47 @@ export default function Login() {
         =========================================
         */
         const {
-          data: sessionData,
+          data: {
+            session,
+          },
+          error: sessionError,
         } =
           await supabase.auth.getSession();
 
         console.log(
           "SESSION:",
-          sessionData
+          session
         );
+
+        if (
+          sessionError
+        ) {
+
+          throw sessionError;
+        }
 
         /*
         =========================================
-        SESSION FAILED
+        SESSION NOT FOUND
         =========================================
         */
-        if (
-          !sessionData?.session
-        ) {
+        if (!session) {
 
           throw new Error(
-            "Session could not be created."
+            "Login successful but session not found."
           );
         }
 
         /*
         =========================================
-        WAIT FOR STORAGE
+        SMALL DELAY FOR STORAGE SYNC
         =========================================
         */
         await new Promise(
           (resolve) =>
             setTimeout(
               resolve,
-              1200
+              500
             )
         );
 
@@ -229,8 +203,9 @@ export default function Login() {
         REDIRECT
         =========================================
         */
-        window.location.href =
-          "/app/dashboard";
+        window.location.replace(
+          "/app/dashboard"
+        );
 
       } catch (err) {
 
@@ -239,10 +214,48 @@ export default function Login() {
           err
         );
 
-        setErrorMsg(
-          err?.message ||
-            "Login failed"
-        );
+        /*
+        =========================================
+        CLEAN ERROR MESSAGES
+        =========================================
+        */
+        if (
+          err?.message?.includes(
+            "Invalid login credentials"
+          )
+        ) {
+
+          setErrorMsg(
+            "Incorrect email or password."
+          );
+
+        } else if (
+          err?.message?.includes(
+            "Email not confirmed"
+          )
+        ) {
+
+          setErrorMsg(
+            "Please verify your email before logging in."
+          );
+
+        } else if (
+          err?.message?.includes(
+            "fetch"
+          )
+        ) {
+
+          setErrorMsg(
+            "Network error. Please check your internet connection."
+          );
+
+        } else {
+
+          setErrorMsg(
+            err?.message ||
+              "Login failed"
+          );
+        }
 
       } finally {
 

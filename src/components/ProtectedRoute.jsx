@@ -1,6 +1,5 @@
 import {
-  useEffect,
-  useState,
+  useContext,
 } from "react";
 
 import {
@@ -8,14 +7,16 @@ import {
   useLocation,
 } from "react-router-dom";
 
-import { supabase } from "../lib/supabase";
+import {
+  AuthContext,
+} from "../context/AuthContext";
 
 /*
 ========================================
 PROTECTED ROUTE
 ========================================
-Protects dashboard routes
-from unauthorized access
+Centralized auth protection
+using AuthContext only
 ========================================
 */
 
@@ -25,228 +26,28 @@ export default function ProtectedRoute({
 
   /*
   ========================================
-  STATES
+  AUTH CONTEXT
   ========================================
   */
-  const [loading, setLoading] =
-    useState(true);
+  const {
+    user,
+    loading,
+  } =
+    useContext(
+      AuthContext
+    );
 
-  const [authenticated, setAuthenticated] =
-    useState(false);
-
+  /*
+  ========================================
+  CURRENT LOCATION
+  ========================================
+  */
   const location =
     useLocation();
 
   /*
   ========================================
-  CHECK AUTH
-  ========================================
-  */
-  useEffect(() => {
-
-    let mounted = true;
-
-    /*
-    ========================================
-    VERIFY SESSION
-    ========================================
-    */
-    const verifySession =
-      async () => {
-
-        try {
-
-          const {
-            data: { session },
-            error,
-          } =
-            await supabase.auth.getSession();
-
-          /*
-          ========================================
-          SESSION ERROR
-          ========================================
-          */
-          if (error) {
-
-            console.error(
-              "AUTH SESSION ERROR:",
-              error
-            );
-
-            if (mounted) {
-
-              setAuthenticated(
-                false
-              );
-            }
-
-            return;
-          }
-
-          /*
-          ========================================
-          AUTH STATE
-          ========================================
-          */
-          if (mounted) {
-
-            setAuthenticated(
-              !!session
-            );
-          }
-
-        } catch (err) {
-
-          console.error(
-            "PROTECTED ROUTE ERROR:",
-            err
-          );
-
-          if (mounted) {
-
-            setAuthenticated(
-              false
-            );
-          }
-
-        } finally {
-
-          if (mounted) {
-
-            /*
-            ========================================
-            SMALL DELAY
-            Prevents redirect flashing
-            on slower devices
-            ========================================
-            */
-            setTimeout(() => {
-
-              if (mounted) {
-
-                setLoading(
-                  false
-                );
-              }
-
-            }, 300);
-          }
-        }
-      };
-
-    /*
-    ========================================
-    INITIAL SESSION CHECK
-    ========================================
-    */
-    verifySession();
-
-    /*
-    ========================================
-    AUTH LISTENER
-    ========================================
-    */
-    const {
-      data: {
-        subscription,
-      },
-    } =
-      supabase.auth.onAuthStateChange(
-        async (
-          event,
-          session
-        ) => {
-
-          if (!mounted)
-            return;
-
-          console.log(
-            "AUTH EVENT:",
-            event
-          );
-
-          /*
-          ========================================
-          SIGNED IN
-          ========================================
-          */
-          if (
-            event ===
-              "SIGNED_IN" ||
-            event ===
-              "TOKEN_REFRESHED"
-          ) {
-
-            setAuthenticated(
-              !!session
-            );
-
-            setLoading(
-              false
-            );
-          }
-
-          /*
-          ========================================
-          SIGNED OUT
-          ========================================
-          */
-          if (
-            event ===
-            "SIGNED_OUT"
-          ) {
-
-            setAuthenticated(
-              false
-            );
-
-            setLoading(
-              false
-            );
-          }
-        }
-      );
-
-    /*
-    ========================================
-    FAILSAFE
-    Prevent infinite loading
-    ========================================
-    */
-    const failsafe =
-      setTimeout(() => {
-
-        if (mounted) {
-
-          setLoading(
-            false
-          );
-        }
-
-      }, 5000);
-
-    /*
-    ========================================
-    CLEANUP
-    ========================================
-    */
-    return () => {
-
-      mounted = false;
-
-      clearTimeout(
-        failsafe
-      );
-
-      subscription?.unsubscribe();
-    };
-
-  }, []);
-
-  /*
-  ========================================
-  LOADING UI
+  LOADING STATE
   ========================================
   */
   if (loading) {
@@ -255,7 +56,7 @@ export default function ProtectedRoute({
 
       <div className="min-h-screen bg-[#050816] flex items-center justify-center overflow-hidden relative">
 
-        {/* GLOW */}
+        {/* BACKGROUND GLOW */}
         <div className="absolute top-[-150px] left-[-150px] w-[340px] h-[340px] bg-purple-600/20 blur-[160px] rounded-full"></div>
 
         <div className="absolute bottom-[-150px] right-[-150px] w-[340px] h-[340px] bg-blue-600/20 blur-[160px] rounded-full"></div>
@@ -275,7 +76,7 @@ export default function ProtectedRoute({
           {/* TEXT */}
           <h2 className="text-white text-2xl font-bold mb-2">
 
-            Loading AIAERA...
+            Loading Workspace...
 
           </h2>
 
@@ -293,10 +94,10 @@ export default function ProtectedRoute({
 
   /*
   ========================================
-  NOT AUTHENTICATED
+  NOT LOGGED IN
   ========================================
   */
-  if (!authenticated) {
+  if (!user) {
 
     return (
 
