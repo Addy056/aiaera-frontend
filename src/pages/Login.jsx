@@ -1,4 +1,8 @@
-import { useState } from "react";
+import {
+  useState,
+  useEffect,
+  useContext,
+} from "react";
 
 import { supabase } from "../lib/supabase";
 
@@ -6,6 +10,10 @@ import {
   Link,
   useNavigate,
 } from "react-router-dom";
+
+import {
+  AuthContext,
+} from "../context/AuthContext";
 
 import {
   Bot,
@@ -36,6 +44,18 @@ export default function Login() {
 
   /*
   =========================================
+  AUTH CONTEXT
+  =========================================
+  */
+  const {
+    user,
+  } =
+    useContext(
+      AuthContext
+    );
+
+  /*
+  =========================================
   STATES
   =========================================
   */
@@ -59,6 +79,29 @@ export default function Login() {
 
   const [resetMessage, setResetMessage] =
     useState("");
+
+  /*
+  =========================================
+  REDIRECT AFTER AUTH HYDRATION
+  =========================================
+  */
+  useEffect(() => {
+
+    if (user) {
+
+      console.log(
+        "USER AUTHENTICATED"
+      );
+
+      navigate(
+        "/app/dashboard",
+        {
+          replace: true,
+        }
+      );
+    }
+
+  }, [user, navigate]);
 
   /*
   =========================================
@@ -112,12 +155,10 @@ export default function Login() {
 
         /*
         =========================================
-        REDIRECT
+        DO NOT NAVIGATE HERE
+        AuthContext handles hydration first
         =========================================
         */
-        navigate(
-          "/app/dashboard"
-        );
 
       } catch (err) {
 
@@ -128,7 +169,7 @@ export default function Login() {
 
         /*
         =========================================
-        CLEAN ERROR MESSAGES
+        CLEAN ERRORS
         =========================================
         */
         if (
@@ -259,92 +300,8 @@ export default function Login() {
       </div>
 
       {/* MAIN */}
-      <div className="relative z-10 w-full max-w-7xl grid lg:grid-cols-2 gap-20 items-center">
+      <div className="relative z-10 w-full max-w-md mx-auto">
 
-        {/* LEFT SIDE */}
-        <motion.div
-          initial={{
-            opacity: 0,
-            y: 40,
-          }}
-          animate={{
-            opacity: 1,
-            y: 0,
-          }}
-          transition={{
-            duration: 0.8,
-          }}
-          className="hidden lg:block"
-        >
-
-          {/* BADGE */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/5 backdrop-blur-xl mb-8">
-
-            <Sparkles
-              className="w-4 h-4 text-purple-400"
-            />
-
-            <span className="text-sm text-gray-300">
-              AI Automation Platform
-            </span>
-
-          </div>
-
-          {/* TITLE */}
-          <h1 className="text-7xl font-black leading-[0.92] tracking-[-4px] text-white mb-8">
-
-            Welcome Back
-
-            <span className="block bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
-
-              To AIAERA
-
-            </span>
-
-          </h1>
-
-          {/* DESC */}
-          <p className="text-gray-400 text-xl leading-relaxed mb-14 max-w-xl">
-
-            Manage AI chatbots,
-            automate customer conversations,
-            capture leads,
-            and scale support with intelligent AI.
-
-          </p>
-
-          {/* FEATURES */}
-          <div className="space-y-5">
-
-            <FeatureCard
-              icon={
-                <Bot className="text-purple-400" />
-              }
-              title="Website AI Chatbots"
-              desc="Train AI using your business knowledge"
-            />
-
-            <FeatureCard
-              icon={
-                <Rocket className="text-blue-400" />
-              }
-              title="Lead & Appointment Automation"
-              desc="Capture and convert customers automatically"
-            />
-
-            <FeatureCard
-              icon={
-                <ShieldCheck className="text-pink-400" />
-              }
-              title="WhatsApp & Social AI"
-              desc="Unlock omnichannel automation with Pro"
-            />
-
-          </div>
-
-        </motion.div>
-
-        {/* RIGHT SIDE */}
         <motion.div
           initial={{
             opacity: 0,
@@ -357,30 +314,23 @@ export default function Login() {
           transition={{
             duration: 0.7,
           }}
-          className="w-full max-w-md mx-auto relative"
         >
 
-          {/* LOGIN CARD */}
           <div className="relative rounded-[36px] p-[1px] bg-gradient-to-br from-purple-500/30 via-white/10 to-blue-500/30 shadow-[0_20px_120px_rgba(0,0,0,0.55)]">
 
             <div className="relative bg-[#0B1120]/90 backdrop-blur-3xl rounded-[36px] p-8 overflow-hidden">
-
-              {/* GLOW */}
-              <div className="absolute top-[-120px] right-[-120px] w-[280px] h-[280px] bg-purple-500/20 blur-[120px] rounded-full"></div>
 
               {/* LOGO */}
               <div className="relative flex justify-center mb-10">
 
                 <div className="absolute w-24 h-24 bg-purple-500/20 blur-[55px] rounded-[28px]"></div>
 
-                <div className="relative w-[88px] h-[88px] rounded-[24px] border border-white/10 bg-[#0A0F1F] backdrop-blur-3xl flex items-center justify-center shadow-[0_20px_60px_rgba(124,58,237,0.35)]">
-
-                  <div className="absolute inset-[1px] rounded-[23px] bg-gradient-to-br from-white/5 to-transparent"></div>
+                <div className="relative w-[88px] h-[88px] rounded-[24px] border border-white/10 bg-[#0A0F1F] flex items-center justify-center">
 
                   <img
                     src={logo}
                     alt="AIAERA"
-                    className="relative w-16 h-16 object-contain"
+                    className="w-16 h-16 object-contain"
                   />
 
                 </div>
@@ -409,7 +359,7 @@ export default function Login() {
 
                 </h2>
 
-                <p className="text-gray-400 leading-relaxed">
+                <p className="text-gray-400">
 
                   Access your AI automation dashboard
 
@@ -456,7 +406,7 @@ export default function Login() {
                   <input
                     type="email"
                     placeholder="you@example.com"
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:bg-white/10 transition-all"
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white"
                     value={email}
                     onChange={(e) =>
                       setEmail(
@@ -486,7 +436,7 @@ export default function Login() {
                           : "password"
                       }
                       placeholder="Enter your password"
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 pr-14 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:bg-white/10 transition-all"
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 pr-14 text-white"
                       value={password}
                       onChange={(e) =>
                         setPassword(
@@ -503,7 +453,7 @@ export default function Login() {
                           !showPassword
                         )
                       }
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
                     >
 
                       {showPassword ? (
@@ -527,7 +477,7 @@ export default function Login() {
                       handleForgotPassword
                     }
                     disabled={resetLoading}
-                    className="text-sm text-purple-400 hover:text-purple-300 transition"
+                    className="text-sm text-purple-400"
                   >
 
                     {resetLoading
@@ -542,7 +492,7 @@ export default function Login() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:scale-[1.02] hover:shadow-xl hover:shadow-purple-500/20 transition-all duration-300 text-white font-semibold py-4 rounded-2xl flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold py-4 rounded-2xl flex items-center justify-center gap-2 disabled:opacity-50"
                 >
 
                   {loading ? (
@@ -562,7 +512,7 @@ export default function Login() {
 
               </form>
 
-              {/* TRIAL CTA */}
+              {/* CTA */}
               <div className="mt-6 p-4 rounded-2xl border border-purple-500/20 bg-purple-500/5">
 
                 <div className="flex items-start gap-3">
@@ -580,15 +530,15 @@ export default function Login() {
 
                     </h4>
 
-                    <p className="text-xs text-gray-400 leading-relaxed mb-3">
+                    <p className="text-xs text-gray-400 mb-3">
 
-                      Start your 7-day free trial and build AI chatbots for your business.
+                      Start your 7-day free trial.
 
                     </p>
 
                     <Link
                       to="/signup"
-                      className="inline-flex items-center gap-2 text-sm font-medium text-purple-300 hover:text-purple-200 transition"
+                      className="inline-flex items-center gap-2 text-sm font-medium text-purple-300"
                     >
 
                       Start Free Trial
@@ -620,46 +570,5 @@ export default function Login() {
       </div>
 
     </div>
-  );
-}
-
-function FeatureCard({
-  icon,
-  title,
-  desc,
-}) {
-
-  return (
-
-    <motion.div
-      whileHover={{
-        y: -4,
-      }}
-      className="flex items-center gap-4 p-5 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl"
-    >
-
-      <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10">
-
-        {icon}
-
-      </div>
-
-      <div>
-
-        <h3 className="text-white font-semibold text-lg">
-
-          {title}
-
-        </h3>
-
-        <p className="text-gray-400 text-sm">
-
-          {desc}
-
-        </p>
-
-      </div>
-
-    </motion.div>
   );
 }
