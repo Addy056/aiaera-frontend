@@ -17,12 +17,22 @@ import {
 import {
   useState,
   useEffect,
-  useContext,
   useRef,
 } from "react";
 
 import { supabase } from "../lib/supabase";
-import { AuthContext } from "../context/AuthContext";
+
+import {
+  useAuth,
+} from "../hooks/useAuth";
+
+import {
+  useBuilder,
+} from "../hooks/useBuilder";
+
+import {
+  saveIntegrations,
+} from "../api/integrationsApi";
 
 const API_URL =
   import.meta.env.VITE_API_URL;
@@ -30,16 +40,30 @@ const API_URL =
 export default function Builder() {
 
   const { user } =
-    useContext(AuthContext);
-
+    useAuth();
+const token =
+  (await supabase.auth.getSession())
+    ?.data?.session?.access_token;
   const messagesEndRef =
     useRef(null);
 
-  const [loading, setLoading] =
-    useState(true);
+  const {
 
-  const [saving, setSaving] =
-    useState(false);
+    selectedChatbot,
+
+    integrations,
+
+    loading,
+
+    saving,
+
+    setIntegrations,
+
+    handleSaveChatbot,
+
+  } = useBuilder(
+    user?.id
+  );
 
   const [sending, setSending] =
     useState(false);
@@ -58,13 +82,6 @@ export default function Builder() {
 
   const [website, setWebsite] =
     useState("");
-
-  const [integrations, setIntegrations] =
-    useState({
-      provider: "calendly",
-      meeting_link: "",
-      maps_link: "",
-    });
 
   const [theme, setTheme] =
     useState({
@@ -90,11 +107,20 @@ export default function Builder() {
 
   useEffect(() => {
 
-    if (!user) return;
+    if (!selectedChatbot)
+      return;
+   setChatbotId(selectedChatbot.id);
+    setBusinessInfo(
+      selectedChatbot.business_info ||
+        ""
+    );
 
-    initialize();
+    setWebsite(
+      selectedChatbot.website_url ||
+        ""
+    );
 
-  }, [user]);
+  }, [selectedChatbot]);
 
   useEffect(() => {
 
@@ -104,162 +130,7 @@ export default function Builder() {
 
   }, [messages]);
 
-  const initialize = async () => {
-
-    try {
-
-      setLoading(true);
-
-      let {
-        data: chatbot,
-      } = await supabase
-        .from("chatbots")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (!chatbot) {
-
-        const {
-          data: newBot,
-        } = await supabase
-          .from("chatbots")
-          .insert([
-            {
-              user_id: user.id,
-
-              business_info: "",
-
-              website_url: "",
-
-              bot_name:
-                "AI Assistant",
-
-              theme: {
-                botName:
-                  "AI Assistant",
-
-                chatBg:
-                  "#081120",
-
-                botBubble:
-                  "#1F2937",
-
-                userBubble:
-                  "#7f5af0",
-
-                textColor:
-                  "#ffffff",
-
-                logo: "",
-              },
-            },
-          ])
-          .select()
-          .single();
-
-        chatbot = newBot;
-      }
-
-      setChatbotId(chatbot.id);
-
-      setBusinessInfo(
-        chatbot.business_info || ""
-      );
-
-      setWebsite(
-        chatbot.website_url || ""
-      );
-
-      let parsedTheme =
-        chatbot.theme || {};
-
-      if (
-        typeof parsedTheme ===
-        "string"
-      ) {
-
-        try {
-
-          parsedTheme =
-            JSON.parse(
-              parsedTheme
-            );
-
-        } catch {
-
-          parsedTheme = {};
-        }
-      }
-
-      setTheme({
-        botName:
-          parsedTheme.botName ||
-          "AI Assistant",
-
-        chatBg:
-          parsedTheme.chatBg ||
-          "#081120",
-
-        botBubble:
-          parsedTheme.botBubble ||
-          "#1F2937",
-
-        userBubble:
-          parsedTheme.userBubble ||
-          "#7f5af0",
-
-        textColor:
-          parsedTheme.textColor ||
-          "#ffffff",
-
-        logo:
-          parsedTheme.logo ||
-          "",
-      });
-
-      const token =
-        (
-          await supabase.auth.getSession()
-        ).data.session
-          ?.access_token;
-
-      const integrationRes =
-        await fetch(
-          `${API_URL}/api/integrations`,
-          {
-            headers: {
-              Authorization:
-                `Bearer ${token}`,
-            },
-          }
-        );
-
-      const integrationData =
-        await integrationRes.json();
-
-      setIntegrations({
-        provider:
-          integrationData.provider ||
-          "calendly",
-
-        meeting_link:
-          integrationData.meeting_link || "",
-
-        maps_link:
-          integrationData.maps || "",
-      });
-
-    } catch (err) {
-
-      console.error(err);
-
-    } finally {
-
-      setLoading(false);
-
-    }
-  };
+  
 
   const saveChanges = async () => {
 
@@ -283,11 +154,7 @@ export default function Builder() {
         })
         .eq("id", chatbotId);
 
-      const token =
-        (
-          await supabase.auth.getSession()
-        ).data.session
-          ?.access_token;
+      
 
       await fetch(
         `${API_URL}/api/integrations`,
@@ -297,9 +164,6 @@ export default function Builder() {
           headers: {
             "Content-Type":
               "application/json",
-
-            Authorization:
-              `Bearer ${token}`,
           },
 
           body: JSON.stringify({
@@ -359,7 +223,7 @@ export default function Builder() {
           .substring(2)}.${fileExt}`;
 
       const filePath =
-        `${user.id}/${fileName}`;
+        `${user?.id}/${fileName}`;
 
       const {
         error: uploadError,
@@ -904,11 +768,7 @@ export default function Builder() {
                         !files.length
                       ) return;
 
-                      const token =
-                        (
-                          await supabase.auth.getSession()
-                        ).data.session
-                          ?.access_token;
+                      
 
                       for (const file of files) {
 

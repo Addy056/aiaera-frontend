@@ -30,6 +30,7 @@ export default function Dashboard() {
   STATES
   ========================================
   */
+
   const [loading, setLoading] =
     useState(true);
 
@@ -522,9 +523,7 @@ export default function Dashboard() {
           </Link>
 
         </div>
-
       </div>
-
       {/* MAIN STATS */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
@@ -807,8 +806,7 @@ export default function Dashboard() {
         </div>
 
       </div>
-
-      {/* CHATBOTS */}
+            {/* CHATBOTS */}
       <div className="
         rounded-[30px]
         border
@@ -1041,7 +1039,7 @@ export default function Dashboard() {
 
       </div>
 
-    </div>
+   </div>
   );
 }
 

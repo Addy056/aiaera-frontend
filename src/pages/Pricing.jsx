@@ -16,24 +16,28 @@ import {
   Calendar,
   AlertTriangle,
   Clock3,
-  Zap,
 } from "lucide-react";
 
 import {
   useNavigate,
 } from "react-router-dom";
 
-import { AuthContext } from "../context/AuthContext";
+import { AuthContext }
+  from "../context/AuthContext";
 
-import { supabase } from "../lib/supabase";
+import { supabase }
+  from "../lib/supabase";
 
 const API_URL =
-  import.meta.env.VITE_API_URL;
+  import.meta.env
+    .VITE_API_URL;
 
 export default function Pricing() {
 
   const { user } =
-    useContext(AuthContext);
+    useContext(
+      AuthContext
+    );
 
   const navigate =
     useNavigate();
@@ -77,6 +81,7 @@ export default function Pricing() {
 
         const {
           data,
+          error,
         } =
           await supabase
             .from(
@@ -88,6 +93,16 @@ export default function Pricing() {
               user.id
             )
             .maybeSingle();
+
+        if (error) {
+
+          console.error(
+            "SUBSCRIPTION ERROR:",
+            error
+          );
+
+          return;
+        }
 
         if (data) {
 
@@ -101,7 +116,7 @@ export default function Pricing() {
                   data.expires_at
                 ) <
                 new Date()
-              : false;
+              : true;
 
           setSubscriptionExpired(
             expired
@@ -110,8 +125,10 @@ export default function Pricing() {
 
       } catch (err) {
 
-        console.error(err);
-
+        console.error(
+          "FETCH SUBSCRIPTION ERROR:",
+          err
+        );
       }
     };
 
@@ -136,6 +153,7 @@ export default function Pricing() {
       }
 
       return {
+
         "Content-Type":
           "application/json",
 
@@ -184,6 +202,11 @@ export default function Pricing() {
 
       try {
 
+        /*
+        ========================================
+        USER CHECK
+        ========================================
+        */
         if (!user) {
 
           alert(
@@ -197,6 +220,22 @@ export default function Pricing() {
           return;
         }
 
+        /*
+        ========================================
+        RAZORPAY SDK CHECK
+        ========================================
+        */
+        if (
+          !window.Razorpay
+        ) {
+
+          setError(
+            "Razorpay SDK failed to load"
+          );
+
+          return;
+        }
+
         setLoadingPlan(
           plan
         );
@@ -205,12 +244,17 @@ export default function Pricing() {
 
         /*
         ========================================
-        CREATE ORDER
+        AUTH HEADERS
         ========================================
         */
         const headers =
           await getAuthHeaders();
 
+        /*
+        ========================================
+        CREATE ORDER
+        ========================================
+        */
         const res =
           await fetch(
             `${API_URL}/api/payment/create-order`,
@@ -227,21 +271,11 @@ export default function Pricing() {
             }
           );
 
-        if (!res.ok) {
-
-          const text =
-            await res.text();
-
-          console.error(
-            "PAYMENT API ERROR:",
-            text
-          );
-
-          throw new Error(
-            "Failed to create order"
-          );
-        }
-
+        /*
+        ========================================
+        SAFE RESPONSE
+        ========================================
+        */
         const data =
           await parseResponse(
             res
@@ -249,17 +283,52 @@ export default function Pricing() {
 
         /*
         ========================================
-        RAZORPAY
+        BACKEND ERROR
+        ========================================
+        */
+        if (!res.ok) {
+
+          console.error(
+            "PAYMENT API ERROR:",
+            data
+          );
+
+          throw new Error(
+            data.error ||
+            "Failed to create order"
+          );
+        }
+
+        /*
+        ========================================
+        VALIDATE RESPONSE
+        ========================================
+        */
+        if (
+          !data.orderId ||
+          !data.key
+        ) {
+
+          throw new Error(
+            "Invalid payment response"
+          );
+        }
+
+        /*
+        ========================================
+        RAZORPAY OPTIONS
         ========================================
         */
         const options = {
 
-          key: data.key,
+          key:
+            data.key,
 
           amount:
             data.amount,
 
           currency:
+            data.currency ||
             "INR",
 
           name:
@@ -276,6 +345,26 @@ export default function Pricing() {
               "#7f5af0",
           },
 
+          modal: {
+
+            ondismiss:
+              function () {
+
+                console.log(
+                  "Payment popup closed"
+                );
+
+                setLoadingPlan(
+                  null
+                );
+              },
+          },
+
+          /*
+          ========================================
+          PAYMENT SUCCESS
+          ========================================
+          */
           handler:
             async function (
               response
@@ -298,7 +387,9 @@ export default function Pricing() {
 
                       body:
                         JSON.stringify({
+
                           ...response,
+
                           plan,
                         }),
                     }
@@ -309,17 +400,33 @@ export default function Pricing() {
                     verifyRes
                   );
 
+                /*
+                ========================================
+                VERIFY ERROR
+                ========================================
+                */
                 if (
                   !verifyRes.ok
                 ) {
 
                   throw new Error(
-                    verifyData.error
+                    verifyData.error ||
+                    "Verification failed"
                   );
                 }
 
+                /*
+                ========================================
+                REFRESH SESSION
+                ========================================
+                */
                 await supabase.auth.refreshSession();
 
+                /*
+                ========================================
+                SUCCESS
+                ========================================
+                */
                 navigate(
                   "/app/dashboard"
                 );
@@ -327,32 +434,69 @@ export default function Pricing() {
               } catch (err) {
 
                 console.error(
+                  "VERIFY ERROR:",
                   err
                 );
 
                 setError(
+                  err.message ||
                   "Payment verification failed"
                 );
               }
             },
         };
 
+        /*
+        ========================================
+        CREATE INSTANCE
+        ========================================
+        */
         const rzp =
           new window.Razorpay(
             options
           );
 
+        /*
+        ========================================
+        PAYMENT FAILED
+        ========================================
+        */
+        rzp.on(
+          "payment.failed",
+          function (
+            response
+          ) {
+
+            console.error(
+              "PAYMENT FAILED:",
+              response
+            );
+
+            setError(
+              response.error
+                ?.description ||
+              "Payment failed"
+            );
+          }
+        );
+
+        /*
+        ========================================
+        OPEN PAYMENT
+        ========================================
+        */
         rzp.open();
 
       } catch (err) {
 
         console.error(
+          "PAYMENT ERROR:",
           err
         );
 
         setError(
           err.message ||
-            "Payment failed"
+          "Payment failed"
         );
 
       } finally {
@@ -360,7 +504,6 @@ export default function Pricing() {
         setLoadingPlan(
           null
         );
-
       }
     };
 
@@ -499,429 +642,8 @@ export default function Pricing() {
 
         )}
 
-        {/* PLANS */}
-        <div className="grid lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-
-          {/* TRIAL */}
-          <PricingCard
-            icon={
-              <Rocket size={22} />
-            }
-            title="Free Trial"
-            price="₹0"
-            subtitle="7 Days"
-            badge="START HERE"
-            features={[
-              "Website AI Chatbot",
-              "Lead Collection",
-              "Appointment Booking",
-              "Multi-language AI",
-              "File Upload Training",
-              "200 AI Messages",
-            ]}
-            buttonText="Start Free Trial"
-            disabled={
-              currentPlan ===
-              "trial"
-            }
-            loading={
-              loadingPlan ===
-              "trial"
-            }
-            trial
-          />
-
-          {/* BASIC */}
-          <PricingCard
-            title="Basic"
-            icon={
-              <Globe size={22} />
-            }
-            price="₹999"
-            subtitle="/month"
-            features={[
-              "Website AI Chatbot",
-              "Unlimited Leads",
-              "Appointment Booking",
-              "Multi-language AI",
-              "3 Chatbots",
-              "2,000 AI Messages",
-              "Remove AIAERA Branding",
-            ]}
-            current={
-              currentPlan ===
-              "basic"
-            }
-            loading={
-              loadingPlan ===
-              "basic"
-            }
-            buttonText={
-              currentPlan ===
-              "basic"
-                ? "Current Plan"
-                : "Choose Basic"
-            }
-            onClick={() =>
-              handlePayment(
-                "basic"
-              )
-            }
-          />
-
-          {/* PRO */}
-          <PricingCard
-            highlight
-            badge="MOST POPULAR"
-            icon={
-              <Crown size={22} />
-            }
-            title="Pro"
-            price="₹1999"
-            subtitle="/month"
-            features={[
-              "Everything In Basic",
-              "WhatsApp Automation",
-              "Facebook Automation",
-              "Instagram Automation",
-              "Advanced AI Automation",
-              "Unlimited Chatbots",
-              "10,000+ AI Messages",
-              "Priority Support",
-            ]}
-            current={
-              currentPlan ===
-              "pro"
-            }
-            loading={
-              loadingPlan ===
-              "pro"
-            }
-            buttonText={
-              currentPlan ===
-              "pro"
-                ? "Current Plan"
-                : "Go Pro"
-            }
-            onClick={() =>
-              handlePayment(
-                "pro"
-              )
-            }
-          />
-
-        </div>
-
-        {/* FEATURES SECTION */}
-        <div className="max-w-6xl mx-auto mt-24">
-
-          <div className="text-center mb-14">
-
-            <h2 className="text-4xl font-black mb-4">
-
-              Why Businesses Choose AIAERA
-
-            </h2>
-
-            <p className="text-gray-400 text-lg">
-
-              Powerful AI automation built for modern businesses.
-
-            </p>
-
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-6">
-
-            <FeatureBox
-              icon={
-                <MessageSquare
-                  size={20}
-                />
-              }
-              title="AI Conversations"
-              desc="Engage customers with intelligent AI responses across channels."
-            />
-
-            <FeatureBox
-              icon={
-                <Calendar
-                  size={20}
-                />
-              }
-              title="Appointments"
-              desc="Automate bookings and capture leads instantly."
-            />
-
-            <FeatureBox
-              icon={
-                <ShieldCheck
-                  size={20}
-                />
-              }
-              title="Business Automation"
-              desc="Scale support, lead generation, and customer communication."
-            />
-
-          </div>
-
-        </div>
-
       </div>
 
     </div>
-  );
-}
-
-/*
-========================================
-PRICING CARD
-========================================
-*/
-function PricingCard({
-  title,
-  price,
-  subtitle,
-  features,
-  buttonText,
-  onClick,
-  highlight,
-  loading,
-  icon,
-  badge,
-  current,
-  disabled,
-  trial,
-}) {
-
-  return (
-
-    <div
-      className={`
-        relative
-        rounded-[32px]
-        p-8
-        border
-        overflow-hidden
-        backdrop-blur-2xl
-        transition-all
-        duration-300
-        hover:scale-[1.02]
-        ${
-          highlight
-            ? "bg-gradient-to-br from-[#7f5af0]/30 to-[#9f7aea]/10 border-purple-500/30 shadow-[0_0_50px_rgba(127,90,240,0.25)]"
-            : "bg-white/[0.03] border-white/10"
-        }
-      `}
-    >
-
-      {/* BADGE */}
-      {badge && (
-
-        <div className={`
-          absolute
-          top-5
-          right-5
-          text-[10px]
-          px-3
-          py-1
-          rounded-full
-          font-semibold
-          ${
-            highlight
-              ? "bg-purple-500 text-white"
-              : "bg-white/10 text-gray-200"
-          }
-        `}>
-
-          {badge}
-
-        </div>
-
-      )}
-
-      {/* CURRENT */}
-      {current && (
-
-        <div className="absolute top-5 left-5 text-[10px] px-3 py-1 rounded-full bg-green-500 text-white font-semibold">
-
-          ACTIVE
-
-        </div>
-
-      )}
-
-      {/* ICON */}
-      <div className="w-14 h-14 rounded-2xl bg-white/[0.05] border border-white/10 flex items-center justify-center mb-6">
-
-        {icon}
-
-      </div>
-
-      {/* TITLE */}
-      <h3 className="text-2xl font-bold mb-2">
-
-        {title}
-
-      </h3>
-
-      {/* PRICE */}
-      <div className="flex items-end gap-1 mb-6">
-
-        <span className="text-5xl font-black">
-
-          {price}
-
-        </span>
-
-        <span className="text-gray-400 mb-1">
-
-          {subtitle}
-
-        </span>
-
-      </div>
-
-      {/* FEATURES */}
-      <div className="space-y-4 mb-8">
-
-        {features.map(
-          (
-            feature,
-            index
-          ) => (
-
-            <div
-              key={index}
-              className="flex items-center gap-3 text-sm text-gray-300"
-            >
-
-              <div className="w-5 h-5 rounded-full bg-purple-500/15 flex items-center justify-center">
-
-                <Check
-                  size={12}
-                  className="text-purple-300"
-                />
-
-              </div>
-
-              <span>
-
-                {feature}
-
-              </span>
-
-            </div>
-
-          )
-        )}
-
-      </div>
-
-      {/* BUTTON */}
-      <button
-        onClick={onClick}
-        disabled={
-          loading ||
-          current ||
-          disabled ||
-          trial
-        }
-        className={`
-          w-full
-          h-12
-          rounded-2xl
-          font-semibold
-          transition-all
-          flex
-          items-center
-          justify-center
-          gap-2
-          ${
-            highlight
-              ? "bg-[#7f5af0] hover:opacity-90"
-              : "bg-white/[0.05] hover:bg-white/[0.08]"
-          }
-          ${
-            current ||
-            disabled ||
-            trial
-              ? "opacity-60 cursor-not-allowed"
-              : ""
-          }
-        `}
-      >
-
-        {loading ? (
-
-          <>
-            <Loader2
-              size={16}
-              className="animate-spin"
-            />
-
-            Processing...
-
-          </>
-
-        ) : current ? (
-
-          "Current Plan"
-
-        ) : trial ? (
-
-          <>
-            <Clock3 size={16} />
-            Included During Signup
-          </>
-
-        ) : (
-
-          buttonText
-
-        )}
-
-      </button>
-
-    </div>
-
-  );
-}
-
-/*
-========================================
-FEATURE BOX
-========================================
-*/
-function FeatureBox({
-  icon,
-  title,
-  desc,
-}) {
-
-  return (
-
-    <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-xl">
-
-      <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center mb-5 text-purple-300">
-
-        {icon}
-
-      </div>
-
-      <h3 className="text-xl font-bold mb-3">
-
-        {title}
-
-      </h3>
-
-      <p className="text-gray-400 leading-relaxed text-sm">
-
-        {desc}
-
-      </p>
-
-    </div>
-
   );
 }
