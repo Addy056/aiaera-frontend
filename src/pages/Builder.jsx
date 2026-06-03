@@ -41,9 +41,7 @@ export default function Builder() {
 
   const { user } =
     useAuth();
-const token =
-  (await supabase.auth.getSession())
-    ?.data?.session?.access_token;
+
   const messagesEndRef =
     useRef(null);
 
@@ -793,7 +791,11 @@ const token =
 
                               headers: {
                                 Authorization:
-                                  `Bearer ${token}`,
+  `Bearer ${
+    (
+      await supabase.auth.getSession()
+    ).data.session?.access_token
+  }`,
                               },
 
                               body:
