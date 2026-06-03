@@ -5,34 +5,35 @@ import {
 } from "react";
 
 import {
-  Loader2,
-  Crown,
-  Globe,
-  Rocket,
-  AlertTriangle,
   Check,
+  Loader2,
+  Sparkles,
+  Crown,
+  Rocket,
+  ShieldCheck,
+  Globe,
+  MessageSquare,
+  Calendar,
+  AlertTriangle,
+  Clock3,
+  Zap,
 } from "lucide-react";
 
 import {
   useNavigate,
 } from "react-router-dom";
 
-import { AuthContext }
-  from "../context/AuthContext";
+import { AuthContext } from "../context/AuthContext";
 
-import { supabase }
-  from "../lib/supabase";
+import { supabase } from "../lib/supabase";
 
 const API_URL =
-  import.meta.env
-    .VITE_API_URL;
+  import.meta.env.VITE_API_URL;
 
 export default function Pricing() {
 
   const { user } =
-    useContext(
-      AuthContext
-    );
+    useContext(AuthContext);
 
   const navigate =
     useNavigate();
@@ -76,7 +77,6 @@ export default function Pricing() {
 
         const {
           data,
-          error,
         } =
           await supabase
             .from(
@@ -88,15 +88,6 @@ export default function Pricing() {
               user.id
             )
             .maybeSingle();
-
-        if (error) {
-
-          console.error(
-            error
-          );
-
-          return;
-        }
 
         if (data) {
 
@@ -110,7 +101,7 @@ export default function Pricing() {
                   data.expires_at
                 ) <
                 new Date()
-              : true;
+              : false;
 
           setSubscriptionExpired(
             expired
@@ -119,9 +110,8 @@ export default function Pricing() {
 
       } catch (err) {
 
-        console.error(
-          err
-        );
+        console.error(err);
+
       }
     };
 
@@ -134,9 +124,7 @@ export default function Pricing() {
     async () => {
 
       const { data } =
-        await supabase
-          .auth
-          .getSession();
+        await supabase.auth.getSession();
 
       if (
         !data.session
@@ -148,7 +136,6 @@ export default function Pricing() {
       }
 
       return {
-
         "Content-Type":
           "application/json",
 
@@ -159,7 +146,7 @@ export default function Pricing() {
 
   /*
   ========================================
-  SAFE RESPONSE
+  SAFE RESPONSE PARSER
   ========================================
   */
   const parseResponse =
@@ -175,6 +162,11 @@ export default function Pricing() {
         );
 
       } catch {
+
+        console.error(
+          "INVALID SERVER RESPONSE:",
+          text
+        );
 
         throw new Error(
           "Invalid server response"
@@ -194,19 +186,12 @@ export default function Pricing() {
 
         if (!user) {
 
-          navigate(
-            "/login"
+          alert(
+            "Please login first"
           );
 
-          return;
-        }
-
-        if (
-          !window.Razorpay
-        ) {
-
-          setError(
-            "Razorpay SDK failed to load"
+          navigate(
+            "/login"
           );
 
           return;
@@ -218,6 +203,11 @@ export default function Pricing() {
 
         setError("");
 
+        /*
+        ========================================
+        CREATE ORDER
+        ========================================
+        */
         const headers =
           await getAuthHeaders();
 
@@ -237,36 +227,46 @@ export default function Pricing() {
             }
           );
 
+        if (!res.ok) {
+
+          const text =
+            await res.text();
+
+          console.error(
+            "PAYMENT API ERROR:",
+            text
+          );
+
+          throw new Error(
+            "Failed to create order"
+          );
+        }
+
         const data =
           await parseResponse(
             res
           );
 
-        if (!res.ok) {
-
-          throw new Error(
-            data.error ||
-            "Failed to create order"
-          );
-        }
-
+        /*
+        ========================================
+        RAZORPAY
+        ========================================
+        */
         const options = {
 
-          key:
-            data.key,
+          key: data.key,
 
           amount:
             data.amount,
 
           currency:
-            data.currency ||
             "INR",
 
           name:
             "AIAERA",
 
           description:
-            `${plan} Subscription`,
+            `${plan} subscription`,
 
           order_id:
             data.orderId,
@@ -298,9 +298,7 @@ export default function Pricing() {
 
                       body:
                         JSON.stringify({
-
                           ...response,
-
                           plan,
                         }),
                     }
@@ -320,9 +318,7 @@ export default function Pricing() {
                   );
                 }
 
-                await supabase
-                  .auth
-                  .refreshSession();
+                await supabase.auth.refreshSession();
 
                 navigate(
                   "/app/dashboard"
@@ -335,7 +331,7 @@ export default function Pricing() {
                 );
 
                 setError(
-                  err.message
+                  "Payment verification failed"
                 );
               }
             },
@@ -345,20 +341,6 @@ export default function Pricing() {
           new window.Razorpay(
             options
           );
-
-        rzp.on(
-          "payment.failed",
-          function (
-            response
-          ) {
-
-            setError(
-              response.error
-                ?.description ||
-              "Payment failed"
-            );
-          }
-        );
 
         rzp.open();
 
@@ -370,7 +352,7 @@ export default function Pricing() {
 
         setError(
           err.message ||
-          "Payment failed"
+            "Payment failed"
         );
 
       } finally {
@@ -378,42 +360,138 @@ export default function Pricing() {
         setLoadingPlan(
           null
         );
+
       }
     };
 
   return (
 
-    <div className="min-h-screen bg-black text-white p-8">
+    <div className="min-h-screen text-white px-4 md:px-6 py-10 overflow-hidden relative">
 
-      <div className="max-w-6xl mx-auto">
+      {/* BACKGROUND */}
+      <div className="absolute top-[-120px] left-[-120px] w-[320px] h-[320px] bg-purple-600/20 blur-[140px] rounded-full"></div>
 
-        <h1 className="text-5xl font-black text-center mb-12">
+      <div className="absolute bottom-[-120px] right-[-120px] w-[320px] h-[320px] bg-blue-600/20 blur-[140px] rounded-full"></div>
 
-          Pricing
+      <div className="relative z-10">
 
-        </h1>
-
+        {/* EXPIRED BANNER */}
         {subscriptionExpired && (
 
-          <div className="mb-8 p-4 rounded-2xl border border-red-500/20 bg-red-500/10 flex items-center gap-3">
+          <div className="max-w-5xl mx-auto mb-8 rounded-3xl border border-red-500/20 bg-red-500/10 p-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
 
-            <AlertTriangle
-              className="text-red-400"
-            />
+            <div className="flex items-start gap-4">
 
-            <p>
+              <div className="w-12 h-12 rounded-2xl bg-red-500/20 flex items-center justify-center">
 
-              Your subscription has expired.
+                <AlertTriangle
+                  size={20}
+                  className="text-red-300"
+                />
 
-            </p>
+              </div>
+
+              <div>
+
+                <h3 className="text-lg font-semibold text-red-200 mb-1">
+
+                  Subscription Expired
+
+                </h3>
+
+                <p className="text-sm text-red-100/80">
+
+                  Your chatbot and automations are currently paused.
+                  Renew your subscription to reactivate all features.
+
+                </p>
+
+              </div>
+
+            </div>
 
           </div>
 
         )}
 
+        {/* HEADER */}
+        <div className="text-center mb-14">
+
+          <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full border border-white/10 bg-white/[0.03] mb-4">
+
+            <Sparkles
+              size={12}
+              className="text-purple-400"
+            />
+
+            <span className="text-xs text-gray-300">
+
+              AI Automation Pricing
+
+            </span>
+
+          </div>
+
+          <h1 className="text-5xl md:text-6xl font-black mb-4 tracking-[-2px]">
+
+            Simple Pricing
+
+          </h1>
+
+          <p className="text-gray-400 text-lg max-w-2xl mx-auto leading-relaxed">
+
+            Start your 7-day free trial and upgrade as your AI automation grows.
+
+          </p>
+
+        </div>
+
+        {/* CURRENT PLAN */}
+        {currentPlan && (
+
+          <div className="max-w-md mx-auto mb-10">
+
+            <div className="rounded-3xl border border-purple-500/20 bg-gradient-to-br from-[#7f5af0]/20 to-blue-500/10 p-5 text-center">
+
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/10 mb-4">
+
+                <Crown
+                  size={14}
+                  className="text-yellow-300"
+                />
+
+                <span className="text-sm font-medium">
+
+                  CURRENT PLAN
+
+                </span>
+
+              </div>
+
+              <h2 className="text-3xl font-black uppercase mb-2">
+
+                {currentPlan}
+
+              </h2>
+
+              <p className="text-sm text-gray-300">
+
+                {subscriptionExpired
+                  ? "Your plan has expired"
+                  : "Your subscription is active"}
+
+              </p>
+
+            </div>
+
+          </div>
+
+        )}
+
+        {/* ERROR */}
         {error && (
 
-          <div className="mb-8 p-4 rounded-2xl border border-red-500/20 bg-red-500/10 text-red-300">
+          <div className="max-w-xl mx-auto mb-8 bg-red-500/10 border border-red-500/20 text-red-300 p-4 rounded-2xl text-sm text-center backdrop-blur-xl">
 
             {error}
 
@@ -421,28 +499,54 @@ export default function Pricing() {
 
         )}
 
-        <div className="grid md:grid-cols-3 gap-6">
+        {/* PLANS */}
+        <div className="grid lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
 
+          {/* TRIAL */}
           <PricingCard
-            title="Free"
+            icon={
+              <Rocket size={22} />
+            }
+            title="Free Trial"
             price="₹0"
-            icon={<Rocket />}
+            subtitle="7 Days"
+            badge="START HERE"
             features={[
-              "Website Chatbot",
+              "Website AI Chatbot",
               "Lead Collection",
+              "Appointment Booking",
+              "Multi-language AI",
+              "File Upload Training",
+              "200 AI Messages",
             ]}
-            disabled
-            buttonText="Included"
+            buttonText="Start Free Trial"
+            disabled={
+              currentPlan ===
+              "trial"
+            }
+            loading={
+              loadingPlan ===
+              "trial"
+            }
+            trial
           />
 
+          {/* BASIC */}
           <PricingCard
             title="Basic"
+            icon={
+              <Globe size={22} />
+            }
             price="₹999"
-            icon={<Globe />}
+            subtitle="/month"
             features={[
+              "Website AI Chatbot",
               "Unlimited Leads",
-              "Appointments",
+              "Appointment Booking",
+              "Multi-language AI",
               "3 Chatbots",
+              "2,000 AI Messages",
+              "Remove AIAERA Branding",
             ]}
             current={
               currentPlan ===
@@ -452,7 +556,12 @@ export default function Pricing() {
               loadingPlan ===
               "basic"
             }
-            buttonText="Choose Basic"
+            buttonText={
+              currentPlan ===
+              "basic"
+                ? "Current Plan"
+                : "Choose Basic"
+            }
             onClick={() =>
               handlePayment(
                 "basic"
@@ -460,16 +569,25 @@ export default function Pricing() {
             }
           />
 
+          {/* PRO */}
           <PricingCard
+            highlight
+            badge="MOST POPULAR"
+            icon={
+              <Crown size={22} />
+            }
             title="Pro"
             price="₹1999"
-            icon={<Crown />}
-            highlight
+            subtitle="/month"
             features={[
-              "WhatsApp",
-              "Facebook",
-              "Instagram",
+              "Everything In Basic",
+              "WhatsApp Automation",
+              "Facebook Automation",
+              "Instagram Automation",
+              "Advanced AI Automation",
               "Unlimited Chatbots",
+              "10,000+ AI Messages",
+              "Priority Support",
             ]}
             current={
               currentPlan ===
@@ -479,13 +597,73 @@ export default function Pricing() {
               loadingPlan ===
               "pro"
             }
-            buttonText="Go Pro"
+            buttonText={
+              currentPlan ===
+              "pro"
+                ? "Current Plan"
+                : "Go Pro"
+            }
             onClick={() =>
               handlePayment(
                 "pro"
               )
             }
           />
+
+        </div>
+
+        {/* FEATURES SECTION */}
+        <div className="max-w-6xl mx-auto mt-24">
+
+          <div className="text-center mb-14">
+
+            <h2 className="text-4xl font-black mb-4">
+
+              Why Businesses Choose AIAERA
+
+            </h2>
+
+            <p className="text-gray-400 text-lg">
+
+              Powerful AI automation built for modern businesses.
+
+            </p>
+
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+
+            <FeatureBox
+              icon={
+                <MessageSquare
+                  size={20}
+                />
+              }
+              title="AI Conversations"
+              desc="Engage customers with intelligent AI responses across channels."
+            />
+
+            <FeatureBox
+              icon={
+                <Calendar
+                  size={20}
+                />
+              }
+              title="Appointments"
+              desc="Automate bookings and capture leads instantly."
+            />
+
+            <FeatureBox
+              icon={
+                <ShieldCheck
+                  size={20}
+                />
+              }
+              title="Business Automation"
+              desc="Scale support, lead generation, and customer communication."
+            />
+
+          </div>
 
         </div>
 
@@ -503,50 +681,109 @@ PRICING CARD
 function PricingCard({
   title,
   price,
+  subtitle,
   features,
   buttonText,
   onClick,
+  highlight,
   loading,
   icon,
+  badge,
   current,
   disabled,
-  highlight,
+  trial,
 }) {
 
   return (
 
     <div
       className={`
-        rounded-3xl
+        relative
+        rounded-[32px]
         p-8
         border
+        overflow-hidden
+        backdrop-blur-2xl
+        transition-all
+        duration-300
+        hover:scale-[1.02]
         ${
           highlight
-            ? "border-purple-500 bg-purple-500/10"
-            : "border-white/10 bg-white/[0.03]"
+            ? "bg-gradient-to-br from-[#7f5af0]/30 to-[#9f7aea]/10 border-purple-500/30 shadow-[0_0_50px_rgba(127,90,240,0.25)]"
+            : "bg-white/[0.03] border-white/10"
         }
       `}
     >
 
-      <div className="mb-6">
+      {/* BADGE */}
+      {badge && (
+
+        <div className={`
+          absolute
+          top-5
+          right-5
+          text-[10px]
+          px-3
+          py-1
+          rounded-full
+          font-semibold
+          ${
+            highlight
+              ? "bg-purple-500 text-white"
+              : "bg-white/10 text-gray-200"
+          }
+        `}>
+
+          {badge}
+
+        </div>
+
+      )}
+
+      {/* CURRENT */}
+      {current && (
+
+        <div className="absolute top-5 left-5 text-[10px] px-3 py-1 rounded-full bg-green-500 text-white font-semibold">
+
+          ACTIVE
+
+        </div>
+
+      )}
+
+      {/* ICON */}
+      <div className="w-14 h-14 rounded-2xl bg-white/[0.05] border border-white/10 flex items-center justify-center mb-6">
 
         {icon}
 
       </div>
 
-      <h2 className="text-3xl font-black mb-2">
+      {/* TITLE */}
+      <h3 className="text-2xl font-bold mb-2">
 
         {title}
 
-      </h2>
+      </h3>
 
-      <p className="text-5xl font-black mb-6">
+      {/* PRICE */}
+      <div className="flex items-end gap-1 mb-6">
 
-        {price}
+        <span className="text-5xl font-black">
 
-      </p>
+          {price}
 
-      <div className="space-y-3 mb-8">
+        </span>
+
+        <span className="text-gray-400 mb-1">
+
+          {subtitle}
+
+        </span>
+
+      </div>
+
+      {/* FEATURES */}
+      <div className="space-y-4 mb-8">
 
         {features.map(
           (
@@ -556,12 +793,17 @@ function PricingCard({
 
             <div
               key={index}
-              className="flex items-center gap-2"
+              className="flex items-center gap-3 text-sm text-gray-300"
             >
 
-              <Check
-                size={16}
-              />
+              <div className="w-5 h-5 rounded-full bg-purple-500/15 flex items-center justify-center">
+
+                <Check
+                  size={12}
+                  className="text-purple-300"
+                />
+
+              </div>
 
               <span>
 
@@ -576,20 +818,43 @@ function PricingCard({
 
       </div>
 
+      {/* BUTTON */}
       <button
         onClick={onClick}
         disabled={
-          disabled ||
+          loading ||
           current ||
-          loading
+          disabled ||
+          trial
         }
-        className="w-full h-12 rounded-2xl bg-[#7f5af0] font-semibold disabled:opacity-50"
+        className={`
+          w-full
+          h-12
+          rounded-2xl
+          font-semibold
+          transition-all
+          flex
+          items-center
+          justify-center
+          gap-2
+          ${
+            highlight
+              ? "bg-[#7f5af0] hover:opacity-90"
+              : "bg-white/[0.05] hover:bg-white/[0.08]"
+          }
+          ${
+            current ||
+            disabled ||
+            trial
+              ? "opacity-60 cursor-not-allowed"
+              : ""
+          }
+        `}
       >
 
         {loading ? (
 
-          <div className="flex items-center justify-center gap-2">
-
+          <>
             <Loader2
               size={16}
               className="animate-spin"
@@ -597,11 +862,18 @@ function PricingCard({
 
             Processing...
 
-          </div>
+          </>
 
         ) : current ? (
 
           "Current Plan"
+
+        ) : trial ? (
+
+          <>
+            <Clock3 size={16} />
+            Included During Signup
+          </>
 
         ) : (
 
@@ -612,5 +884,44 @@ function PricingCard({
       </button>
 
     </div>
+
+  );
+}
+
+/*
+========================================
+FEATURE BOX
+========================================
+*/
+function FeatureBox({
+  icon,
+  title,
+  desc,
+}) {
+
+  return (
+
+    <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-xl">
+
+      <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center mb-5 text-purple-300">
+
+        {icon}
+
+      </div>
+
+      <h3 className="text-xl font-bold mb-3">
+
+        {title}
+
+      </h3>
+
+      <p className="text-gray-400 leading-relaxed text-sm">
+
+        {desc}
+
+      </p>
+
+    </div>
+
   );
 }
