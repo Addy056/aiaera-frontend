@@ -400,11 +400,6 @@ export default function Pricing() {
                     verifyRes
                   );
 
-                /*
-                ========================================
-                VERIFY ERROR
-                ========================================
-                */
                 if (
                   !verifyRes.ok
                 ) {
@@ -415,18 +410,8 @@ export default function Pricing() {
                   );
                 }
 
-                /*
-                ========================================
-                REFRESH SESSION
-                ========================================
-                */
                 await supabase.auth.refreshSession();
 
-                /*
-                ========================================
-                SUCCESS
-                ========================================
-                */
                 navigate(
                   "/app/dashboard"
                 );
@@ -446,21 +431,11 @@ export default function Pricing() {
             },
         };
 
-        /*
-        ========================================
-        CREATE INSTANCE
-        ========================================
-        */
         const rzp =
           new window.Razorpay(
             options
           );
 
-        /*
-        ========================================
-        PAYMENT FAILED
-        ========================================
-        */
         rzp.on(
           "payment.failed",
           function (
@@ -480,11 +455,6 @@ export default function Pricing() {
           }
         );
 
-        /*
-        ========================================
-        OPEN PAYMENT
-        ========================================
-        */
         rzp.open();
 
       } catch (err) {
@@ -517,8 +487,7 @@ export default function Pricing() {
       <div className="absolute bottom-[-120px] right-[-120px] w-[320px] h-[320px] bg-blue-600/20 blur-[140px] rounded-full"></div>
 
       <div className="relative z-10">
-
-        {/* EXPIRED BANNER */}
+                {/* EXPIRED BANNER */}
         {subscriptionExpired && (
 
           <div className="max-w-5xl mx-auto mb-8 rounded-3xl border border-red-500/20 bg-red-500/10 p-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -641,6 +610,174 @@ export default function Pricing() {
           </div>
 
         )}
+
+        {/* PLANS */}
+        <div className="grid lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+
+          {/* TRIAL */}
+          <PricingCard
+            icon={
+              <Rocket size={22} />
+            }
+            title="Free Trial"
+            price="₹0"
+            subtitle="7 Days"
+            badge="START HERE"
+            features={[
+              "Website AI Chatbot",
+              "Lead Collection",
+              "Appointment Booking",
+              "Multi-language AI",
+              "File Upload Training",
+              "200 AI Messages",
+            ]}
+            buttonText="Start Free Trial"
+            disabled={
+              currentPlan ===
+              "trial"
+            }
+            loading={
+              loadingPlan ===
+              "trial"
+            }
+            trial
+          />
+
+          {/* BASIC */}
+          <PricingCard
+            title="Basic"
+            icon={
+              <Globe size={22} />
+            }
+            price="₹999"
+            subtitle="/month"
+            features={[
+              "Website AI Chatbot",
+              "Unlimited Leads",
+              "Appointment Booking",
+              "Multi-language AI",
+              "3 Chatbots",
+              "2,000 AI Messages",
+              "Remove AIAERA Branding",
+            ]}
+            current={
+              currentPlan ===
+              "basic"
+            }
+            loading={
+              loadingPlan ===
+              "basic"
+            }
+            buttonText={
+              currentPlan ===
+              "basic"
+                ? "Current Plan"
+                : "Choose Basic"
+            }
+            onClick={() =>
+              handlePayment(
+                "basic"
+              )
+            }
+          />
+
+          {/* PRO */}
+          <PricingCard
+            highlight
+            badge="MOST POPULAR"
+            icon={
+              <Crown size={22} />
+            }
+            title="Pro"
+            price="₹1999"
+            subtitle="/month"
+            features={[
+              "Everything In Basic",
+              "WhatsApp Automation",
+              "Facebook Automation",
+              "Instagram Automation",
+              "Advanced AI Automation",
+              "Unlimited Chatbots",
+              "10,000+ AI Messages",
+              "Priority Support",
+            ]}
+            current={
+              currentPlan ===
+              "pro"
+            }
+            loading={
+              loadingPlan ===
+              "pro"
+            }
+            buttonText={
+              currentPlan ===
+              "pro"
+                ? "Current Plan"
+                : "Go Pro"
+            }
+            onClick={() =>
+              handlePayment(
+                "pro"
+              )
+            }
+          />
+
+        </div>
+
+        {/* FEATURES SECTION */}
+        <div className="max-w-6xl mx-auto mt-24">
+
+          <div className="text-center mb-14">
+
+            <h2 className="text-4xl font-black mb-4">
+
+              Why Businesses Choose AIAERA
+
+            </h2>
+
+            <p className="text-gray-400 text-lg">
+
+              Powerful AI automation built for modern businesses.
+
+            </p>
+
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+
+            <FeatureBox
+              icon={
+                <MessageSquare
+                  size={20}
+                />
+              }
+              title="AI Conversations"
+              desc="Engage customers with intelligent AI responses across channels."
+            />
+
+            <FeatureBox
+              icon={
+                <Calendar
+                  size={20}
+                />
+              }
+              title="Appointments"
+              desc="Automate bookings and capture leads instantly."
+            />
+
+            <FeatureBox
+              icon={
+                <ShieldCheck
+                  size={20}
+                />
+              }
+              title="Business Automation"
+              desc="Scale support, lead generation, and customer communication."
+            />
+
+          </div>
+
+        </div>
 
       </div>
 
