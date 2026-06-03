@@ -101,7 +101,7 @@ export default function Pricing() {
                   data.expires_at
                 ) <
                 new Date()
-              : false;
+              : true;
 
           setSubscriptionExpired(
             expired
@@ -237,9 +237,9 @@ export default function Pricing() {
             text
           );
 
-          throw new Error(
-            "Failed to create order"
-          );
+         throw new Error(
+  text || "Failed to create order"
+);
         }
 
         const data =
@@ -697,42 +697,27 @@ function PricingCard({
   return (
 
     <div
-      className={`
-        relative
-        rounded-[32px]
-        p-8
-        border
-        overflow-hidden
-        backdrop-blur-2xl
-        transition-all
-        duration-300
-        hover:scale-[1.02]
-        ${
-          highlight
-            ? "bg-gradient-to-br from-[#7f5af0]/30 to-[#9f7aea]/10 border-purple-500/30 shadow-[0_0_50px_rgba(127,90,240,0.25)]"
-            : "bg-white/[0.03] border-white/10"
-        }
-      `}
+  className={
+    `relative rounded-[32px] p-8 border overflow-hidden backdrop-blur-2xl transition-all duration-300 hover:scale-[1.02] ${
+      highlight
+        ? "bg-gradient-to-br from-[#7f5af0]/30 to-[#9f7aea]/10 border-purple-500/30 shadow-[0_0_50px_rgba(127,90,240,0.25)]"
+        : "bg-white/[0.03] border-white/10"
+    }`
+  }
     >
 
       {/* BADGE */}
       {badge && (
 
-        <div className={`
-          absolute
-          top-5
-          right-5
-          text-[10px]
-          px-3
-          py-1
-          rounded-full
-          font-semibold
-          ${
-            highlight
-              ? "bg-purple-500 text-white"
-              : "bg-white/10 text-gray-200"
-          }
-        `}>
+        <div
+  className={
+    `absolute top-5 right-5 text-[10px] px-3 py-1 rounded-full font-semibold ${
+      highlight
+        ? "bg-purple-500 text-white"
+        : "bg-white/10 text-gray-200"
+    }`
+  }
+>
 
           {badge}
 
@@ -827,29 +812,19 @@ function PricingCard({
           disabled ||
           trial
         }
-        className={`
-          w-full
-          h-12
-          rounded-2xl
-          font-semibold
-          transition-all
-          flex
-          items-center
-          justify-center
-          gap-2
-          ${
-            highlight
-              ? "bg-[#7f5af0] hover:opacity-90"
-              : "bg-white/[0.05] hover:bg-white/[0.08]"
-          }
-          ${
-            current ||
-            disabled ||
-            trial
-              ? "opacity-60 cursor-not-allowed"
-              : ""
-          }
-        `}
+        className={
+  `w-full h-12 rounded-2xl font-semibold transition-all flex items-center justify-center gap-2 ${
+    highlight
+      ? "bg-[#7f5af0] hover:opacity-90"
+      : "bg-white/[0.05] hover:bg-white/[0.08]"
+  } ${
+    current ||
+    disabled ||
+    trial
+      ? "opacity-60 cursor-not-allowed"
+      : ""
+  }`
+}
       >
 
         {loading ? (
