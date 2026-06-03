@@ -784,3 +784,257 @@ export default function Pricing() {
     </div>
   );
 }
+/*
+========================================
+PRICING CARD
+========================================
+*/
+function PricingCard({
+  title,
+  price,
+  subtitle,
+  features,
+  buttonText,
+  onClick,
+  highlight,
+  loading,
+  icon,
+  badge,
+  current,
+  disabled,
+  trial,
+}) {
+
+  return (
+
+    <div
+      className={`
+        relative
+        rounded-[32px]
+        p-8
+        border
+        overflow-hidden
+        backdrop-blur-2xl
+        transition-all
+        duration-300
+        hover:scale-[1.02]
+        ${
+          highlight
+            ? "bg-gradient-to-br from-[#7f5af0]/30 to-[#9f7aea]/10 border-purple-500/30 shadow-[0_0_50px_rgba(127,90,240,0.25)]"
+            : "bg-white/[0.03] border-white/10"
+        }
+      `}
+    >
+
+      {/* BADGE */}
+      {badge && (
+
+        <div
+          className={`
+            absolute
+            top-5
+            right-5
+            text-[10px]
+            px-3
+            py-1
+            rounded-full
+            font-semibold
+            ${
+              highlight
+                ? "bg-purple-500 text-white"
+                : "bg-white/10 text-gray-200"
+            }
+          `}
+        >
+
+          {badge}
+
+        </div>
+
+      )}
+
+      {/* CURRENT */}
+      {current && (
+
+        <div className="absolute top-5 left-5 text-[10px] px-3 py-1 rounded-full bg-green-500 text-white font-semibold">
+
+          ACTIVE
+
+        </div>
+
+      )}
+
+      {/* ICON */}
+      <div className="w-14 h-14 rounded-2xl bg-white/[0.05] border border-white/10 flex items-center justify-center mb-6">
+
+        {icon}
+
+      </div>
+
+      {/* TITLE */}
+      <h3 className="text-2xl font-bold mb-2">
+
+        {title}
+
+      </h3>
+
+      {/* PRICE */}
+      <div className="flex items-end gap-1 mb-6">
+
+        <span className="text-5xl font-black">
+
+          {price}
+
+        </span>
+
+        <span className="text-gray-400 mb-1">
+
+          {subtitle}
+
+        </span>
+
+      </div>
+
+      {/* FEATURES */}
+      <div className="space-y-4 mb-8">
+
+        {features.map(
+          (
+            feature,
+            index
+          ) => (
+
+            <div
+              key={index}
+              className="flex items-center gap-3 text-sm text-gray-300"
+            >
+
+              <div className="w-5 h-5 rounded-full bg-purple-500/15 flex items-center justify-center">
+
+                <Check
+                  size={12}
+                  className="text-purple-300"
+                />
+
+              </div>
+
+              <span>
+
+                {feature}
+
+              </span>
+
+            </div>
+
+          )
+        )}
+
+      </div>
+
+      {/* BUTTON */}
+      <button
+        onClick={onClick}
+        disabled={
+          loading ||
+          current ||
+          disabled ||
+          trial
+        }
+        className={`
+          w-full
+          h-12
+          rounded-2xl
+          font-semibold
+          transition-all
+          flex
+          items-center
+          justify-center
+          gap-2
+          ${
+            highlight
+              ? "bg-[#7f5af0] hover:opacity-90"
+              : "bg-white/[0.05] hover:bg-white/[0.08]"
+          }
+          ${
+            current ||
+            disabled ||
+            trial
+              ? "opacity-60 cursor-not-allowed"
+              : ""
+          }
+        `}
+      >
+
+        {loading ? (
+
+          <>
+            <Loader2
+              size={16}
+              className="animate-spin"
+            />
+
+            Processing...
+
+          </>
+
+        ) : current ? (
+
+          "Current Plan"
+
+        ) : trial ? (
+
+          <>
+            <Clock3 size={16} />
+            Included During Signup
+          </>
+
+        ) : (
+
+          buttonText
+
+        )}
+
+      </button>
+
+    </div>
+
+  );
+}
+
+/*
+========================================
+FEATURE BOX
+========================================
+*/
+function FeatureBox({
+  icon,
+  title,
+  desc,
+}) {
+
+  return (
+
+    <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-xl">
+
+      <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center mb-5 text-purple-300">
+
+        {icon}
+
+      </div>
+
+      <h3 className="text-xl font-bold mb-3">
+
+        {title}
+
+      </h3>
+
+      <p className="text-gray-400 leading-relaxed text-sm">
+
+        {desc}
+
+      </p>
+
+    </div>
+
+  );
+}
