@@ -1,15 +1,6 @@
-import {
-  useContext,
-} from "react";
-
-import {
-  Navigate,
-  useLocation,
-} from "react-router-dom";
-
-import {
-  AuthContext,
-} from "../context/AuthContext";
+import { useContext } from "react";
+import { Navigate, useLocation } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
 
 /*
 ========================================
@@ -23,7 +14,6 @@ using AuthContext only
 export default function ProtectedRoute({
   children,
 }) {
-
   /*
   ========================================
   AUTH CONTEXT
@@ -32,18 +22,24 @@ export default function ProtectedRoute({
   const {
     user,
     loading,
-  } =
-    useContext(
-      AuthContext
-    );
+  } = useContext(AuthContext);
+
+  /*
+  ========================================
+  DEBUG LOGS
+  ========================================
+  */
+  console.log("========== PROTECTED ROUTE ==========");
+  console.log("Loading:", loading);
+  console.log("User:", user);
+  console.log("====================================");
 
   /*
   ========================================
   CURRENT LOCATION
   ========================================
   */
-  const location =
-    useLocation();
+  const location = useLocation();
 
   /*
   ========================================
@@ -51,11 +47,12 @@ export default function ProtectedRoute({
   ========================================
   */
   if (loading) {
+    console.log(
+      "PROTECTED ROUTE: Showing loading screen"
+    );
 
     return (
-
       <div className="min-h-screen bg-[#050816] flex items-center justify-center overflow-hidden relative">
-
         {/* BACKGROUND */}
         <div className="absolute top-[-150px] left-[-150px] w-[340px] h-[340px] bg-purple-600/20 blur-[160px] rounded-full"></div>
 
@@ -63,32 +60,23 @@ export default function ProtectedRoute({
 
         {/* CONTENT */}
         <div className="relative z-10 flex flex-col items-center">
-
           {/* SPINNER */}
           <div className="relative mb-6">
-
             <div className="absolute inset-0 bg-purple-500/20 blur-[30px] rounded-full"></div>
 
             <div className="relative w-16 h-16 rounded-full border-[5px] border-purple-500/10 border-t-purple-500 animate-spin"></div>
-
           </div>
 
           {/* TITLE */}
           <h2 className="text-white text-2xl font-bold mb-2">
-
             Loading Workspace...
-
           </h2>
 
           {/* DESC */}
           <p className="text-gray-400 text-sm">
-
             Verifying your session
-
           </p>
-
         </div>
-
       </div>
     );
   }
@@ -99,22 +87,18 @@ export default function ProtectedRoute({
   ========================================
   */
   if (!user) {
-
     console.log(
       "NO USER FOUND - REDIRECT LOGIN"
     );
 
     return (
-
       <Navigate
         to="/login"
         replace
         state={{
-          from:
-            location.pathname,
+          from: location.pathname,
         }}
       />
-
     );
   }
 
@@ -123,5 +107,9 @@ export default function ProtectedRoute({
   AUTHORIZED
   ========================================
   */
+  console.log(
+    "USER AUTHENTICATED - RENDERING PAGE"
+  );
+
   return children;
 }
