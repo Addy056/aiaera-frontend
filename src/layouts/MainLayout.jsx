@@ -19,9 +19,13 @@ import {
 } from "react-router-dom";
 
 import {
-  useEffect,
+  useContext,
   useState,
 } from "react";
+
+import {
+  AuthContext,
+} from "../context/AuthContext";
 
 import { supabase } from "../lib/supabase";
 
@@ -31,279 +35,35 @@ export default function MainLayout() {
 
   /*
   ========================================
+  AUTH CONTEXT
+  ========================================
+  */
+  const {
+    user,
+    loading,
+    subscription,
+    isExpired,
+  } = useContext(
+    AuthContext
+  );
+
+  /*
+  ========================================
   STATES
   ========================================
   */
-  const [userEmail, setUserEmail] =
-    useState("");
-
-  const [sidebarOpen, setSidebarOpen] =
-    useState(false);
-
-  const [subscription, setSubscription] =
-    useState(null);
-
-  const [isExpired, setIsExpired] =
-    useState(false);
-
-  const [loading, setLoading] =
-    useState(true);
+  const [
+    sidebarOpen,
+    setSidebarOpen,
+  ] = useState(false);
 
   /*
   ========================================
-  LOAD USER
+  USER EMAIL
   ========================================
   */
-  const loadUser =
-    async () => {
-
-      try {
-
-        setLoading(true);
-
-        /*
-        ========================================
-        GET SESSION
-        ========================================
-        */
-        const {
-          data: { session },
-          error,
-        } =
-          await supabase.auth.getSession();
-
-        if (
-          error ||
-          !session?.user
-        ) {
-
-          setUserEmail("");
-
-          setSubscription(
-            null
-          );
-
-          setIsExpired(
-            false
-          );
-
-          setLoading(
-            false
-          );
-
-          return;
-        }
-
-        const user =
-          session.user;
-
-        /*
-        ========================================
-        USER EMAIL
-        ========================================
-        */
-        setUserEmail(
-          user.email || ""
-        );
-
-        /*
-        ========================================
-        FETCH SUBSCRIPTION
-        ========================================
-        */
-        const {
-          data: subData,
-          error: subError,
-        } =
-          await supabase
-            .from(
-              "user_subscriptions"
-            )
-            .select("*")
-            .eq(
-              "user_id",
-              user.id
-            )
-            .maybeSingle();
-
-        /*
-        ========================================
-        NO SUBSCRIPTION
-        ========================================
-        */
-        if (
-          subError ||
-          !subData
-        ) {
-
-          setSubscription(
-            null
-          );
-
-          setIsExpired(
-            false
-          );
-
-          setLoading(
-            false
-          );
-
-          return;
-        }
-
-        /*
-        ========================================
-        SAVE SUBSCRIPTION
-        ========================================
-        */
-        setSubscription(
-          subData
-        );
-
-        /*
-        ========================================
-        CHECK EXPIRY
-        ========================================
-        */
-        const expired =
-          subData?.expires_at
-            ? new Date(
-                subData.expires_at
-              ).getTime() <
-              Date.now()
-            : false;
-
-        setIsExpired(
-          expired
-        );
-
-      } catch (err) {
-
-        console.error(
-          "LOAD USER ERROR:",
-          err
-        );
-
-      } finally {
-
-        setLoading(
-          false
-        );
-      }
-    };
-
-  /*
-  ========================================
-  AUTH LISTENER
-  ========================================
-  */
-  useEffect(() => {
-
-    let mounted = true;
-
-    /*
-    ========================================
-    INITIAL LOAD
-    ========================================
-    */
-    loadUser();
-
-    /*
-    ========================================
-    AUTH STATE CHANGES
-    ========================================
-    */
-    const {
-      data:
-        authListener,
-    } =
-      supabase.auth.onAuthStateChange(
-        async (
-          event,
-          session
-        ) => {
-
-          if (!mounted)
-            return;
-
-          console.log(
-            "AUTH EVENT:",
-            event
-          );
-
-          /*
-          ========================================
-          SIGNED OUT
-          ========================================
-          */
-          if (
-            event ===
-            "SIGNED_OUT"
-          ) {
-
-            setUserEmail("");
-
-            setSubscription(
-              null
-            );
-
-            setIsExpired(
-              false
-            );
-
-            setSidebarOpen(
-              false
-            );
-
-            return;
-          }
-
-          /*
-          ========================================
-          SIGNED IN
-          ========================================
-          */
-          if (
-            event ===
-              "SIGNED_IN" &&
-            session?.user
-          ) {
-
-            await loadUser();
-          }
-
-          /*
-          ========================================
-          TOKEN REFRESH
-          ========================================
-          */
-          if (
-            event ===
-            "TOKEN_REFRESHED"
-          ) {
-
-            console.log(
-              "Session refreshed"
-            );
-          }
-        }
-      );
-
-    /*
-    ========================================
-    CLEANUP
-    ========================================
-    */
-    return () => {
-
-      mounted = false;
-
-      authListener
-        ?.subscription
-        ?.unsubscribe();
-    };
-
-  }, []);
+  const userEmail =
+    user?.email || "";
 
   /*
   ========================================
@@ -322,11 +82,7 @@ export default function MainLayout() {
         const {
           error,
         } =
-          await supabase.auth.signOut({
-
-            scope:
-              "global",
-          });
+          await supabase.auth.signOut();
 
         if (error) {
 
@@ -338,26 +94,6 @@ export default function MainLayout() {
           return;
         }
 
-        /*
-        ========================================
-        RESET STATE
-        ========================================
-        */
-        setUserEmail("");
-
-        setSubscription(
-          null
-        );
-
-        setIsExpired(
-          false
-        );
-
-        /*
-        ========================================
-        REDIRECT
-        ========================================
-        */
         window.location.href =
           "/";
 
@@ -370,6 +106,7 @@ export default function MainLayout() {
       }
     };
 
+  
   /*
   ========================================
   LINKS
@@ -954,8 +691,8 @@ export default function MainLayout() {
                 <p className="text-xs text-gray-400 truncate">
 
                   {subscription?.plan ||
-                    "trial"}{" "}
-                  plan
+  "Free"}{" "}
+plan
 
                 </p>
 
