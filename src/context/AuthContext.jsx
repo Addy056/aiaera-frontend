@@ -12,7 +12,6 @@ export const AuthContext =
 export default function AuthProvider({
   children,
 }) {
-
   /*
   ========================================
   STATES
@@ -51,17 +50,13 @@ export default function AuthProvider({
   */
   const loadSubscription =
     async (userId) => {
-
       if (!userId) {
-
         setSubscription(null);
         setIsExpired(false);
-
         return;
       }
 
       try {
-
         console.log(
           "START SUBSCRIPTION QUERY:",
           userId
@@ -97,7 +92,6 @@ export default function AuthProvider({
         );
 
         if (error) {
-
           console.error(
             "SUBSCRIPTION ERROR:",
             error
@@ -121,7 +115,6 @@ export default function AuthProvider({
         if (
           data?.expires_at
         ) {
-
           const expired =
             new Date(
               data.expires_at
@@ -130,16 +123,12 @@ export default function AuthProvider({
           setIsExpired(
             expired
           );
-
         } else {
-
           setIsExpired(
             false
           );
         }
-
       } catch (err) {
-
         console.error(
           "LOAD SUBSCRIPTION ERROR:",
           err
@@ -161,15 +150,12 @@ export default function AuthProvider({
   ========================================
   */
   useEffect(() => {
-
     let mounted =
       true;
 
     const initializeAuth =
       async () => {
-
         try {
-
           console.log(
             "STEP 1: GET SESSION"
           );
@@ -191,7 +177,6 @@ export default function AuthProvider({
           );
 
           if (error) {
-
             console.error(
               "SESSION ERROR:",
               error
@@ -220,21 +205,18 @@ export default function AuthProvider({
           if (
             currentUser
           ) {
-
             console.log(
               "STEP 3: LOAD SUBSCRIPTION"
             );
 
-            await loadSubscription(
+            loadSubscription(
               currentUser.id
             );
 
             console.log(
-              "STEP 4: SUBSCRIPTION FINISHED"
+              "STEP 4: SUBSCRIPTION STARTED"
             );
-
           } else {
-
             setSubscription(
               null
             );
@@ -243,22 +225,17 @@ export default function AuthProvider({
               false
             );
           }
-
         } catch (err) {
-
           console.error(
             "INITIAL AUTH ERROR:",
             err
           );
-
         } finally {
-
           console.log(
             "STEP 5: SET LOADING FALSE"
           );
 
           if (mounted) {
-
             setLoading(
               false
             );
@@ -276,9 +253,7 @@ export default function AuthProvider({
           event,
           session
         ) => {
-
           try {
-
             console.log(
               "AUTH EVENT:",
               event
@@ -304,21 +279,23 @@ export default function AuthProvider({
             if (
               currentUser
             ) {
+              if (
+                event !==
+                "INITIAL_SESSION"
+              ) {
+                console.log(
+                  "AUTH LISTENER LOAD SUB"
+                );
 
-              console.log(
-                "AUTH LISTENER LOAD SUB"
-              );
+                await loadSubscription(
+                  currentUser.id
+                );
 
-              await loadSubscription(
-                currentUser.id
-              );
-
-              console.log(
-                "AUTH LISTENER SUB COMPLETE"
-              );
-
+                console.log(
+                  "AUTH LISTENER SUB COMPLETE"
+                );
+              }
             } else {
-
               setSubscription(
                 null
               );
@@ -327,22 +304,17 @@ export default function AuthProvider({
                 false
               );
             }
-
           } catch (err) {
-
             console.error(
               "AUTH LISTENER ERROR:",
               err
             );
-
           } finally {
-
             console.log(
               "AUTH LISTENER SET LOADING FALSE"
             );
 
             if (mounted) {
-
               setLoading(
                 false
               );
@@ -352,13 +324,11 @@ export default function AuthProvider({
       );
 
     return () => {
-
       mounted =
         false;
 
       authListener?.subscription?.unsubscribe();
     };
-
   }, []);
 
   /*
@@ -368,32 +338,35 @@ export default function AuthProvider({
   */
   const refreshSubscription =
     async () => {
-
       if (!user)
         return;
 
-      await loadSubscription(
-        user.id
-      );
+      try {
+        await loadSubscription(
+          user.id
+        );
+      } catch (err) {
+        console.error(
+          "REFRESH SUBSCRIPTION ERROR:",
+          err
+        );
+      }
     };
 
   console.log(
     "AUTH CONTEXT STATE"
   );
 
-  console.log(
-    {
-      loading,
-      user:
-        user?.email,
-      subscription,
-      isExpired,
-      isAdmin,
-    }
-  );
+  console.log({
+    loading,
+    user:
+      user?.email,
+    subscription,
+    isExpired,
+    isAdmin,
+  });
 
   return (
-
     <AuthContext.Provider
       value={{
         user,
@@ -404,9 +377,7 @@ export default function AuthProvider({
         refreshSubscription,
       }}
     >
-
       {children}
-
     </AuthContext.Provider>
   );
 }
