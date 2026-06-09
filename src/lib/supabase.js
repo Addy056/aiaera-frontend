@@ -22,7 +22,6 @@ if (
   !supabaseUrl ||
   !supabaseAnonKey
 ) {
-
   throw new Error(
     "❌ Missing Supabase environment variables"
   );
@@ -30,127 +29,61 @@ if (
 
 /*
 ========================================
-SAFE STORAGE
+SINGLETON CLIENT
 ========================================
 */
-const safeStorage =
-  typeof window !==
-  "undefined"
-    ? window.localStorage
-    : undefined;
-
-/*
-========================================
-PREVENT MULTIPLE CLIENTS
-========================================
-*/
-let supabaseInstance =
-  null;
+let supabaseInstance;
 
 /*
 ========================================
 CREATE CLIENT
 ========================================
 */
-const createSupabaseClient =
-  () => {
+function getSupabaseClient() {
+  if (supabaseInstance) {
+    return supabaseInstance;
+  }
 
-    if (
-      supabaseInstance
-    ) {
-
-      return supabaseInstance;
-    }
-
-    supabaseInstance =
-      createClient(
-        supabaseUrl,
-        supabaseAnonKey,
-        {
-
-          auth: {
-
-            /*
-            ========================================
-            SESSION
-            ========================================
-            */
-            persistSession:
-              true,
-
-            /*
-            ========================================
-            AUTO REFRESH
-            ========================================
-            */
-            autoRefreshToken:
-              true,
-
-            /*
-            ========================================
-            URL DETECTION
-            ========================================
-            */
-            detectSessionInUrl:
+  supabaseInstance =
+    createClient(
+      supabaseUrl,
+      supabaseAnonKey,
+      {
+        auth: {
+          persistSession:
             true,
 
-            /*
-            ========================================
-            STORAGE
-            ========================================
-            */
-            storage:
-              safeStorage,
+          autoRefreshToken:
+            true,
 
-            /*
-            ========================================
-            STORAGE KEY
-            ========================================
-            */
-            storageKey:
-              "aiaera-auth",
+          detectSessionInUrl:
+            false,
 
-            /*
-            ========================================
-            FLOW TYPE
-            ========================================
-            */
-            flowType:
-              "pkce",
+          flowType:
+            "pkce",
+
+          storageKey:
+            "aiaera-auth",
+        },
+
+        realtime: {
+          params: {
+            eventsPerSecond:
+              5,
           },
+        },
 
-          /*
-          ========================================
-          REALTIME
-          ========================================
-          */
-          realtime: {
-
-            params: {
-
-              eventsPerSecond:
-                5,
-            },
+        global: {
+          headers: {
+            "X-Client-Info":
+              "aiaera-web",
           },
+        },
+      }
+    );
 
-          /*
-          ========================================
-          GLOBAL HEADERS
-          ========================================
-          */
-          global: {
-
-            headers: {
-
-              "X-Client-Info":
-                "aiaera-web",
-            },
-          },
-        }
-      );
-
-    return supabaseInstance;
-  };
+  return supabaseInstance;
+}
 
 /*
 ========================================
@@ -158,17 +91,16 @@ EXPORT CLIENT
 ========================================
 */
 export const supabase =
-  createSupabaseClient();
+  getSupabaseClient();
 
 /*
 ========================================
-DEBUG
+DEV LOG
 ========================================
 */
 if (
   import.meta.env.DEV
 ) {
-
   console.log(
     "✅ Supabase Initialized"
   );

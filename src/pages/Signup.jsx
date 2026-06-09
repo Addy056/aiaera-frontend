@@ -1,8 +1,18 @@
-import { useState, useEffect, useRef } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  useContext,
+} from "react";
 
 import { supabase } from "../lib/supabase";
 
-import { Link, useNavigate } from "react-router-dom";
+import {
+  Link,
+  useNavigate,
+} from "react-router-dom";
+
+import { AuthContext } from "../context/AuthContext";
 
 import {
   Bot,
@@ -21,9 +31,15 @@ import { motion } from "framer-motion";
 import logo from "../assets/aiaera-logo.png";
 
 export default function Signup() {
-
   const navigate =
     useNavigate();
+
+  const {
+    user,
+    loading: authLoading,
+  } = useContext(
+    AuthContext
+  );
 
   /*
   =========================================
@@ -38,9 +54,6 @@ export default function Signup() {
 
   const [loading, setLoading] =
     useState(false);
-
-  const [checkingAuth, setCheckingAuth] =
-    useState(true);
 
   const [errorMsg, setErrorMsg] =
     useState("");
@@ -61,67 +74,28 @@ export default function Signup() {
 
   /*
   =========================================
-  CHECK EXISTING SESSION
+  USE AUTH CONTEXT
+  REMOVE getSession()
+  TO PREVENT LOCK ERRORS
   =========================================
   */
   useEffect(() => {
-
-    let mounted = true;
-
-    const checkSession =
-      async () => {
-
-        try {
-
-          const {
-            data: { session },
-          } =
-            await supabase.auth.getSession();
-
-          /*
-          =========================================
-          ALREADY LOGGED IN
-          =========================================
-          */
-          if (
-            mounted &&
-            session?.user
-          ) {
-
-            navigate(
-              "/app/dashboard",
-              {
-                replace: true,
-              }
-            );
-          }
-
-        } catch (err) {
-
-          console.log(
-            "SESSION CHECK ERROR:",
-            err
-          );
-
-        } finally {
-
-          if (mounted) {
-
-            setCheckingAuth(
-              false
-            );
-          }
+    if (
+      !authLoading &&
+      user
+    ) {
+      navigate(
+        "/app/dashboard",
+        {
+          replace: true,
         }
-      };
-
-    checkSession();
-
-    return () => {
-
-      mounted = false;
-    };
-
-  }, [navigate]);
+      );
+    }
+  }, [
+    user,
+    authLoading,
+    navigate,
+  ]);
 
   /*
   =========================================
@@ -130,19 +104,12 @@ export default function Signup() {
   */
   const handleSignup =
     async (e) => {
-
       e.preventDefault();
 
-      /*
-      =========================================
-      BLOCK MULTIPLE CLICKS
-      =========================================
-      */
       if (
         loading ||
         signupInProgress.current
       ) {
-
         return;
       }
 
@@ -156,48 +123,19 @@ export default function Signup() {
       setSuccessMsg("");
 
       try {
-
-        /*
-        =========================================
-        CREATE ACCOUNT
-        IMPORTANT:
-        DO NOT AUTO LOGIN
-        =========================================
-        */
         const {
           data,
           error,
         } =
-          await supabase.auth.signUp({
-            email:
-              email.trim(),
+          await supabase.auth.signUp(
+            {
+              email:
+                email.trim(),
+              password,
+            }
+          );
 
-            password,
-
-            options: {
-
-              /*
-              =========================================
-              PREVENT SESSION RACE CONDITION
-              =========================================
-              */
-              emailRedirectTo:
-                undefined,
-            },
-          });
-
-        /*
-        =========================================
-        ERROR
-        =========================================
-        */
         if (error) {
-
-          /*
-          =========================================
-          USER EXISTS
-          =========================================
-          */
           if (
             error.message
               ?.toLowerCase()
@@ -205,7 +143,6 @@ export default function Signup() {
                 "already registered"
               )
           ) {
-
             throw new Error(
               "Account already exists. Please login instead."
             );
@@ -214,11 +151,12 @@ export default function Signup() {
           throw error;
         }
 
-        const user =
+        const createdUser =
           data?.user;
 
-        if (!user) {
-
+        if (
+          !createdUser
+        ) {
           throw new Error(
             "Failed to create account"
           );
@@ -238,7 +176,8 @@ export default function Signup() {
         );
 
         const {
-          error: subscriptionError,
+          error:
+            subscriptionError,
         } =
           await supabase
             .from(
@@ -247,23 +186,17 @@ export default function Signup() {
             .upsert(
               {
                 user_id:
-                  user.id,
-
+                  createdUser.id,
                 plan:
                   "trial",
-
                 status:
                   "active",
-
                 messages_used:
                   0,
-
                 messages_limit:
                   200,
-
                 started_at:
                   new Date().toISOString(),
-
                 expires_at:
                   expiresAt.toISOString(),
               },
@@ -273,64 +206,33 @@ export default function Signup() {
               }
             );
 
-        /*
-        =========================================
-        SUBSCRIPTION ERROR
-        =========================================
-        */
         if (
           subscriptionError
         ) {
-
-          console.log(
+          console.error(
             "SUBSCRIPTION ERROR:",
             subscriptionError
           );
         }
 
-        /*
-        =========================================
-        SUCCESS
-        =========================================
-        */
         setSuccessMsg(
           "🎉 Account created successfully! Redirecting to login..."
         );
 
-        /*
-        =========================================
-        CLEAR FORM
-        =========================================
-        */
         setEmail("");
-
         setPassword("");
 
-        /*
-        =========================================
-        REDIRECT TO LOGIN
-        =========================================
-        */
         setTimeout(() => {
-
           navigate(
             "/login"
           );
-
         }, 1800);
-
       } catch (err) {
-
-        console.log(
-          "FINAL SIGNUP ERROR:",
+        console.error(
+          "SIGNUP ERROR:",
           err
         );
 
-        /*
-        =========================================
-        HANDLE LOCK ERROR
-        =========================================
-        */
         if (
           err?.message
             ?.toLowerCase()
@@ -338,21 +240,16 @@ export default function Signup() {
               "lock"
             )
         ) {
-
           setErrorMsg(
             "Authentication conflict detected. Please refresh and try again."
           );
-
         } else {
-
           setErrorMsg(
             err?.message ||
               "Signup failed"
           );
         }
-
       } finally {
-
         setLoading(false);
 
         signupInProgress.current =
@@ -365,21 +262,15 @@ export default function Signup() {
   LOADING
   =========================================
   */
-  if (checkingAuth) {
-
+  if (authLoading) {
     return (
-
       <div className="min-h-screen bg-[#050816] flex items-center justify-center">
-
         <div className="w-10 h-10 border-2 border-white/20 border-t-purple-500 rounded-full animate-spin"></div>
-
       </div>
     );
   }
 
-  return (
-
-    <div className="min-h-screen bg-[#050816] relative overflow-hidden flex items-center justify-center px-6 py-10">
+  return (    <div className="min-h-screen bg-[#050816] relative overflow-hidden flex items-center justify-center px-6 py-10">
 
       {/* BACKGROUND */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -513,7 +404,8 @@ export default function Signup() {
 
               </div>
 
-              <div className="text-center mb-8">
+              <div className="text-center mb-8"></div>
+                            <div className="text-center mb-8">
 
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-purple-500/20 bg-purple-500/10 mb-5">
 
@@ -549,6 +441,7 @@ export default function Signup() {
                   {errorMsg}
 
                 </div>
+
               )}
 
               {successMsg && (
@@ -560,6 +453,7 @@ export default function Signup() {
                   {successMsg}
 
                 </div>
+
               )}
 
               <form onSubmit={handleSignup}>
@@ -632,9 +526,7 @@ export default function Signup() {
 
                   </div>
 
-                </div>
-
-                <button
+                </div>                <button
                   type="submit"
                   disabled={loading}
                   className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:scale-[1.02] transition-all duration-300 text-white font-semibold py-4 rounded-2xl flex items-center justify-center gap-2 disabled:opacity-50"
@@ -691,9 +583,7 @@ function FeatureCard({
   title,
   desc,
 }) {
-
   return (
-
     <motion.div
       whileHover={{
         y: -4,

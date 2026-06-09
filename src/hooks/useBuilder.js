@@ -59,29 +59,20 @@ export const useBuilder =
       useCallback(
         async () => {
 
-          /*
-          ========================================
-          SAFETY CHECK
-          ========================================
-          */
           if (!userId) {
 
-            setLoading(
-              false
-            );
+            setChatbots([]);
+            setSelectedChatbot(null);
+            setIntegrations(null);
+            setLoading(false);
 
             return;
           }
 
           try {
 
-            setLoading(
-              true
-            );
-
-            setError(
-              null
-            );
+            setLoading(true);
+            setError(null);
 
             /*
             ========================================
@@ -103,28 +94,61 @@ export const useBuilder =
               throw chatbotError;
             }
 
-            /*
-            ========================================
-            SAVE CHATBOTS
-            ========================================
-            */
+            const safeChatbots =
+              Array.isArray(
+                chatbotData
+              )
+                ? chatbotData
+                : [];
+
             setChatbots(
-              chatbotData ||
-                []
+              safeChatbots
             );
 
             /*
             ========================================
-            DEFAULT SELECT
+            KEEP CURRENT CHATBOT
             ========================================
             */
             if (
-              chatbotData?.length >
+              safeChatbots.length >
               0
             ) {
 
               setSelectedChatbot(
-                chatbotData[0]
+                (prev) => {
+
+                  if (
+                    prev
+                  ) {
+
+                    const existing =
+                      safeChatbots.find(
+                        (
+                          chatbot
+                        ) =>
+                          chatbot.id ===
+                          prev.id
+                      );
+
+                    if (
+                      existing
+                    ) {
+
+                      return existing;
+                    }
+                  }
+
+                  return (
+                    safeChatbots[0]
+                  );
+                }
+              );
+
+            } else {
+
+              setSelectedChatbot(
+                null
               );
             }
 
@@ -147,30 +171,31 @@ export const useBuilder =
               integrationError
             ) {
 
-              throw integrationError;
-            }
+              console.error(
+                "INTEGRATION ERROR:",
+                integrationError
+              );
 
-            setIntegrations(
-              integrationData ||
-                null
-            );
+            } else {
+
+              setIntegrations(
+                integrationData ||
+                  null
+              );
+            }
 
           } catch (err) {
 
-            console.log(
+            console.error(
               "BUILDER LOAD ERROR:",
               err
             );
 
-            setError(
-              err
-            );
+            setError(err);
 
           } finally {
 
-            setLoading(
-              false
-            );
+            setLoading(false);
           }
         },
         [userId]
@@ -183,7 +208,26 @@ export const useBuilder =
     */
     useEffect(() => {
 
-      loadBuilderData();
+      let mounted =
+        true;
+
+      const load =
+        async () => {
+
+          if (
+            !mounted
+          ) return;
+
+          await loadBuilderData();
+        };
+
+      load();
+
+      return () => {
+
+        mounted =
+          false;
+      };
 
     }, [loadBuilderData]);
 
@@ -197,49 +241,27 @@ export const useBuilder =
         chatbotPayload
       ) => {
 
-        /*
-        ========================================
-        SAFETY CHECK
-        ========================================
-        */
         if (!userId) {
 
-          console.log(
+          console.error(
             "NO USER ID"
           );
 
-          return;
+          return null;
         }
 
         try {
 
-          setSaving(
-            true
-          );
+          setSaving(true);
+          setError(null);
 
-          setError(
-            null
-          );
-
-          /*
-          ========================================
-          PREPARE DATA
-          ========================================
-          */
           const payload =
             {
-
               ...chatbotPayload,
-
               user_id:
                 userId,
             };
 
-          /*
-          ========================================
-          SAVE CHATBOT
-          ========================================
-          */
           const {
             data,
             error,
@@ -253,42 +275,28 @@ export const useBuilder =
             throw error;
           }
 
-          /*
-          ========================================
-          UPDATE STATE
-          ========================================
-          */
           setSelectedChatbot(
             data
           );
 
-          /*
-          ========================================
-          RELOAD LIST
-          ========================================
-          */
           await loadBuilderData();
 
           return data;
 
         } catch (err) {
 
-          console.log(
+          console.error(
             "SAVE CHATBOT ERROR:",
             err
           );
 
-          setError(
-            err
-          );
+          setError(err);
 
           throw err;
 
         } finally {
 
-          setSaving(
-            false
-          );
+          setSaving(false);
         }
       };
 
@@ -299,11 +307,6 @@ export const useBuilder =
     */
     return {
 
-      /*
-      ========================================
-      STATES
-      ========================================
-      */
       chatbots,
 
       selectedChatbot,
@@ -316,22 +319,12 @@ export const useBuilder =
 
       error,
 
-      /*
-      ========================================
-      SETTERS
-      ========================================
-      */
       setChatbots,
 
       setSelectedChatbot,
 
       setIntegrations,
 
-      /*
-      ========================================
-      ACTIONS
-      ========================================
-      */
       loadBuilderData,
 
       handleSaveChatbot,

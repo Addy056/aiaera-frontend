@@ -2,21 +2,20 @@ import {
   createContext,
   useEffect,
   useState,
+  useCallback,
 } from "react";
 
 import { supabase } from "../lib/supabase";
 
-export const AuthContext =
-  createContext();
+export const AuthContext = createContext();
+
+const ADMIN_EMAILS = [
+  "dhawaleaditya077@gmail.com",
+];
 
 export default function AuthProvider({
   children,
 }) {
-  /*
-  ========================================
-  STATES
-  ========================================
-  */
   const [user, setUser] =
     useState(null);
 
@@ -34,39 +33,25 @@ export default function AuthProvider({
   const [isAdmin, setIsAdmin] =
     useState(false);
 
-  /*
-  ========================================
-  ADMIN EMAILS
-  ========================================
-  */
-  const ADMIN_EMAILS = [
-    "dhawaleaditya077@gmail.com",
-  ];
-
-  /*
-  ========================================
-  LOAD SUBSCRIPTION
-  ========================================
-  */
   const loadSubscription =
-    async (userId) => {
-      if (!userId) {
-        setSubscription(null);
-        setIsExpired(false);
-        return;
-      }
+    useCallback(
+      async (userId) => {
+        if (!userId) {
+          setSubscription(null);
+          setIsExpired(false);
+          return;
+        }
 
-      try {
-        console.log(
-          "START SUBSCRIPTION QUERY:",
-          userId
-        );
+        try {
+          console.log(
+            "START SUBSCRIPTION QUERY:",
+            userId
+          );
 
-        const {
-          data,
-          error,
-        } =
-          await supabase
+          const {
+            data,
+            error,
+          } = await supabase
             .from(
               "user_subscriptions"
             )
@@ -77,24 +62,51 @@ export default function AuthProvider({
             )
             .maybeSingle();
 
-        console.log(
-          "END SUBSCRIPTION QUERY"
-        );
+          console.log(
+            "END SUBSCRIPTION QUERY"
+          );
 
-        console.log(
-          "SUB DATA:",
-          data
-        );
+          if (error) {
+            console.error(
+              "SUBSCRIPTION ERROR:",
+              error
+            );
 
-        console.log(
-          "SUB ERROR:",
-          error
-        );
+            setSubscription(
+              null
+            );
 
-        if (error) {
+            setIsExpired(
+              false
+            );
+
+            return;
+          }
+
+          setSubscription(
+            data || null
+          );
+
+          if (
+            data?.expires_at
+          ) {
+            const expired =
+              new Date(
+                data.expires_at
+              ) < new Date();
+
+            setIsExpired(
+              expired
+            );
+          } else {
+            setIsExpired(
+              false
+            );
+          }
+        } catch (err) {
           console.error(
-            "SUBSCRIPTION ERROR:",
-            error
+            "LOAD SUBSCRIPTION ERROR:",
+            err
           );
 
           setSubscription(
@@ -104,60 +116,24 @@ export default function AuthProvider({
           setIsExpired(
             false
           );
-
-          return;
         }
-
-        setSubscription(
-          data || null
-        );
-
-        if (
-          data?.expires_at
-        ) {
-          const expired =
-            new Date(
-              data.expires_at
-            ) < new Date();
-
-          setIsExpired(
-            expired
-          );
-        } else {
-          setIsExpired(
-            false
-          );
-        }
-      } catch (err) {
-        console.error(
-          "LOAD SUBSCRIPTION ERROR:",
-          err
-        );
-
-        setSubscription(
-          null
-        );
-
-        setIsExpired(
-          false
-        );
-      }
-    };
+      },
+      []
+    );
 
   /*
   ========================================
-  INITIAL AUTH + LISTENER
+  INITIAL AUTH
   ========================================
   */
   useEffect(() => {
-    let mounted =
-      true;
+    let mounted = true;
 
     const initializeAuth =
       async () => {
         try {
           console.log(
-            "STEP 1: GET SESSION"
+            "GETTING SESSION..."
           );
 
           const {
@@ -168,20 +144,11 @@ export default function AuthProvider({
           } =
             await supabase.auth.getSession();
 
-          console.log(
-            "STEP 2: SESSION RECEIVED"
-          );
-
-          console.log(
-            session
-          );
-
           if (error) {
             console.error(
               "SESSION ERROR:",
               error
             );
-
             return;
           }
 
@@ -201,40 +168,12 @@ export default function AuthProvider({
               currentUser?.email?.toLowerCase()
             )
           );
-
-          if (
-            currentUser
-          ) {
-            console.log(
-              "STEP 3: LOAD SUBSCRIPTION"
-            );
-
-            loadSubscription(
-              currentUser.id
-            );
-
-            console.log(
-              "STEP 4: SUBSCRIPTION STARTED"
-            );
-          } else {
-            setSubscription(
-              null
-            );
-
-            setIsExpired(
-              false
-            );
-          }
         } catch (err) {
           console.error(
             "INITIAL AUTH ERROR:",
             err
           );
         } finally {
-          console.log(
-            "STEP 5: SET LOADING FALSE"
-          );
-
           if (mounted) {
             setLoading(
               false
@@ -249,77 +188,45 @@ export default function AuthProvider({
       data: authListener,
     } =
       supabase.auth.onAuthStateChange(
-        async (
+        (
           event,
           session
         ) => {
-          try {
-            console.log(
-              "AUTH EVENT:",
-              event
+          console.log(
+            "AUTH EVENT:",
+            event
+          );
+
+          if (!mounted)
+            return;
+
+          const currentUser =
+            session?.user ||
+            null;
+
+          setUser(
+            currentUser
+          );
+
+          setIsAdmin(
+            ADMIN_EMAILS.includes(
+              currentUser?.email?.toLowerCase()
+            )
+          );
+
+          if (!currentUser) {
+            setSubscription(
+              null
             );
 
-            if (!mounted)
-              return;
-
-            const currentUser =
-              session?.user ||
-              null;
-
-            setUser(
-              currentUser
+            setIsExpired(
+              false
             );
-
-            setIsAdmin(
-              ADMIN_EMAILS.includes(
-                currentUser?.email?.toLowerCase()
-              )
-            );
-
-            if (
-              currentUser
-            ) {
-              if (
-                event !==
-                "INITIAL_SESSION"
-              ) {
-                console.log(
-                  "AUTH LISTENER LOAD SUB"
-                );
-
-                await loadSubscription(
-                  currentUser.id
-                );
-
-                console.log(
-                  "AUTH LISTENER SUB COMPLETE"
-                );
-              }
-            } else {
-              setSubscription(
-                null
-              );
-
-              setIsExpired(
-                false
-              );
-            }
-          } catch (err) {
-            console.error(
-              "AUTH LISTENER ERROR:",
-              err
-            );
-          } finally {
-            console.log(
-              "AUTH LISTENER SET LOADING FALSE"
-            );
-
-            if (mounted) {
-              setLoading(
-                false
-              );
-            }
           }
+
+          setLoading(
+            false
+          );
         }
       );
 
@@ -333,12 +240,38 @@ export default function AuthProvider({
 
   /*
   ========================================
+  LOAD SUBSCRIPTION WHEN USER CHANGES
+  ========================================
+  */
+  useEffect(() => {
+    if (!user?.id) {
+      setSubscription(
+        null
+      );
+
+      setIsExpired(
+        false
+      );
+
+      return;
+    }
+
+    loadSubscription(
+      user.id
+    );
+  }, [
+    user?.id,
+    loadSubscription,
+  ]);
+
+  /*
+  ========================================
   REFRESH SUBSCRIPTION
   ========================================
   */
   const refreshSubscription =
     async () => {
-      if (!user)
+      if (!user?.id)
         return;
 
       try {
@@ -352,19 +285,6 @@ export default function AuthProvider({
         );
       }
     };
-
-  console.log(
-    "AUTH CONTEXT STATE"
-  );
-
-  console.log({
-    loading,
-    user:
-      user?.email,
-    subscription,
-    isExpired,
-    isAdmin,
-  });
 
   return (
     <AuthContext.Provider
