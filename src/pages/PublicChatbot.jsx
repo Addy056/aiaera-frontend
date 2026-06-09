@@ -36,7 +36,31 @@ const isRTLText =
       text
     );
   };
+/*
+========================================
+VISITOR ID
+========================================
+*/
+const getVisitorId = () => {
 
+  let visitorId =
+    localStorage.getItem(
+      "aiaera_visitor_id"
+    );
+
+  if (!visitorId) {
+
+    visitorId =
+      crypto.randomUUID();
+
+    localStorage.setItem(
+      "aiaera_visitor_id",
+      visitorId
+    );
+  }
+
+  return visitorId;
+};
 export default function PublicChatbot() {
 
   const { id } =
@@ -57,14 +81,42 @@ export default function PublicChatbot() {
   STATES
   ========================================
   */
-  const [messages, setMessages] =
-    useState([
+ const [messages, setMessages] =
+  useState(() => {
+
+    const saved =
+      localStorage.getItem(
+        `chat_${id}`
+      );
+
+    if (saved) {
+
+      try {
+
+        return JSON.parse(
+          saved
+        );
+
+      } catch {
+
+        return [
+          {
+            role: "bot",
+            text:
+              "Hi 👋 I'm your AI assistant. How can I help you today?",
+          },
+        ];
+      }
+    }
+
+    return [
       {
         role: "bot",
         text:
           "Hi 👋 I'm your AI assistant. How can I help you today?",
       },
-    ]);
+    ];
+  });
 
   const [input, setInput] =
     useState("");
@@ -80,7 +132,10 @@ export default function PublicChatbot() {
 
   const [expired, setExpired] =
     useState(false);
-
+const [visitorId] =
+  useState(
+    getVisitorId()
+  );
   const [integrations, setIntegrations] =
     useState({
       provider: "calendly",
@@ -105,7 +160,21 @@ export default function PublicChatbot() {
       });
 
   }, [messages]);
+useEffect(() => {
 
+  localStorage.setItem(
+
+    `chat_${id}`,
+
+    JSON.stringify(
+      messages
+    )
+  );
+
+}, [
+  messages,
+  id,
+]);
   /*
   ========================================
   FETCH CHATBOT
@@ -239,13 +308,20 @@ export default function PublicChatbot() {
               },
 
               body:
-                JSON.stringify({
-                  chatbotId: id,
-                  message:
-                    currentInput,
-                  messages:
-                    updatedMessages,
-                }),
+  JSON.stringify({
+
+    chatbotId:
+      id,
+
+    visitorId,
+
+    message:
+      currentInput,
+
+    messages:
+      updatedMessages,
+
+  }),
             }
           );
 
