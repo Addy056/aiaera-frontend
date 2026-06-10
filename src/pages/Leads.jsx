@@ -819,6 +819,11 @@ export default function Leads() {
                                 "No Email"}
 
                             </p>
+{lead.phone && (
+    <p className="text-purple-300">
+      {lead.phone}
+    </p>
+  )}
 
                           </div>
 
@@ -993,7 +998,18 @@ export default function Leads() {
                   />
                 }
               />
-
+              
+              <ModernDetailCard
+  title="Phone Number"
+  value={
+    selectedLead.phone
+  }
+  icon={
+    <Phone
+      size={16}
+    />
+  }
+/>
               <ModernDetailCard
                 title="Email Address"
                 value={
