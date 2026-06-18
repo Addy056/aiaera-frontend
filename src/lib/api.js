@@ -54,54 +54,24 @@ export const integrationsAPI = {
           "/api/integrations"
         );
 
-      /*
-      ====================================
-      NORMALIZE RESPONSE
-      ====================================
-      */
-
       return (
         res.data?.integrations || {
-          /*
-          ================================
-          WHATSAPP
-          ================================
-          */
+
           whatsapp_token: "",
           whatsapp_phone_id: "",
           whatsapp_enabled: false,
 
-          /*
-          ================================
-          FACEBOOK
-          ================================
-          */
           facebook_page_id: "",
           facebook_page_token: "",
           facebook_enabled: false,
 
-          /*
-          ================================
-          INSTAGRAM
-          ================================
-          */
           instagram_business_id: "",
           instagram_access_token: "",
           instagram_enabled: false,
 
-          /*
-          ================================
-          MEETING PROVIDER
-          ================================
-          */
           provider: "calendly",
           meeting_link: "",
 
-          /*
-          ================================
-          OTHER
-          ================================
-          */
           maps: "",
         }
       );
@@ -115,19 +85,8 @@ export const integrationsAPI = {
   saveIntegrations:
     async (payload) => {
 
-      /*
-      ====================================
-      SANITIZE PAYLOAD
-      ====================================
-      */
-
       const cleanPayload = {
 
-        /*
-        ================================
-        WHATSAPP
-        ================================
-        */
         whatsapp_token:
           payload.whatsapp_token || "",
 
@@ -137,11 +96,6 @@ export const integrationsAPI = {
         whatsapp_enabled:
           payload.whatsapp_enabled || false,
 
-        /*
-        ================================
-        FACEBOOK
-        ================================
-        */
         facebook_page_id:
           payload.facebook_page_id || "",
 
@@ -151,11 +105,6 @@ export const integrationsAPI = {
         facebook_enabled:
           payload.facebook_enabled || false,
 
-        /*
-        ================================
-        INSTAGRAM
-        ================================
-        */
         instagram_business_id:
           payload.instagram_business_id || "",
 
@@ -165,22 +114,12 @@ export const integrationsAPI = {
         instagram_enabled:
           payload.instagram_enabled || false,
 
-        /*
-        ================================
-        MEETING PROVIDER
-        ================================
-        */
         provider:
           payload.provider || "calendly",
 
         meeting_link:
           payload.meeting_link || "",
 
-        /*
-        ================================
-        OTHER
-        ================================
-        */
         maps:
           payload.maps || "",
       };
@@ -308,12 +247,92 @@ APPOINTMENTS API
 */
 export const appointmentsAPI = {
 
+  /*
+  ========================================
+  GET APPOINTMENTS
+  ========================================
+  */
   getAppointments:
     async () => {
 
       const res =
         await api.get(
           "/api/appointments"
+        );
+
+      return res.data;
+    },
+
+  /*
+  ========================================
+  CREATE APPOINTMENT
+  ========================================
+  */
+  createAppointment:
+    async (payload) => {
+
+      const res =
+        await api.post(
+          "/api/appointments",
+          payload
+        );
+
+      return res.data;
+    },
+
+  /*
+  ========================================
+  UPDATE APPOINTMENT STATUS
+  ========================================
+  */
+  updateAppointmentStatus:
+    async (
+      appointmentId,
+      status,
+      notes = ""
+    ) => {
+
+      const res =
+        await api.patch(
+          `/api/appointments/${appointmentId}/status`,
+          {
+            status,
+            notes,
+          }
+        );
+
+      return res.data;
+    },
+
+  /*
+  ========================================
+  DELETE APPOINTMENT
+  ========================================
+  */
+  deleteAppointment:
+    async (
+      appointmentId
+    ) => {
+
+      const res =
+        await api.delete(
+          `/api/appointments/${appointmentId}`
+        );
+
+      return res.data;
+    },
+
+  /*
+  ========================================
+  APPOINTMENT STATS
+  ========================================
+  */
+  getStats:
+    async () => {
+
+      const res =
+        await api.get(
+          "/api/appointments/stats"
         );
 
       return res.data;

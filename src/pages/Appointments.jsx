@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 
 import { supabase } from "../lib/supabase";
-
+import { appointmentsAPI } from "../lib/api";
 import { AuthContext } from "../context/AuthContext";
 
 export default function Appointments() {
@@ -56,7 +56,25 @@ export default function Appointments() {
     selectedAppointment,
     setSelectedAppointment,
   ] = useState(null);
+const pendingCount =
+  appointments.filter(
+    item => item.status === "pending"
+  ).length;
 
+const acceptedCount =
+  appointments.filter(
+    item => item.status === "accepted"
+  ).length;
+
+const rejectedCount =
+  appointments.filter(
+    item => item.status === "rejected"
+  ).length;
+
+const completedCount =
+  appointments.filter(
+    item => item.status === "completed"
+  ).length;
   /*
   ========================================
   SUBSCRIPTION
@@ -69,7 +87,28 @@ export default function Appointments() {
 
   const [isExpired, setIsExpired] =
     useState(false);
+ const updateStatus =
+  async (
+    appointmentId,
+    status
+  ) => {
 
+    try {
+
+      await appointmentsAPI
+        .updateAppointmentStatus(
+          appointmentId,
+          status
+        );
+
+      fetchData();
+
+    } catch (err) {
+
+      console.error(err);
+
+    }
+  };
   /*
   ========================================
   INIT
@@ -408,45 +447,44 @@ export default function Appointments() {
       </div>
 
       {/* STATS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-5">
 
-        <StatCard
-          icon={
-            <Calendar size={20} />
-          }
-          title="Appointments"
-          value={
-            appointments.length
-          }
-          color="from-[#7f5af0]/20 to-purple-500/5"
-        />
+  <StatCard
+    icon={<Calendar size={20} />}
+    title="Total"
+    value={appointments.length}
+    color="from-purple-500/20 to-purple-500/5"
+  />
 
-        <StatCard
-          icon={
-            <Users size={20} />
-          }
-          title="Customers"
-          value={
-            appointments.filter(
-              (item) =>
-                item.customer_name
-            ).length
-          }
-          color="from-blue-500/20 to-cyan-500/5"
-        />
+  <StatCard
+    icon={<Clock3 size={20} />}
+    title="Pending"
+    value={pendingCount}
+    color="from-yellow-500/20 to-yellow-500/5"
+  />
 
-        <StatCard
-          icon={
-            <Clock3 size={20} />
-          }
-          title="This Month"
-          value={
-            appointments.length
-          }
-          color="from-pink-500/20 to-rose-500/5"
-        />
+  <StatCard
+    icon={<Calendar size={20} />}
+    title="Accepted"
+    value={acceptedCount}
+    color="from-green-500/20 to-green-500/5"
+  />
 
-      </div>
+  <StatCard
+    icon={<Users size={20} />}
+    title="Rejected"
+    value={rejectedCount}
+    color="from-red-500/20 to-red-500/5"
+  />
+
+  <StatCard
+    icon={<Video size={20} />}
+    title="Completed"
+    value={completedCount}
+    color="from-blue-500/20 to-blue-500/5"
+  />
+
+</div>
 
       {/* SEARCH */}
       <div className="rounded-[28px] border border-white/10 bg-white/[0.03] backdrop-blur-xl p-5">
@@ -508,41 +546,49 @@ export default function Appointments() {
         </div>
 
         {/* TABLE */}
-        <div className="overflow-x-auto">
+<div className="overflow-x-auto">
 
-          <table className="w-full">
+  <table className="w-full">
 
-            <thead>
+    <thead>
 
-              <tr className="border-b border-white/10 bg-white/[0.02]">
+      <tr className="border-b border-white/10 bg-white/[0.02]">
 
-                <th className="text-left px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-400">
+        <th className="text-left px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-400">
 
-                  Customer
+          Customer
 
-                </th>
+        </th>
 
-                <th className="text-left px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-400">
+        <th className="text-left px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-400">
 
-                  Meeting
+          Meeting
 
-                </th>
+        </th>
 
-                <th className="text-left px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-400">
+        <th className="text-left px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-400">
 
-                  Date
+          Status
 
-                </th>
+        </th>
 
-                <th className="text-right px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-400">
+        <th className="text-left px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-400">
 
-                  Actions
+          Date
 
-                </th>
+        </th>
 
-              </tr>
+        <th className="text-right px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-400">
 
-            </thead>
+          Actions
+
+        </th>
+
+      </tr>
+
+    </thead>
+
+
 
             <tbody>
 
@@ -550,10 +596,10 @@ export default function Appointments() {
 
                 <tr>
 
-                  <td
-                    colSpan="4"
-                    className="py-20 text-center"
-                  >
+                 <td
+  colSpan="5"
+  className="py-20 text-center"
+>
 
                     <div className="flex flex-col items-center">
 
@@ -633,11 +679,11 @@ export default function Appointments() {
                       {/* LINK */}
                       <td className="px-6 py-5">
 
-                        {item.calendly_event_link ? (
+                        {item.meeting_link ? (
 
                           <a
                             href={
-                              item.calendly_event_link
+                              item.meeting_link
                             }
                             target="_blank"
                             rel="noreferrer"
@@ -663,7 +709,31 @@ export default function Appointments() {
                         )}
 
                       </td>
+                      <td className="px-6 py-5">
 
+  <span
+    className={`
+      px-3
+      py-1
+      rounded-full
+      text-xs
+      font-semibold
+
+      ${
+        item.status === "accepted"
+          ? "bg-green-500/20 text-green-300"
+          : item.status === "rejected"
+          ? "bg-red-500/20 text-red-300"
+          : item.status === "completed"
+          ? "bg-blue-500/20 text-blue-300"
+          : "bg-yellow-500/20 text-yellow-300"
+      }
+    `}
+  >
+    {item.status || "pending"}
+  </span>
+
+</td>
                       {/* DATE */}
                       <td className="px-6 py-5">
 
@@ -704,38 +774,55 @@ export default function Appointments() {
 
                           </button>
 
-                          <button
-                            disabled={
-                              isExpired
-                            }
-                            className={`
-                              w-11
-                              h-11
-                              rounded-2xl
-                              flex
-                              items-center
-                              justify-center
-                              transition-all
-                              ${
-                                isExpired
-                                  ? "bg-white/5 text-gray-600 cursor-not-allowed"
-                                  : "bg-purple-500/10 border border-purple-500/10"
-                              }
-                            `}
-                          >
+                          <div className="flex gap-2">
 
-                            {isExpired ? (
-                              <Lock
-                                size={16}
-                              />
-                            ) : (
-                              <Video
-                                size={16}
-                                className="text-purple-300"
-                              />
-                            )}
+  {item.status === "pending" &&
+    !isExpired && (
 
-                          </button>
+      <>
+        <button
+          onClick={() =>
+            updateStatus(
+              item.id,
+              "accepted"
+            )
+          }
+          className="px-3 py-2 rounded-xl bg-green-500/20 text-green-300"
+        >
+          Accept
+        </button>
+
+        <button
+          onClick={() =>
+            updateStatus(
+              item.id,
+              "rejected"
+            )
+          }
+          className="px-3 py-2 rounded-xl bg-red-500/20 text-red-300"
+        >
+          Reject
+        </button>
+      </>
+    )}
+
+  {item.status === "accepted" &&
+    !isExpired && (
+
+      <button
+        onClick={() =>
+          updateStatus(
+            item.id,
+            "completed"
+          )
+        }
+        className="px-3 py-2 rounded-xl bg-blue-500/20 text-blue-300"
+      >
+        Complete
+      </button>
+    )}
+
+</div>
 
                         </div>
 
@@ -821,11 +908,28 @@ export default function Appointments() {
                   />
                 }
               />
-
+              <DetailCard
+  title="Customer Phone"
+  value={
+    selectedAppointment.customer_phone
+  }
+  icon={
+    <Users size={16} />
+  }
+/>
+<DetailCard
+  title="Status"
+  value={
+    selectedAppointment.status
+  }
+  icon={
+    <Clock3 size={16} />
+  }
+/>
               <DetailCard
                 title="Meeting Link"
                 value={
-                  selectedAppointment.calendly_event_link
+                  selectedAppointment.meeting_link
                 }
                 icon={
                   <Video
