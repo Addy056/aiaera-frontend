@@ -13,8 +13,6 @@ import {
   Bot,
   User,
   Loader2,
-  Calendar,
-  MapPin,
   Sparkles,
 } from "lucide-react";
 
@@ -137,11 +135,12 @@ const [visitorId] =
     getVisitorId()
   );
   const [integrations, setIntegrations] =
-    useState({
-      provider: "calendly",
-      meeting_link: "",
-      maps: "",
-    });
+  useState({
+    meeting_provider: "calendly",
+    meeting_link: "",
+    maps_link: "",
+  });
+    
 
   const messagesEndRef =
     useRef(null);
@@ -222,26 +221,19 @@ useEffect(() => {
           data.chatbot
         );
 
-        setIntegrations({
-          provider:
-            data.integrations
-              ?.provider ||
-            "calendly",
+       setIntegrations({
+  meeting_provider:
+    data.integrations?.meeting_provider ||
+    "calendly",
 
-          meeting_link:
-            data.integrations
-              ?.meeting_link ||
-            data.integrations
-              ?.calendly_link ||
-            "",
+  meeting_link:
+    data.integrations?.meeting_link ||
+    "",
 
-          maps:
-            data.integrations
-              ?.maps ||
-            data.integrations
-              ?.google_maps_link ||
-            "",
-        });
+  maps_link:
+    data.integrations?.maps_link ||
+    "",
+});
 
       } catch (error) {
 
@@ -735,58 +727,9 @@ useEffect(() => {
         {/* FOOTER */}
         <div className="border-t border-white/10 p-4 bg-[#0B1120] shrink-0">
 
-          {(integrations.meeting_link ||
-            integrations.maps) && (
+          
 
-            <div className="flex flex-wrap gap-3 mb-4">
-
-              {integrations.meeting_link && (
-
-                <a
-                  href={
-                    integrations.meeting_link
-                  }
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2 h-11 px-5 rounded-2xl bg-purple-500/10 border border-purple-500/20 hover:bg-purple-500/20 transition-all text-sm text-white"
-                >
-
-                  <Calendar
-                    size={15}
-                    className="text-purple-300"
-                  />
-
-                  Book Meeting
-
-                </a>
-
-              )}
-
-              {integrations.maps && (
-
-                <a
-                  href={
-                    integrations.maps
-                  }
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2 h-11 px-5 rounded-2xl bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 transition-all text-sm text-white"
-                >
-
-                  <MapPin
-                    size={15}
-                    className="text-blue-300"
-                  />
-
-                  Visit Us
-
-                </a>
-
-              )}
-
-            </div>
-
-          )}
+          
 
           {/* INPUT */}
           <div className="flex items-center gap-3">
