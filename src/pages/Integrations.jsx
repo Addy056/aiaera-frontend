@@ -93,7 +93,7 @@ export default function Integrations() {
       WHATSAPP
       ====================================
       */
-      whatsapp_token: "",
+      whatsapp_access_token: "",
       whatsapp_phone_id: "",
       whatsapp_enabled: false,
 
@@ -103,7 +103,7 @@ export default function Integrations() {
       ====================================
       */
       facebook_page_id: "",
-      facebook_page_token: "",
+      facebook_page_access_token: "",
       facebook_enabled: false,
 
       /*
@@ -117,10 +117,10 @@ export default function Integrations() {
 
       /*
       ====================================
-      MEETING PROVIDER
+      Meeting Provider
       ====================================
       */
-      provider: "calendly",
+      meeting_provider: "calendly",
       meeting_link: "",
 
       /*
@@ -128,7 +128,7 @@ export default function Integrations() {
       OTHER
       ====================================
       */
-      maps: "",
+      maps_link: "",
     });
 
   /*
@@ -215,8 +215,8 @@ export default function Integrations() {
 
         setForm({
 
-          whatsapp_token:
-            data.whatsapp_token || "",
+          whatsapp_access_token:
+            data.whatsapp_access_token || "",
 
           whatsapp_phone_id:
             data.whatsapp_phone_id || "",
@@ -227,8 +227,8 @@ export default function Integrations() {
           facebook_page_id:
             data.facebook_page_id || "",
 
-          facebook_page_token:
-            data.facebook_page_token || "",
+          facebook_page_access_token:
+            data.facebook_page_access_token || "",
 
           facebook_enabled:
             data.facebook_enabled || false,
@@ -242,14 +242,14 @@ export default function Integrations() {
           instagram_enabled:
             data.instagram_enabled || false,
 
-          provider:
-            data.provider || "calendly",
+          meeting_provider:
+            data.meeting_provider || "calendly",
 
           meeting_link:
             data.meeting_link || "",
 
-          maps:
-            data.maps || "",
+          maps_link:
+            data.maps_link || "",
         });
 
       } catch (err) {
@@ -566,7 +566,7 @@ export default function Integrations() {
                 <PlatformIcon type="whatsapp" />
               }
               status={
-                form.whatsapp_token
+                form.whatsapp_access_token
                   ? "connected"
                   : "disconnected"
               }
@@ -619,10 +619,10 @@ export default function Integrations() {
                 />
 
                 <IntegrationInput
-                  name="whatsapp_token"
+                  name="whatsapp_access_token"
                   placeholder="Permanent Access Token"
                   value={
-                    form.whatsapp_token
+                    form.whatsapp_access_token
                   }
                   onChange={handleChange}
                 />
@@ -649,7 +649,7 @@ export default function Integrations() {
                 <PlatformIcon type="facebook" />
               }
               status={
-                form.facebook_page_token
+                form.facebook_page_access_token
                   ? "connected"
                   : "disconnected"
               }
@@ -702,10 +702,10 @@ export default function Integrations() {
                 />
 
                 <IntegrationInput
-                  name="facebook_page_token"
+                  name="facebook_page_access_token"
                   placeholder="Facebook Page Access Token"
                   value={
-                    form.facebook_page_token
+                    form.facebook_page_access_token
                   }
                   onChange={handleChange}
                 />
@@ -820,8 +820,8 @@ export default function Integrations() {
               </label>
 
               <select
-                name="provider"
-                value={form.provider}
+                name="meeting_provider"
+                value={form.meeting_provider}
                 onChange={handleChange}
                 disabled={isExpired}
                 className="w-full h-[54px] rounded-2xl bg-[#0f172a]/90 border border-purple-500/30 px-4 text-sm text-white outline-none"
@@ -860,7 +860,7 @@ export default function Integrations() {
 
           </IntegrationCard>
 
-          {/* MAPS */}
+          {/* maps_link */}
           <IntegrationCard
             title="Business Location"
             subtitle="Help customers find your business quickly."
@@ -868,16 +868,16 @@ export default function Integrations() {
               <PlatformIcon type="maps" />
             }
             status={
-              form.maps
+              form.maps_link
                 ? "connected"
                 : "disconnected"
             }
           >
 
             <IntegrationInput
-              name="maps"
-              placeholder="https://maps.google.com/..."
-              value={form.maps}
+              name="maps_link"
+              placeholder="https://maps_link.google.com/..."
+              value={form.maps_link}
               onChange={handleChange}
             />
 
