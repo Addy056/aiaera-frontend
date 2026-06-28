@@ -1,92 +1,220 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  Sparkles,
+  CheckCircle2,
+  Bot,
+  ShieldCheck,
+} from "lucide-react";
 
 const CTASection = () => {
   const navigate = useNavigate();
 
   return (
-    <section className="relative overflow-hidden py-28">
-      {/* Background Glow */}
-      <div className="absolute top-[-100px] left-[-100px] w-[400px] h-[400px] bg-purple-700/20 blur-[140px] rounded-full"></div>
+    <section className="relative overflow-hidden py-28 md:py-36">
+      {/* Background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-violet-500/[0.03] to-transparent" />
 
-      <div className="absolute bottom-[-100px] right-[-100px] w-[400px] h-[400px] bg-indigo-700/20 blur-[140px] rounded-full"></div>
+      <div className="absolute -top-40 -left-32 h-[420px] w-[420px] rounded-full bg-violet-600/20 blur-[160px]" />
 
-      {/* Grid Overlay */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
+      <div className="absolute -bottom-40 -right-32 h-[420px] w-[420px] rounded-full bg-blue-600/20 blur-[160px]" />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-10">
-        <div className="relative overflow-hidden rounded-[50px] border border-purple-500/20 bg-gradient-to-br from-purple-500/15 via-white/[0.03] to-indigo-500/10 backdrop-blur-[30px] px-8 md:px-16 py-20 md:py-28 text-center shadow-[0_20px_80px_rgba(124,58,237,0.25)]">
-          {/* Inner Glow */}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.12),transparent_30%)]"></div>
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:48px_48px]" />
 
-          {/* Floating Orbs */}
-          <div className="absolute top-10 left-10 w-20 h-20 rounded-full bg-purple-500/10 blur-2xl"></div>
+      <div className="relative z-10 mx-auto max-w-7xl px-6 md:px-10">
+        <div className="relative overflow-hidden rounded-[40px] border border-white/10 bg-white/[0.05] backdrop-blur-3xl shadow-[0_30px_100px_rgba(0,0,0,0.45)]">
 
-          <div className="absolute bottom-10 right-10 w-20 h-20 rounded-full bg-indigo-500/10 blur-2xl"></div>
+          {/* Glow */}
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(168,85,247,0.18),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(59,130,246,0.16),transparent_35%)]" />
 
-          <div className="relative z-10">
+          {/* Animated Border */}
+          <div className="absolute inset-0 rounded-[40px] border border-white/10" />
+
+          {/* Floating Cards */}
+          <div className="hidden lg:flex absolute left-10 top-12 items-center gap-4 rounded-3xl border border-white/10 bg-black/20 backdrop-blur-2xl px-5 py-4 shadow-xl">
+
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-500/20">
+              <Bot className="h-6 w-6 text-violet-300" />
+            </div>
+
+            <div>
+              <p className="text-xs uppercase tracking-widest text-white/45">
+                AI Assistant
+              </p>
+
+              <p className="font-semibold">
+                Responding Instantly
+              </p>
+            </div>
+          </div>
+
+          <div className="hidden lg:flex absolute right-10 bottom-12 items-center gap-4 rounded-3xl border border-white/10 bg-black/20 backdrop-blur-2xl px-5 py-4 shadow-xl">
+
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/20">
+              <ShieldCheck className="h-6 w-6 text-emerald-300" />
+            </div>
+
+            <div>
+              <p className="text-xs uppercase tracking-widest text-white/45">
+                Secure Platform
+              </p>
+
+              <p className="font-semibold">
+                Enterprise Ready
+              </p>
+            </div>
+          </div>
+
+          <div className="relative z-10 px-8 py-20 md:px-16 md:py-28">
+
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/[0.05] border border-purple-500/20 backdrop-blur-2xl text-purple-200 mb-8">
+            <div className="mx-auto mb-8 inline-flex items-center gap-2 rounded-full border border-violet-400/20 bg-white/[0.05] px-5 py-2 text-violet-200 backdrop-blur-2xl">
+
               <Sparkles size={16} />
-              Start Your AI Journey Today
+
+              <span className="font-medium">
+                AI Automation Platform
+              </span>
             </div>
 
             {/* Heading */}
-            <h2 className="text-5xl md:text-7xl font-black leading-[1.1] mb-8">
-              Ready To Grow
+            <h2 className="mx-auto max-w-5xl text-center text-5xl font-black leading-[1.05] md:text-7xl">
+
+              Put AI To Work
+
               <br />
 
-              <span className="bg-gradient-to-r from-[#c084fc] via-[#a78bfa] to-[#818cf8] bg-clip-text text-transparent">
-                With AI Automation?
+              <span className="bg-gradient-to-r from-violet-300 via-fuchsia-300 to-blue-300 bg-clip-text text-transparent">
+                For Your Business
               </span>
             </h2>
 
             {/* Description */}
-            <p className="text-lg md:text-xl text-white/60 max-w-3xl mx-auto leading-relaxed mb-12">
-              Build intelligent AI chatbots, automate customer support,
-              collect leads, and scale your business with AIAERA.
+            <p className="mx-auto mt-8 max-w-3xl text-center text-lg leading-8 text-white/65 md:text-xl">
+
+              Train an AI assistant using your website, PDFs and business
+              information. Capture more leads, automate customer support,
+              schedule appointments and engage customers 24/7 from a single
+              platform.
             </p>
 
-            {/* Buttons */}
-            <div className="flex flex-wrap items-center justify-center gap-5">
-              {/* Main CTA */}
+            {/* Feature Pills */}
+            <div className="mt-10 flex flex-wrap justify-center gap-4">
+
+              {[
+                "Website AI",
+                "Lead Generation",
+                "Appointment Booking",
+                "WhatsApp",
+                "Facebook",
+                "Instagram",
+                "Multi-language AI",
+              ].map((item) => (
+                <div
+                  key={item}
+                  className="rounded-full border border-white/10 bg-white/[0.05] px-5 py-3 text-sm text-white/80 backdrop-blur-xl"
+                >
+                  {item}
+                </div>
+              ))}
+            </div>
+
+            {/* CTA Buttons */}
+            <div className="mt-14 flex flex-wrap items-center justify-center gap-5">
+
               <button
                 onClick={() => navigate("/signup")}
-                className="group relative px-10 py-5 rounded-2xl overflow-hidden bg-gradient-to-r from-[#8b5cf6] to-[#6d28d9] font-semibold text-lg shadow-[0_15px_50px_rgba(124,58,237,0.45)] hover:scale-105 transition-all duration-300"
+                className="group inline-flex items-center gap-3 rounded-2xl bg-gradient-to-r from-violet-600 to-blue-600 px-10 py-5 text-lg font-semibold shadow-[0_15px_50px_rgba(99,102,241,0.45)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_60px_rgba(99,102,241,0.55)]"
               >
-                <span className="relative z-10 flex items-center gap-3">
-                  Start Free Today
+                Start Free
 
-                  <ArrowRight
-                    size={20}
-                    className="group-hover:translate-x-1 transition-all"
-                  />
-                </span>
-
-                <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-all"></div>
+                <ArrowRight
+                  size={20}
+                  className="transition-transform duration-300 group-hover:translate-x-1"
+                />
               </button>
 
-              {/* Secondary Button */}
               <button
                 onClick={() => navigate("/login")}
-                className="px-10 py-5 rounded-2xl border border-white/10 bg-white/[0.05] backdrop-blur-2xl hover:bg-white/[0.08] transition-all duration-300 text-lg"
+                className="rounded-2xl border border-white/10 bg-white/[0.05] px-10 py-5 text-lg font-medium backdrop-blur-xl transition-all duration-300 hover:bg-white/[0.08]"
               >
                 Login
               </button>
             </div>
+                        {/* Trust Indicators */}
+            <div className="mt-16 flex flex-wrap items-center justify-center gap-8">
 
-            {/* Bottom Text */}
-            <div className="mt-10 flex flex-wrap justify-center gap-8 text-white/45 text-sm">
-              <p>✔ No Credit Card Required</p>
+              <div className="flex items-center gap-2 text-white/70">
+                <CheckCircle2
+                  size={18}
+                  className="text-emerald-400"
+                />
 
-              <p>✔ Instant Setup</p>
+                <span>No Credit Card Required</span>
+              </div>
 
-              <p>✔ Cancel Anytime</p>
+              <div className="flex items-center gap-2 text-white/70">
+                <CheckCircle2
+                  size={18}
+                  className="text-emerald-400"
+                />
+
+                <span>Setup in Under 5 Minutes</span>
+              </div>
+
+              <div className="flex items-center gap-2 text-white/70">
+                <CheckCircle2
+                  size={18}
+                  className="text-emerald-400"
+                />
+
+                <span>Cancel Anytime</span>
+              </div>
             </div>
+
+            {/* Bottom Stats */}
+            <div className="mt-20 grid gap-6 border-t border-white/10 pt-10 md:grid-cols-3">
+
+              <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-xl">
+
+                <h3 className="text-4xl font-black bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
+                  24/7
+                </h3>
+
+                <p className="mt-2 text-white/60">
+                  AI responds instantly to every visitor without interruption.
+                </p>
+              </div>
+
+              <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-xl">
+
+                <h3 className="text-4xl font-black bg-gradient-to-r from-violet-300 to-blue-300 bg-clip-text text-transparent">
+                  10K+
+                </h3>
+
+                <p className="mt-2 text-white/60">
+                  Customer conversations automated through AI assistants.
+                </p>
+              </div>
+
+              <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-xl">
+
+                <h3 className="text-4xl font-black bg-gradient-to-r from-emerald-300 to-cyan-300 bg-clip-text text-transparent">
+                  99.9%
+                </h3>
+
+                <p className="mt-2 text-white/60">
+                  Reliable platform built for modern businesses.
+                </p>
+              </div>
+
+            </div>
+
           </div>
 
-          {/* Bottom Border Glow */}
-          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#8b5cf6] to-[#6d28d9]"></div>
+          {/* Bottom Gradient Line */}
+          <div className="absolute bottom-0 left-0 h-[2px] w-full bg-gradient-to-r from-violet-600 via-fuchsia-500 to-blue-600" />
+
         </div>
       </div>
     </section>

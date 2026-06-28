@@ -34,6 +34,32 @@ const isRTLText =
       text
     );
   };
+  /*
+========================================
+RENDER CLICKABLE LINKS
+========================================
+*/
+const renderMessage = (text = "") => {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+
+  return text.split(urlRegex).map((part, index) => {
+    if (part.match(urlRegex)) {
+      return (
+        <a
+          key={index}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-400 underline break-all hover:text-blue-300 transition"
+        >
+          {part}
+        </a>
+      );
+    }
+
+    return <span key={index}>{part}</span>;
+  });
+};
 /*
 ========================================
 VISITOR ID
@@ -657,30 +683,20 @@ useEffect(() => {
                       </div>
 
                       {/* TEXT */}
-                      <div
-                        dir={
-                          rtl
-                            ? "rtl"
-                            : "ltr"
-                        }
-                        className={`
-                          flex-1
-                          leading-relaxed
-                          text-sm
-                          whitespace-pre-wrap
-                          break-words
-                          overflow-hidden
-                          ${
-                            rtl
-                              ? "text-right"
-                              : "text-left"
-                          }
-                        `}
-                      >
-
-                        {message.text}
-
-                      </div>
+                     <div
+  dir={rtl ? "rtl" : "ltr"}
+  className={`
+    flex-1
+    leading-relaxed
+    text-sm
+    whitespace-pre-wrap
+    break-words
+    overflow-hidden
+    ${rtl ? "text-right" : "text-left"}
+  `}
+>
+  {renderMessage(message.text)}
+</div>
 
                     </div>
 

@@ -1,270 +1,156 @@
 import { useNavigate } from "react-router-dom";
-import {
-  Mail,
-  Phone,
-  Globe,
-  ArrowUpRight,
-} from "lucide-react";
+import { Mail, Phone, Globe, ChevronRight } from "lucide-react";
 
-const Footer = () => {
+const productLinks = [
+  { label: "Features", id: "features" },
+  { label: "Pricing", id: "pricing" },
+  { label: "Login", route: "/login" },
+  { label: "Get Started", route: "/signup" },
+];
+
+export default function Footer() {
   const navigate = useNavigate();
 
-  const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
+  const go = (item) => {
+    if (item.id) {
+      document.getElementById(item.id)?.scrollIntoView({ behavior: "smooth" });
+      return;
+    }
+    navigate(item.route);
   };
 
   return (
     <footer
       id="footer"
-      className="relative overflow-hidden border-t border-white/10 bg-[#05010d] pt-24"
+      className="relative overflow-hidden border-t border-white/10 bg-[#05070d]"
     >
-      {/* Background Glow */}
-      <div className="absolute top-0 left-0 w-[400px] h-[400px] bg-purple-700/10 blur-[140px] rounded-full"></div>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(124,58,237,.12),transparent_30%),radial-gradient(circle_at_bottom_right,rgba(59,130,246,.10),transparent_35%)]" />
 
-      <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-indigo-700/10 blur-[140px] rounded-full"></div>
-
-      {/* Grid Overlay */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
-
-      <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-10">
-        {/* TOP SECTION */}
-        <div className="grid lg:grid-cols-4 md:grid-cols-2 gap-14 pb-16 border-b border-white/10">
-          {/* Brand */}
-          <div>
-            <div className="flex items-center gap-4 mb-6">
-              <div className="relative">
-                <img
-                  src="/favicon.png"
-                  alt="AIAERA"
-                  className="w-14 h-14 rounded-2xl shadow-[0_10px_40px_rgba(124,58,237,0.45)]"
-                />
-
-                <div className="absolute inset-0 rounded-2xl bg-purple-500/20 blur-xl"></div>
-              </div>
+      <div className="relative mx-auto max-w-7xl px-6 py-20 lg:px-10">
+        <div className="grid gap-14 lg:grid-cols-4">
+          {/* Left */}
+          <div className="lg:col-span-2">
+            <div className="flex items-center gap-4">
+              <img
+                src="/favicon.png"
+                alt="AIAERA"
+                className="h-16 w-16 rounded-2xl"
+              />
 
               <div>
-                <h2 className="text-3xl font-black">
-                  AIAERA
-                </h2>
-
-                <p className="text-sm text-white/45">
-                  AI Business Automation
+                <h2 className="text-4xl font-black">AIAERA</h2>
+                <p className="text-white/50">
+                  AI Business Automation Platform
                 </p>
               </div>
             </div>
 
-            <p className="text-white/60 leading-relaxed mb-6">
-              Premium AI chatbot platform helping businesses automate customer
-              support, collect leads, and scale using advanced AI automation.
+            <p className="mt-6 max-w-xl leading-8 text-white/60">
+              Build AI assistants trained on your business knowledge, automate
+              customer support, collect leads and book appointments from one
+              modern platform.
             </p>
 
-            {/* Social Buttons */}
-            <div className="flex flex-wrap items-center gap-4">
-              <button className="px-4 py-2 rounded-xl border border-white/10 bg-white/[0.04] text-white/60 hover:text-white hover:bg-purple-500/20 transition-all">
-                Instagram
-              </button>
+            <div className="mt-8 space-y-4">
+              {[
+                {
+                  icon: Mail,
+                  title: "Email",
+                  value: "support@aiaera.com",
+                },
+                {
+                  icon: Phone,
+                  title: "Phone",
+                  value: "+91 98765 43210",
+                },
+                {
+                  icon: Globe,
+                  title: "Website",
+                  value: "www.aiaera.com",
+                },
+              ].map(({ icon: Icon, title, value }) => (
+                <div
+                  key={title}
+                  className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4"
+                >
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-600/20">
+                    <Icon size={18} />
+                  </div>
 
-              <button className="px-4 py-2 rounded-xl border border-white/10 bg-white/[0.04] text-white/60 hover:text-white hover:bg-purple-500/20 transition-all">
-                Facebook
-              </button>
-
-              <button className="px-4 py-2 rounded-xl border border-white/10 bg-white/[0.04] text-white/60 hover:text-white hover:bg-purple-500/20 transition-all">
-                LinkedIn
-              </button>
+                  <div>
+                    <p className="text-xs uppercase tracking-widest text-white/40">
+                      {title}
+                    </p>
+                    <p className="text-white/80">{value}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* Sections */}
+          {/* Product */}
           <div>
-            <h3 className="text-xl font-bold mb-6">
-              Sections
-            </h3>
+            <h3 className="mb-6 text-lg font-bold">Product</h3>
 
             <div className="space-y-4">
-              <button
-                onClick={scrollToTop}
-                className="block text-white/60 hover:text-white transition-all"
-              >
-                Home
-              </button>
-
-              <button
-                onClick={() =>
-                  document
-                    .getElementById("features")
-                    ?.scrollIntoView({
-                      behavior: "smooth",
-                    })
-                }
-                className="block text-white/60 hover:text-white transition-all"
-              >
-                Features
-              </button>
-
-              <button
-                onClick={() =>
-                  document
-                    .getElementById("pricing")
-                    ?.scrollIntoView({
-                      behavior: "smooth",
-                    })
-                }
-                className="block text-white/60 hover:text-white transition-all"
-              >
-                Pricing
-              </button>
-
-              <button
-                onClick={() => navigate("/login")}
-                className="block text-white/60 hover:text-white transition-all"
-              >
-                Login
-              </button>
-
-              <button
-                onClick={() => navigate("/signup")}
-                className="block text-white/60 hover:text-white transition-all"
-              >
-                Signup
-              </button>
+              {productLinks.map((item) => (
+                <button
+                  key={item.label}
+                  onClick={() => go(item)}
+                  className="flex items-center gap-2 text-white/60 transition hover:text-white"
+                >
+                  <ChevronRight size={16} />
+                  {item.label}
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Legal */}
+          {/* Follow Us (Shifted to Company Space) */}
           <div>
-            <h3 className="text-xl font-bold mb-6">
-              Legal
-            </h3>
+            <h3 className="mb-6 text-lg font-bold">Follow Us</h3>
 
-            <div className="space-y-4">
-              <button
-                onClick={() => navigate("/privacy-policy")}
-                className="flex items-center gap-2 text-white/60 hover:text-white transition-all group"
-              >
-                Privacy Policy
-
-                <ArrowUpRight
-                  size={16}
-                  className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-all"
-                />
-              </button>
-
-              <button
-                onClick={() => navigate("/terms")}
-                className="flex items-center gap-2 text-white/60 hover:text-white transition-all group"
-              >
-                Terms & Conditions
-
-                <ArrowUpRight
-                  size={16}
-                  className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-all"
-                />
-              </button>
-
-              <button
-                onClick={() => navigate("/refund-policy")}
-                className="flex items-center gap-2 text-white/60 hover:text-white transition-all group"
-              >
-                Refund Policy
-
-                <ArrowUpRight
-                  size={16}
-                  className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-all"
-                />
-              </button>
-            </div>
-          </div>
-
-          {/* Contact */}
-          <div>
-            <h3 className="text-xl font-bold mb-6">
-              Contact
-            </h3>
-
-            <div className="space-y-5">
-              {/* Email */}
-              <div className="flex items-center gap-4 text-white/60">
-                <div className="w-11 h-11 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center">
-                  <Mail size={18} />
-                </div>
-
-                <div>
-                  <p className="text-sm text-white/40">
-                    Email
-                  </p>
-
-                  <p>support@aiaera.com</p>
-                </div>
-              </div>
-
-              {/* Phone */}
-              <div className="flex items-center gap-4 text-white/60">
-                <div className="w-11 h-11 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center">
-                  <Phone size={18} />
-                </div>
-
-                <div>
-                  <p className="text-sm text-white/40">
-                    Phone
-                  </p>
-
-                  <p>+91 9876543210</p>
-                </div>
-              </div>
-
-              {/* Website */}
-              <div className="flex items-center gap-4 text-white/60">
-                <div className="w-11 h-11 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center">
-                  <Globe size={18} />
-                </div>
-
-                <div>
-                  <p className="text-sm text-white/40">
-                    Website
-                  </p>
-
-                  <p>www.aiaera.com</p>
-                </div>
-              </div>
+            <div className="flex flex-wrap gap-3">
+              {["Instagram", "Facebook", "LinkedIn", "X"].map((social) => (
+                <button
+                  key={social}
+                  className="rounded-full border border-white/10 px-4 py-2 text-sm text-white/70 transition hover:bg-white/10 hover:text-white"
+                >
+                  {social}
+                </button>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Bottom */}
-        <div className="py-8 flex flex-col md:flex-row items-center justify-between gap-5">
-          <p className="text-white/40 text-sm text-center md:text-left">
-            © 2026 AIAERA. All rights reserved.
-          </p>
-
-          <div className="flex items-center gap-6 text-sm">
-            <button
-              onClick={() => navigate("/privacy-policy")}
-              className="text-white/40 hover:text-white transition-all"
+        <div className="mt-16 grid gap-6 border-t border-white/10 pt-10 md:grid-cols-3">
+          {[
+            [
+              "Enterprise Security",
+              "Secure authentication and encrypted data.",
+            ],
+            [
+              "24/7 AI",
+              "Always-on AI assistant for your customers.",
+            ],
+            [
+              "Built For Growth",
+              "Capture leads and automate conversations.",
+            ],
+          ].map(([title, description]) => (
+            <div
+              key={title}
+              className="rounded-2xl border border-white/10 bg-white/[0.03] p-6"
             >
-              Privacy
-            </button>
+              <h4 className="font-bold">{title}</h4>
 
-            <button
-              onClick={() => navigate("/terms")}
-              className="text-white/40 hover:text-white transition-all"
-            >
-              Terms
-            </button>
-
-            <button
-              onClick={() => navigate("/support")}
-              className="text-white/40 hover:text-white transition-all"
-            >
-              Support
-            </button>
-          </div>
+              <p className="mt-3 text-sm text-white/60">
+                {description}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
     </footer>
   );
-};
-
-export default Footer;
+}

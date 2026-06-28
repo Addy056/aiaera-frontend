@@ -54,27 +54,27 @@ export const integrationsAPI = {
           "/api/integrations"
         );
 
-      return (
-        res.data?.integrations || {
+     return (
+  res.data?.integrations || {
 
-          whatsapp_token: "",
-          whatsapp_phone_id: "",
-          whatsapp_enabled: false,
+    whatsapp_access_token: "",
+    whatsapp_phone_id: "",
+    whatsapp_enabled: false,
 
-          facebook_page_id: "",
-          facebook_page_token: "",
-          facebook_enabled: false,
+    facebook_page_id: "",
+    facebook_page_access_token: "",
+    facebook_enabled: false,
 
-          instagram_business_id: "",
-          instagram_access_token: "",
-          instagram_enabled: false,
+    instagram_business_id: "",
+    instagram_access_token: "",
+    instagram_enabled: false,
 
-          provider: "calendly",
-          meeting_link: "",
+    meeting_provider: "calendly",
+    meeting_link: "",
 
-          maps: "",
-        }
-      );
+    maps_link: "",
+  }
+);
     },
 
   /*
@@ -86,43 +86,42 @@ export const integrationsAPI = {
     async (payload) => {
 
       const cleanPayload = {
+  whatsapp_access_token:
+    payload.whatsapp_access_token || "",
 
-        whatsapp_token:
-          payload.whatsapp_token || "",
+  whatsapp_phone_id:
+    payload.whatsapp_phone_id || "",
 
-        whatsapp_phone_id:
-          payload.whatsapp_phone_id || "",
+  whatsapp_enabled:
+    payload.whatsapp_enabled || false,
 
-        whatsapp_enabled:
-          payload.whatsapp_enabled || false,
+  facebook_page_id:
+    payload.facebook_page_id || "",
 
-        facebook_page_id:
-          payload.facebook_page_id || "",
+  facebook_page_access_token:
+    payload.facebook_page_access_token || "",
 
-        facebook_page_token:
-          payload.facebook_page_token || "",
+  facebook_enabled:
+    payload.facebook_enabled || false,
 
-        facebook_enabled:
-          payload.facebook_enabled || false,
+  instagram_business_id:
+    payload.instagram_business_id || "",
 
-        instagram_business_id:
-          payload.instagram_business_id || "",
+  instagram_access_token:
+    payload.instagram_access_token || "",
 
-        instagram_access_token:
-          payload.instagram_access_token || "",
+  instagram_enabled:
+    payload.instagram_enabled || false,
 
-        instagram_enabled:
-          payload.instagram_enabled || false,
+  meeting_provider:
+    payload.meeting_provider || "calendly",
 
-        provider:
-          payload.provider || "calendly",
+  meeting_link:
+    payload.meeting_link || "",
 
-        meeting_link:
-          payload.meeting_link || "",
-
-        maps:
-          payload.maps || "",
-      };
+  maps_link:
+    payload.maps_link || "",
+};
 
       const res =
         await api.post(
