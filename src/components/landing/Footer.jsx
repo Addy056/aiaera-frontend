@@ -56,17 +56,17 @@ export default function Footer() {
                 {
                   icon: Mail,
                   title: "Email",
-                  value: "support@aiaera.com",
+                  value: "aiaera056@gmail.com",
                 },
                 {
                   icon: Phone,
                   title: "Phone",
-                  value: "+91 98765 43210",
+                  value: "+91 9270099536",
                 },
                 {
                   icon: Globe,
                   title: "Website",
-                  value: "www.aiaera.com",
+                  value: "www.aiaera.in",
                 },
               ].map(({ icon: Icon, title, value }) => (
                 <div
