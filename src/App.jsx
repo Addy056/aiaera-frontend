@@ -64,6 +64,9 @@ const PublicChatbot = lazy(() =>
   import("./pages/PublicChatbot.jsx")
 );
 
+const PrivacyPolicy = lazy(() =>
+  import("./pages/PrivacyPolicy.jsx")
+);
 /*
 ========================================
 LAYOUTS & COMPONENTS
@@ -209,6 +212,11 @@ function AppRoutes() {
             element={<Pricing />}
           />
 
+          <Route
+  path="/privacy-policy"
+  element={<PrivacyPolicy />}
+/>
+
           {/*
           ========================================
           PUBLIC CHATBOT
@@ -281,7 +289,8 @@ function AppRoutes() {
               path="pricing"
               element={<Pricing />}
             />
-
+           
+      
           </Route>
 
           {/*
