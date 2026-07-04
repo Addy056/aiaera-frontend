@@ -210,10 +210,6 @@ export default function Integrations() {
         INTEGRATIONS
         ====================================
         */
-       console.log("========================================");
-console.log("FORM BEING SAVED");
-console.log(form);
-console.log("========================================");
         const data =
           await integrationsAPI.getIntegrations();
 
@@ -327,6 +323,10 @@ console.log("========================================");
 
       setSuccess("");
 
+      console.log("========================================");
+console.log("FORM BEING SAVED");
+console.log(form);
+console.log("========================================");
       await integrationsAPI
         .saveIntegrations(form);
 
