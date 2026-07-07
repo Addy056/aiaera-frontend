@@ -1,31 +1,61 @@
 import axios from "axios";
 
-import { supabase }
-  from "./supabase";
+import { supabase } from "./supabase";
 
-/*
-========================================
-AXIOS INSTANCE
-========================================
-*/
+const API_TIMEOUT_MS = 20000;
+
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  "http://localhost:5000";
+
+const defaultIntegrations = {
+  whatsapp_access_token: "",
+  whatsapp_phone_id: "",
+  whatsapp_enabled: false,
+  facebook_page_id: "",
+  facebook_page_access_token: "",
+  facebook_enabled: false,
+  instagram_business_id: "",
+  instagram_access_token: "",
+  instagram_enabled: false,
+  meeting_provider: "calendly",
+  meeting_link: "",
+  maps_link: "",
+};
+
 const api = axios.create({
-  baseURL:
-    import.meta.env.VITE_API_URL,
+  baseURL: API_URL,
+  timeout: API_TIMEOUT_MS,
 });
 
-/*
-========================================
-ATTACH AUTH TOKEN
-========================================
-*/
+export const getAuthHeaders = async (
+  contentType = "application/json"
+) => {
+  const { data } =
+    await supabase.auth.getSession();
+
+  if (!data.session?.access_token) {
+    throw new Error("User not authenticated");
+  }
+
+  const headers = {
+    Authorization:
+      `Bearer ${data.session.access_token}`,
+  };
+
+  if (contentType) {
+    headers["Content-Type"] = contentType;
+  }
+
+  return headers;
+};
+
 api.interceptors.request.use(
   async (config) => {
-
     const { data } =
       await supabase.auth.getSession();
 
-    if (data.session) {
-
+    if (data.session?.access_token) {
       config.headers.Authorization =
         `Bearer ${data.session.access_token}`;
     }
@@ -34,94 +64,156 @@ api.interceptors.request.use(
   }
 );
 
-/*
-========================================
-INTEGRATIONS API
-========================================
-*/
-export const integrationsAPI = {
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const status =
+      error.response?.status;
 
-  /*
-  ========================================
-  GET ALL INTEGRATIONS
-  ========================================
-  */
+    if (status === 401) {
+      await supabase.auth.signOut();
+    }
+
+    const message =
+      error.response?.data?.error ||
+      error.response?.data?.message ||
+      (error.code === "ECONNABORTED"
+        ? "Request timed out. Please try again."
+        : error.message) ||
+      "Request failed";
+
+    const normalizedError =
+      new Error(message);
+
+    normalizedError.status =
+      status || 0;
+
+    normalizedError.data =
+      error.response?.data || null;
+
+    throw normalizedError;
+  }
+);
+
+const parseBlobError = async (blob) => {
+  const text =
+    await blob.text();
+
+  try {
+    const data =
+      JSON.parse(text);
+
+    return (
+      data.error ||
+      data.message ||
+      "Request failed"
+    );
+  } catch {
+    return text || "Request failed";
+  }
+};
+
+const normalizeIntegrations =
+  (integrations) => ({
+    ...defaultIntegrations,
+    ...(integrations || {}),
+  });
+
+export const subscriptionAPI = {
+  getSubscription:
+    async () => {
+      const res =
+        await api.get(
+          "/api/payment/subscription"
+        );
+
+      return res.data;
+    },
+
+  createOrder:
+    async (plan) => {
+      const res =
+        await api.post(
+          "/api/payment/create-order",
+          { plan }
+        );
+
+      return res.data;
+    },
+
+  verifyPayment:
+    async (payload) => {
+      const res =
+        await api.post(
+          "/api/payment/verify",
+          payload
+        );
+
+      return res.data;
+    },
+
+  cancel:
+    async () => {
+      const res =
+        await api.post(
+          "/api/payment/cancel"
+        );
+
+      return res.data;
+    },
+};
+
+export const integrationsAPI = {
   getIntegrations:
     async () => {
-
       const res =
         await api.get(
           "/api/integrations"
         );
 
-     return (
-  res.data?.integrations || {
-
-    whatsapp_access_token: "",
-    whatsapp_phone_id: "",
-    whatsapp_enabled: false,
-
-    facebook_page_id: "",
-    facebook_page_access_token: "",
-    facebook_enabled: false,
-
-    instagram_business_id: "",
-    instagram_access_token: "",
-    instagram_enabled: false,
-
-    meeting_provider: "calendly",
-    meeting_link: "",
-
-    maps_link: "",
-  }
-);
+      return normalizeIntegrations(
+        res.data?.integrations
+      );
     },
 
-  /*
-  ========================================
-  SAVE INTEGRATIONS
-  ========================================
-  */
+  getStatus:
+    async () => {
+      const res =
+        await api.get(
+          "/api/integrations/status"
+        );
+
+      return res.data;
+    },
+
   saveIntegrations:
     async (payload) => {
-
       const cleanPayload = {
-  whatsapp_access_token:
-    payload.whatsapp_access_token || "",
-
-  whatsapp_phone_id:
-    payload.whatsapp_phone_id || "",
-
-  whatsapp_enabled:
-    payload.whatsapp_enabled || false,
-
-  facebook_page_id:
-    payload.facebook_page_id || "",
-
-  facebook_page_access_token:
-    payload.facebook_page_access_token || "",
-
-  facebook_enabled:
-    payload.facebook_enabled || false,
-
-  instagram_business_id:
-    payload.instagram_business_id || "",
-
-  instagram_access_token:
-    payload.instagram_access_token || "",
-
-  instagram_enabled:
-    payload.instagram_enabled || false,
-
-  meeting_provider:
-    payload.meeting_provider || "calendly",
-
-  meeting_link:
-    payload.meeting_link || "",
-
-  maps_link:
-    payload.maps_link || "",
-};
+        whatsapp_access_token:
+          payload.whatsapp_access_token || "",
+        whatsapp_phone_id:
+          payload.whatsapp_phone_id || "",
+        whatsapp_enabled:
+          Boolean(payload.whatsapp_enabled),
+        facebook_page_id:
+          payload.facebook_page_id || "",
+        facebook_page_access_token:
+          payload.facebook_page_access_token || "",
+        facebook_enabled:
+          Boolean(payload.facebook_enabled),
+        instagram_business_id:
+          payload.instagram_business_id || "",
+        instagram_access_token:
+          payload.instagram_access_token || "",
+        instagram_enabled:
+          Boolean(payload.instagram_enabled),
+        meeting_provider:
+          payload.meeting_provider || "calendly",
+        meeting_link:
+          payload.meeting_link || "",
+        maps_link:
+          payload.maps_link || "",
+      };
 
       const res =
         await api.post(
@@ -132,17 +224,11 @@ export const integrationsAPI = {
       return res.data;
     },
 
-  /*
-  ========================================
-  TOGGLE AUTOMATION
-  ========================================
-  */
   toggleAutomation:
     async ({
       platform,
       enabled,
     }) => {
-
       const res =
         await api.patch(
           "/api/integrations/toggle",
@@ -155,41 +241,78 @@ export const integrationsAPI = {
       return res.data;
     },
 
-  /*
-  ========================================
-  TEST CONNECTION
-  ========================================
-  */
   testConnection:
     async (platform) => {
-
       const res =
         await api.post(
           "/api/integrations/test",
-          {
-            platform,
-          }
+          { platform }
+        );
+
+      return res.data;
+    },
+
+  deleteIntegration:
+    async (platform) => {
+      const res =
+        await api.delete(
+          `/api/integrations/${platform}`
         );
 
       return res.data;
     },
 };
 
-/*
-========================================
-CHATBOT API
-========================================
-*/
-export const chatbotAPI = {
+export const metaAPI = {
+  getConnectUrl:
+    async (returnTo) => {
+      const res =
+        await api.get(
+          "/api/meta/connect",
+          {
+            params: returnTo
+              ? { returnTo }
+              : {},
+          }
+        );
 
-  /*
-  ========================================
-  CREATE CHATBOT
-  ========================================
-  */
+      return res.data;
+    },
+
+  getStatus:
+    async () => {
+      const res =
+        await api.get(
+          "/api/meta/status"
+        );
+
+      return res.data;
+    },
+
+  sync:
+    async () => {
+      const res =
+        await api.post(
+          "/api/meta/sync"
+        );
+
+      return res.data;
+    },
+
+  disconnect:
+    async () => {
+      const res =
+        await api.delete(
+          "/api/meta/disconnect"
+        );
+
+      return res.data;
+    },
+};
+
+export const chatbotAPI = {
   create:
     async (payload) => {
-
       const res =
         await api.post(
           "/api/chatbot/create",
@@ -199,17 +322,31 @@ export const chatbotAPI = {
       return res.data;
     },
 
-  /*
-  ========================================
-  UPDATE CHATBOT
-  ========================================
-  */
+  getAll:
+    async () => {
+      const res =
+        await api.get(
+          "/api/chatbot/user/all"
+        );
+
+      return res.data;
+    },
+
+  get:
+    async (chatbotId) => {
+      const res =
+        await api.get(
+          `/api/chatbot/${chatbotId}`
+        );
+
+      return res.data;
+    },
+
   update:
     async (
       chatbotId,
       payload
     ) => {
-
       const res =
         await api.put(
           `/api/chatbot/${chatbotId}`,
@@ -218,18 +355,70 @@ export const chatbotAPI = {
 
       return res.data;
     },
+
+  delete:
+    async (chatbotId) => {
+      const res =
+        await api.delete(
+          `/api/chatbot/${chatbotId}`
+        );
+
+      return res.data;
+    },
+
+  scrape:
+    async (payload) => {
+      const res =
+        await api.post(
+          "/api/chatbot/scrape",
+          payload
+        );
+
+      return res.data;
+    },
+
+  publicConfig:
+    async (chatbotId) => {
+      const res =
+        await api.get(
+          `/api/chatbot/public/${chatbotId}`
+        );
+
+      return res.data;
+    },
+
+  chat:
+    async (payload) => {
+      const res =
+        await api.post(
+          "/api/chatbot/chat",
+          payload
+        );
+
+      return res.data;
+    },
 };
 
-/*
-========================================
-LEADS API
-========================================
-*/
-export const leadsAPI = {
+export const uploadAPI = {
+  trainingFile:
+    async (formData) => {
+      const headers =
+        await getAuthHeaders(null);
 
+      const res =
+        await api.post(
+          "/api/upload/training",
+          formData,
+          { headers }
+        );
+
+      return res.data;
+    },
+};
+
+export const leadsAPI = {
   getLeads:
     async () => {
-
       const res =
         await api.get(
           "/api/leads"
@@ -237,23 +426,54 @@ export const leadsAPI = {
 
       return res.data;
     },
+
+  getStats:
+    async () => {
+      const res =
+        await api.get(
+          "/api/leads/stats"
+        );
+
+      return res.data;
+    },
+
+  deleteLead:
+    async (leadId) => {
+      const res =
+        await api.delete(
+          `/api/leads/${leadId}`
+        );
+
+      return res.data;
+    },
+
+  exportCSV:
+    async () => {
+      try {
+        const res =
+          await api.get(
+            "/api/leads/export/csv",
+            {
+              responseType: "blob",
+            }
+          );
+
+        return res.data;
+      } catch (err) {
+        if (err.data instanceof Blob) {
+          throw new Error(
+            await parseBlobError(err.data)
+          );
+        }
+
+        throw err;
+      }
+    },
 };
 
-/*
-========================================
-APPOINTMENTS API
-========================================
-*/
 export const appointmentsAPI = {
-
-  /*
-  ========================================
-  GET APPOINTMENTS
-  ========================================
-  */
   getAppointments:
     async () => {
-
       const res =
         await api.get(
           "/api/appointments"
@@ -262,14 +482,8 @@ export const appointmentsAPI = {
       return res.data;
     },
 
-  /*
-  ========================================
-  CREATE APPOINTMENT
-  ========================================
-  */
   createAppointment:
     async (payload) => {
-
       const res =
         await api.post(
           "/api/appointments",
@@ -279,18 +493,12 @@ export const appointmentsAPI = {
       return res.data;
     },
 
-  /*
-  ========================================
-  UPDATE APPOINTMENT STATUS
-  ========================================
-  */
   updateAppointmentStatus:
     async (
       appointmentId,
       status,
       notes = ""
     ) => {
-
       const res =
         await api.patch(
           `/api/appointments/${appointmentId}/status`,
@@ -303,16 +511,8 @@ export const appointmentsAPI = {
       return res.data;
     },
 
-  /*
-  ========================================
-  DELETE APPOINTMENT
-  ========================================
-  */
   deleteAppointment:
-    async (
-      appointmentId
-    ) => {
-
+    async (appointmentId) => {
       const res =
         await api.delete(
           `/api/appointments/${appointmentId}`
@@ -321,14 +521,8 @@ export const appointmentsAPI = {
       return res.data;
     },
 
-  /*
-  ========================================
-  APPOINTMENT STATS
-  ========================================
-  */
   getStats:
     async () => {
-
       const res =
         await api.get(
           "/api/appointments/stats"
@@ -338,9 +532,9 @@ export const appointmentsAPI = {
     },
 };
 
-/*
-========================================
-EXPORT AXIOS INSTANCE
-========================================
-*/
+export {
+  API_URL,
+  defaultIntegrations,
+};
+
 export default api;
