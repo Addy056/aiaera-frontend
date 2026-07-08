@@ -3,27 +3,54 @@ import {
   MessageSquare,
   Calendar,
   MapPinned,
+  Boxes,
+  Building2,
+  Briefcase,
+  Slack,
+  Workflow,
+  CreditCard,
+  Store,
+  Globe,
+  MonitorSmartphone,
+  Instagram,
 } from "lucide-react";
+
+const icons = {
+  // Existing
+  whatsapp: MessageCircle,
+  facebook: MessageSquare,
+  instagram: Instagram,
+  calendly: Calendar,
+  maps: MapPinned,
+
+  // Providers
+  meta: Boxes,
+  meetings: Calendar,
+  business: Building2,
+  productivity: Briefcase,
+  payments: CreditCard,
+
+  // Future
+  google: Globe,
+  microsoft: MonitorSmartphone,
+  slack: Slack,
+  zapier: Workflow,
+  shopify: Store,
+  stripe: CreditCard,
+};
 
 export default function PlatformIcon({
   type,
+  size = 20,
+  className = "",
 }) {
+  const Icon =
+    icons[type] || Boxes;
 
-  switch (type) {
-
-    case "whatsapp":
-      return <MessageCircle size={20} />;
-
-    case "facebook":
-      return <MessageSquare size={20} />;
-
-    case "calendly":
-      return <Calendar size={20} />;
-
-    case "maps":
-      return <MapPinned size={20} />;
-
-    default:
-      return null;
-  }
+  return (
+    <Icon
+      size={size}
+      className={className}
+    />
+  );
 }
