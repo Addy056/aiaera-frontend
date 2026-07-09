@@ -20,7 +20,7 @@ const icons = {
   // Existing
   whatsapp: MessageCircle,
   facebook: MessageSquare,
-  FaInstagram: FaInstagram,
+  instagram: FaInstagram,
   calendly: Calendar,
   maps: MapPinned,
 
