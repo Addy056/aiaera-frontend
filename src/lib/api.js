@@ -187,42 +187,79 @@ export const integrationsAPI = {
     },
 
   saveIntegrations:
-    async (payload) => {
-      const cleanPayload = {
-        whatsapp_access_token:
-          payload.whatsapp_access_token || "",
-        whatsapp_phone_id:
-          payload.whatsapp_phone_id || "",
-        whatsapp_enabled:
-          Boolean(payload.whatsapp_enabled),
-        facebook_page_id:
-          payload.facebook_page_id || "",
-        facebook_page_access_token:
-          payload.facebook_page_access_token || "",
-        facebook_enabled:
-          Boolean(payload.facebook_enabled),
-        instagram_business_id:
-          payload.instagram_business_id || "",
-        instagram_access_token:
-          payload.instagram_access_token || "",
-        instagram_enabled:
-          Boolean(payload.instagram_enabled),
-        meeting_provider:
-          payload.meeting_provider || "calendly",
-        meeting_link:
-          payload.meeting_link || "",
-        maps_link:
-          payload.maps_link || "",
-      };
+  async (payload) => {
 
-      const res =
-        await api.post(
-          "/api/integrations",
-          cleanPayload
-        );
+    const cleanPayload = {
 
-      return res.data;
-    },
+      /*
+      ====================================
+      WHATSAPP
+      ====================================
+      */
+      whatsapp_access_token:
+        payload.whatsapp_access_token || "",
+
+      whatsapp_phone_id:
+        payload.whatsapp_phone_id || "",
+
+      whatsapp_enabled:
+        Boolean(
+          payload.whatsapp_enabled
+        ),
+
+      /*
+      ====================================
+      FACEBOOK
+      ====================================
+      OAuth manages tokens & page IDs
+      ====================================
+      */
+      facebook_enabled:
+        Boolean(
+          payload.facebook_enabled
+        ),
+
+      /*
+      ====================================
+      INSTAGRAM
+      ====================================
+      OAuth manages tokens & business IDs
+      ====================================
+      */
+      instagram_enabled:
+        Boolean(
+          payload.instagram_enabled
+        ),
+
+      /*
+      ====================================
+      MEETING
+      ====================================
+      */
+      meeting_provider:
+        payload.meeting_provider ||
+        "calendly",
+
+      meeting_link:
+        payload.meeting_link || "",
+
+      /*
+      ====================================
+      BUSINESS LOCATION
+      ====================================
+      */
+      maps_link:
+        payload.maps_link || "",
+    };
+
+    const res =
+      await api.post(
+        "/api/integrations",
+        cleanPayload
+      );
+
+    return res.data;
+  },
 
   toggleAutomation:
     async ({

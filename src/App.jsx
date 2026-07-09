@@ -67,6 +67,10 @@ const PublicChatbot = lazy(() =>
 const PrivacyPolicy = lazy(() =>
   import("./pages/PrivacyPolicy.jsx")
 );
+
+const MetaCallback = lazy(() =>
+  import("./pages/MetaCallback.jsx")
+);
 /*
 ========================================
 LAYOUTS & COMPONENTS
@@ -227,6 +231,10 @@ function AppRoutes() {
             path="/public-chatbot/:id"
             element={<PublicChatbot />}
           />
+          <Route
+  path="/meta/callback"
+  element={<MetaCallback />}
+/>
 
           {/*
           ========================================

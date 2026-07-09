@@ -6,30 +6,28 @@ import {
   AlertTriangle,
   Lock,
   Crown,
+  RefreshCw,
+  Link2,
+  Unlink,
 } from "lucide-react";
 
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
 
 import {
   integrationsAPI,
+  metaAPI,
 } from "../lib/api";
 
 import { supabase } from "../lib/supabase";
 
 import IntegrationCard from "../components/integrations/IntegrationCard";
-
 import IntegrationInput from "../components/integrations/IntegrationInput";
-
 import InfoBox from "../components/integrations/InfoBox";
-
 import PlatformIcon from "../components/integrations/PlatformIcon";
-
 import WhatsAppSetupModal from "../components/integrations/WhatsAppSetupModal";
-
-import FacebookSetupModal from "../components/integrations/FacebookSetupModal";
-
-import InstagramSetupModal from "../components/integrations/InstagramSetupModal";
-
 import AutomationToggle from "../components/integrations/AutomationToggle";
 
 export default function Integrations() {
@@ -45,6 +43,16 @@ export default function Integrations() {
 
   const [success, setSuccess] =
     useState("");
+    /*
+========================================
+META CONNECTION
+========================================
+*/
+const [metaStatus, setMetaStatus] =
+  useState(null);
+
+const [metaLoading, setMetaLoading] =
+  useState(false);
 
   /*
   ========================================
@@ -70,66 +78,54 @@ export default function Integrations() {
     setShowWhatsAppModal,
   ] = useState(false);
 
-  const [
-    showFacebookModal,
-    setShowFacebookModal,
-  ] = useState(false);
-
-  const [
-    showInstagramModal,
-    setShowInstagramModal,
-  ] = useState(false);
-
+ 
   /*
   ========================================
   FORM
   ========================================
   */
   const [form, setForm] =
-    useState({
+  useState({
 
-      /*
-      ====================================
-      WHATSAPP
-      ====================================
-      */
-      whatsapp_access_token: "",
-      whatsapp_phone_id: "",
-      whatsapp_enabled: false,
+    /*
+    ===================================
+    WHATSAPP
+    ===================================
+    */
+    whatsapp_access_token: "",
+    whatsapp_phone_id: "",
+    whatsapp_enabled: false,
 
-      /*
-      ====================================
-      FACEBOOK
-      ====================================
-      */
-      facebook_page_id: "",
-      facebook_page_access_token: "",
-      facebook_enabled: false,
+    /*
+    ===================================
+    FACEBOOK
+    ===================================
+    */
+    facebook_enabled: false,
 
-      /*
-      ====================================
-      INSTAGRAM
-      ====================================
-      */
-      instagram_business_id: "",
-      instagram_access_token: "",
-      instagram_enabled: false,
+    /*
+    ===================================
+    INSTAGRAM
+    ===================================
+    */
+    instagram_enabled: false,
 
-      /*
-      ====================================
-      Meeting Provider
-      ====================================
-      */
-      meeting_provider: "calendly",
-      meeting_link: "",
+    /*
+    ===================================
+    MEETING
+    ===================================
+    */
+    meeting_provider: "calendly",
+    meeting_link: "",
 
-      /*
-      ====================================
-      OTHER
-      ====================================
-      */
-      maps_link: "",
-    });
+    /*
+    ===================================
+    LOCATION
+    ===================================
+    */
+    maps_link: "",
+
+  });
 
   /*
   ========================================
@@ -212,45 +208,48 @@ export default function Integrations() {
         */
         const data =
           await integrationsAPI.getIntegrations();
+/*
+====================================
+META STATUS
+====================================
+*/
+const meta =
+  await metaAPI.getStatus();
 
+if (meta.success) {
+
+  setMetaStatus(
+    meta.status
+  );
+
+}
         setForm({
 
-          whatsapp_access_token:
-            data.whatsapp_access_token || "",
+  whatsapp_access_token:
+    data.whatsapp_access_token || "",
 
-          whatsapp_phone_id:
-            data.whatsapp_phone_id || "",
+  whatsapp_phone_id:
+    data.whatsapp_phone_id || "",
 
-          whatsapp_enabled:
-            data.whatsapp_enabled || false,
+  whatsapp_enabled:
+    data.whatsapp_enabled || false,
 
-          facebook_page_id:
-            data.facebook_page_id || "",
+  facebook_enabled:
+    data.facebook_enabled || false,
 
-          facebook_page_access_token:
-            data.facebook_page_access_token || "",
+  instagram_enabled:
+    data.instagram_enabled || false,
 
-          facebook_enabled:
-            data.facebook_enabled || false,
+  meeting_provider:
+    data.meeting_provider || "calendly",
 
-          instagram_business_id:
-            data.instagram_business_id || "",
+  meeting_link:
+    data.meeting_link || "",
 
-          instagram_access_token:
-            data.instagram_access_token || "",
+  maps_link:
+    data.maps_link || "",
 
-          instagram_enabled:
-            data.instagram_enabled || false,
-
-          meeting_provider:
-            data.meeting_provider || "calendly",
-
-          meeting_link:
-            data.meeting_link || "",
-
-          maps_link:
-            data.maps_link || "",
-        });
+});
 
       } catch (err) {
 
@@ -304,7 +303,101 @@ export default function Integrations() {
     });
 
   };
+const handleConnectMeta =
+  async () => {
 
+    try {
+      setError("");
+setSuccess("");
+
+      setMetaLoading(true);
+
+      const res =
+        await metaAPI.getConnectUrl();
+
+      window.location.href =
+        res.url;
+
+    } catch (err) {
+
+      console.error(err);
+
+      setError(
+        "Unable to connect Meta."
+      );
+
+    } finally {
+
+      setMetaLoading(false);
+
+    }
+
+  };
+  const handleSyncMeta =
+  async () => {
+
+    try {
+      setError("");
+setSuccess("");
+
+      setMetaLoading(true);
+
+      await metaAPI.sync();
+
+      await loadPage();
+
+      setSuccess(
+        "Meta synced successfully."
+      );
+
+    } catch (err) {
+
+      console.error(err);
+
+      setError(
+        "Failed to sync Meta."
+      );
+
+    } finally {
+
+      setMetaLoading(false);
+
+    }
+
+  };
+  const handleDisconnectMeta =
+  async () => {
+
+    try {
+
+      setError("");
+setSuccess("");
+
+      setMetaLoading(true);
+
+      await metaAPI.disconnect();
+
+      await loadPage();
+
+      setSuccess(
+        "Meta disconnected."
+      );
+
+    } catch (err) {
+
+      console.error(err);
+
+      setError(
+        "Unable to disconnect Meta."
+      );
+
+    } finally {
+
+      setMetaLoading(false);
+
+    }
+
+  };
   /*
   ========================================
   SAVE
@@ -329,21 +422,21 @@ console.log(form);
 console.log("========================================");
       await integrationsAPI
         .saveIntegrations(form);
-
-      setSuccess(
-        "Integrations saved successfully 🚀"
-      );
+await loadPage();
+     setSuccess(
+  "Integration settings saved successfully."
+);
 
     } catch (err) {
 
-      console.error(err);
+  console.error(err);
 
-      setError(
-        err.response?.data?.error ||
-        "Failed to save integrations"
-      );
+  setError(
+    err.message ||
+    "Failed to save integrations"
+  );
 
-    } finally {
+}finally {
 
       setLoading(false);
 
@@ -386,19 +479,7 @@ console.log("========================================");
         }
       />
 
-      <FacebookSetupModal
-        open={showFacebookModal}
-        onClose={() =>
-          setShowFacebookModal(false)
-        }
-      />
-
-      <InstagramSetupModal
-        open={showInstagramModal}
-        onClose={() =>
-          setShowInstagramModal(false)
-        }
-      />
+    
 
       <div className="space-y-6 text-white">
 
@@ -653,10 +734,10 @@ console.log("========================================");
                 <PlatformIcon type="facebook" />
               }
               status={
-                form.facebook_page_access_token
-                  ? "connected"
-                  : "disconnected"
-              }
+  metaStatus?.meta_connected
+    ? "connected"
+    : "disconnected"
+}
             >
 
               <div className={`
@@ -696,23 +777,124 @@ console.log("========================================");
 
                 </div>
 
-                <IntegrationInput
-                  name="facebook_page_id"
-                  placeholder="Facebook Page ID"
-                  value={
-                    form.facebook_page_id
-                  }
-                  onChange={handleChange}
-                />
+          <div className="space-y-4">
 
-                <IntegrationInput
-                  name="facebook_page_access_token"
-                  placeholder="Facebook Page Access Token"
-                  value={
-                    form.facebook_page_access_token
-                  }
-                  onChange={handleChange}
-                />
+  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+
+  <div className="flex justify-between">
+
+    <span className="text-xs text-gray-400">
+      Status
+    </span>
+
+    <span
+      className={
+        metaStatus?.meta_connected
+          ? "text-green-400 text-xs"
+          : "text-red-400 text-xs"
+      }
+    >
+      {metaStatus?.meta_connected
+        ? "Connected"
+        : "Disconnected"}
+    </span>
+
+  </div>
+
+  <div className="mt-4">
+
+    <p className="text-xs text-gray-400">
+  Facebook Page
+</p>
+
+<p className="text-sm font-medium mt-1">
+  {metaStatus?.facebook_page_name || "Not Connected"}
+</p>
+
+{metaStatus?.last_meta_sync && (
+
+  <p className="text-xs text-gray-500 mt-3">
+
+    Last Sync:
+    {" "}
+    {new Date(
+      metaStatus.last_meta_sync
+    ).toLocaleString()}
+
+  </p>
+
+
+
+)}
+
+  </div>
+
+</div>
+
+  {
+    metaStatus?.meta_connected ? (
+
+      <div className="flex gap-3">
+
+        <button
+  onClick={handleSyncMeta}
+  disabled={metaLoading}
+  className="flex-1 h-11 rounded-2xl bg-purple-600 hover:opacity-90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+>
+  {metaLoading ? (
+    <Loader2
+      size={16}
+      className="animate-spin"
+    />
+  ) : (
+    <RefreshCw size={16} />
+  )}
+
+  Sync
+</button>
+
+        <button
+  onClick={handleDisconnectMeta}
+  disabled={metaLoading}
+  className="flex-1 h-11 rounded-2xl bg-red-600 hover:opacity-90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+>
+  {metaLoading ? (
+    <Loader2
+      size={16}
+      className="animate-spin"
+    />
+  ) : (
+    <Unlink size={16} />
+  )}
+
+  Disconnect
+</button>
+
+      </div>
+
+    ) : (
+
+     <button
+  onClick={handleConnectMeta}
+  disabled={metaLoading}
+  className="w-full h-12 rounded-2xl bg-[#7f5af0] hover:opacity-90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+>
+  {metaLoading ? (
+    <Loader2
+      size={16}
+      className="animate-spin"
+    />
+  ) : (
+    <Link2 size={16} />
+  )}
+
+  Connect with Meta
+</button>
+
+    )
+  }
+
+</div>
 
               </div>
 
@@ -735,11 +917,12 @@ console.log("========================================");
               icon={
                 <PlatformIcon type="instagram" />
               }
-              status={
-                form.instagram_access_token
-                  ? "connected"
-                  : "disconnected"
-              }
+              
+                status={
+  metaStatus?.meta_connected
+    ? "connected"
+    : "disconnected"
+}
             >
 
               <div className={`
@@ -779,23 +962,59 @@ console.log("========================================");
 
                 </div>
 
-                <IntegrationInput
-                  name="instagram_business_id"
-                  placeholder="Instagram Business ID"
-                  value={
-                    form.instagram_business_id
-                  }
-                  onChange={handleChange}
-                />
+               <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
 
-                <IntegrationInput
-                  name="instagram_access_token"
-                  placeholder="Instagram Access Token"
-                  value={
-                    form.instagram_access_token
-                  }
-                  onChange={handleChange}
-                />
+  <div className="flex justify-between">
+
+    <span className="text-xs text-gray-400">
+      Status
+    </span>
+
+    <span
+      className={
+        metaStatus?.meta_connected
+          ? "text-green-400 text-xs"
+          : "text-red-400 text-xs"
+      }
+    >
+      {metaStatus?.meta_connected
+        ? "Connected"
+        : "Disconnected"}
+    </span>
+
+  </div>
+
+ <div className="mt-4">
+
+    <p className="text-xs text-gray-400">
+      Instagram
+    </p>
+
+    <p className="text-sm font-medium mt-1">
+
+      {metaStatus?.meta_connected
+        ? (metaStatus?.instagram_username || "Connected")
+        : "Not Connected"}
+
+    </p>
+
+    {metaStatus?.last_meta_sync && (
+
+      <p className="text-xs text-gray-500 mt-3">
+
+        Last Sync:
+        {" "}
+        {new Date(
+          metaStatus.last_meta_sync
+        ).toLocaleString()}
+
+      </p>
+
+    )}
+
+</div>
+
+</div>
 
               </div>
 
