@@ -12,14 +12,15 @@ import {
   Store,
   Globe,
   MonitorSmartphone,
-  Instagram,
 } from "lucide-react";
+
+import { FaInstagram } from "react-icons/fa";
 
 const icons = {
   // Existing
   whatsapp: MessageCircle,
   facebook: MessageSquare,
-  instagram: Instagram,
+  FaInstagram: FaInstagram,
   calendly: Calendar,
   maps: MapPinned,
 
