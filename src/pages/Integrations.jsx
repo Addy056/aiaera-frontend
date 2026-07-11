@@ -17,6 +17,11 @@ import {
 } from "react";
 
 import {
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
+
+import {
   integrationsAPI,
   metaAPI,
 } from "../lib/api";
@@ -31,6 +36,10 @@ import WhatsAppSetupModal from "../components/integrations/WhatsAppSetupModal";
 import AutomationToggle from "../components/integrations/AutomationToggle";
 
 export default function Integrations() {
+
+  const location = useLocation();
+
+  const navigate = useNavigate();
 
   const [loading, setLoading] =
     useState(false);
@@ -54,6 +63,11 @@ const [metaStatus, setMetaStatus] =
 const [metaLoading, setMetaLoading] =
   useState(false);
 
+const [showMetaSuccess, setShowMetaSuccess] =
+  useState(false);
+
+const [metaMessage, setMetaMessage] =
+  useState("");
   /*
   ========================================
   SUBSCRIPTION
@@ -137,7 +151,84 @@ const [metaLoading, setMetaLoading] =
     loadPage();
 
   }, []);
+  useEffect(() => {
 
+  const params =
+    new URLSearchParams(
+      location.search
+    );
+
+  const status =
+    params.get(
+      "meta_status"
+    );
+
+  if (!status)
+    return;
+
+  if (status === "success") {
+
+  (async () => {
+    await loadPage();
+
+    const reason = params.get("reason");
+
+    if (reason === "instagram_not_connected") {
+      setMetaMessage(
+        "Facebook connected successfully. Connect an Instagram Professional account to enable Instagram automation."
+      );
+    } else {
+      setMetaMessage("Meta connected successfully.");
+    }
+
+    setShowMetaSuccess(true);
+  })();
+
+}
+
+  if (status === "cancelled") {
+
+    setError(
+      "Meta connection was cancelled."
+    );
+
+  }
+
+  if (status === "error") {
+
+    setError(
+      "Meta connection failed."
+    );
+
+  }
+
+  navigate(
+    location.pathname,
+    {
+      replace: true,
+    }
+  );
+
+}, [
+  location,
+  navigate,
+]);
+ useEffect(() => {
+
+  if (!showMetaSuccess)
+    return;
+
+  const timer =
+    setTimeout(() => {
+
+      setShowMetaSuccess(false);
+
+    }, 4000);
+
+  return () =>
+    clearTimeout(timer);
+
+}, [showMetaSuccess]);
   const loadPage =
     async () => {
 
@@ -145,6 +236,7 @@ const [metaLoading, setMetaLoading] =
 
         setPageLoading(true);
 
+       
         /*
         ====================================
         USER
@@ -595,7 +687,30 @@ await loadPage();
           </button>
 
         </div>
+      {showMetaSuccess && (
 
+  <div className="rounded-2xl border border-green-500/20 bg-green-500/10 p-4 flex items-center gap-3">
+
+    <CheckCircle2
+      size={18}
+      className="text-green-400"
+    />
+
+    <div className="flex-1">
+
+      <p className="text-sm font-medium text-green-200">
+        Meta Connected Successfully
+      </p>
+
+      <p className="text-xs text-green-300 mt-1">
+        {metaMessage}
+      </p>
+
+    </div>
+
+  </div>
+
+)}
         {/* SUCCESS */}
         {success && (
 
@@ -788,16 +903,16 @@ await loadPage();
     </span>
 
     <span
-      className={
-        metaStatus?.meta_connected
-          ? "text-green-400 text-xs"
-          : "text-red-400 text-xs"
-      }
-    >
-      {metaStatus?.meta_connected
-        ? "Connected"
-        : "Disconnected"}
-    </span>
+  className={
+    metaStatus?.instagram_enabled
+      ? "text-green-400 text-xs"
+      : "text-red-400 text-xs"
+  }
+>
+  {metaStatus?.instagram_enabled
+    ? "Connected"
+    : "Disconnected"}
+</span>
 
   </div>
 
@@ -918,8 +1033,8 @@ await loadPage();
                 <PlatformIcon type="instagram" />
               }
               
-                status={
-  metaStatus?.meta_connected
+            status={
+  metaStatus?.instagram_enabled
     ? "connected"
     : "disconnected"
 }
@@ -992,11 +1107,11 @@ await loadPage();
 
     <p className="text-sm font-medium mt-1">
 
-      {metaStatus?.meta_connected
-        ? (metaStatus?.instagram_username || "Connected")
-        : "Not Connected"}
+  {metaStatus?.instagram_enabled
+    ? (metaStatus?.instagram_username || "Connected")
+    : "Not Connected"}
 
-    </p>
+</p>
 
     {metaStatus?.last_meta_sync && (
 
