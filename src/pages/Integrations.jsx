@@ -293,28 +293,28 @@ const [metaMessage, setMetaMessage] =
           );
         }
 
-        /*
-        ====================================
-        INTEGRATIONS
-        ====================================
-        */
-        const data =
-          await integrationsAPI.getIntegrations();
-/*
-====================================
-META STATUS
-====================================
-*/
-const meta =
-  await metaAPI.getStatus();
+       const data =
+  await integrationsAPI.getIntegrations();
 
-if (meta.success) {
+let meta = null;
 
-  setMetaStatus(
-    meta.status
-  );
+try {
+
+  meta =
+    await metaAPI.getStatus();
+
+} catch (e) {
+
+  console.error(e);
 
 }
+
+if (meta?.success) {
+
+  setMetaStatus(meta.status);
+
+}
+
         setForm({
 
   whatsapp_access_token:
@@ -404,19 +404,25 @@ setSuccess("");
 
       setMetaLoading(true);
 
-      const res =
-        await metaAPI.getConnectUrl();
+     const res =
+  await metaAPI.getConnectUrl();
 
-      window.location.href =
-        res.url;
+if (!res?.url) {
+  throw new Error("Meta OAuth URL not received.");
+}
+
+window.location.href =
+  res.url;
 
     } catch (err) {
 
       console.error(err);
 
-      setError(
-        "Unable to connect Meta."
-      );
+     setError(
+  err?.response?.data?.message ||
+  err?.message ||
+  "Unable to connect Meta."
+);
 
     } finally {
 
@@ -446,9 +452,11 @@ setSuccess("");
 
       console.error(err);
 
-      setError(
-        "Failed to sync Meta."
-      );
+     setError(
+  err?.response?.data?.message ||
+  err?.message ||
+  "Failed to sync Meta."
+);
 
     } finally {
 
@@ -479,10 +487,11 @@ setSuccess("");
 
       console.error(err);
 
-      setError(
-        "Unable to disconnect Meta."
-      );
-
+     setError(
+  err?.response?.data?.message ||
+  err?.message ||
+  "Unable to disconnect Meta."
+);
     } finally {
 
       setMetaLoading(false);
@@ -508,10 +517,7 @@ setSuccess("");
 
       setSuccess("");
 
-      console.log("========================================");
-console.log("FORM BEING SAVED");
-console.log(form);
-console.log("========================================");
+    
       await integrationsAPI
         .saveIntegrations(form);
 await loadPage();
@@ -879,9 +885,8 @@ await loadPage();
                   </div>
 
                   <AutomationToggle
-                    enabled={
-                      form.facebook_enabled
-                    }
+  enabled={form.facebook_enabled}
+  disabled={!metaStatus?.meta_connected}
                     onChange={(value) =>
                       handleToggle(
                         "facebook_enabled",
@@ -902,14 +907,14 @@ await loadPage();
       Status
     </span>
 
-    <span
+   <span
   className={
-    metaStatus?.instagram_enabled
+    metaStatus?.meta_connected
       ? "text-green-400 text-xs"
       : "text-red-400 text-xs"
   }
 >
-  {metaStatus?.instagram_enabled
+  {metaStatus?.meta_connected
     ? "Connected"
     : "Disconnected"}
 </span>
@@ -1064,9 +1069,8 @@ await loadPage();
                   </div>
 
                   <AutomationToggle
-                    enabled={
-                      form.instagram_enabled
-                    }
+  enabled={form.instagram_enabled}
+  disabled={!metaStatus?.instagram_enabled}
                     onChange={(value) =>
                       handleToggle(
                         "instagram_enabled",
@@ -1086,16 +1090,16 @@ await loadPage();
     </span>
 
     <span
-      className={
-        metaStatus?.meta_connected
-          ? "text-green-400 text-xs"
-          : "text-red-400 text-xs"
-      }
-    >
-      {metaStatus?.meta_connected
-        ? "Connected"
-        : "Disconnected"}
-    </span>
+  className={
+    metaStatus?.instagram_enabled
+      ? "text-green-400 text-xs"
+      : "text-red-400 text-xs"
+  }
+>
+  {metaStatus?.instagram_enabled
+    ? "Connected"
+    : "Disconnected"}
+</span>
 
   </div>
 
@@ -1115,15 +1119,14 @@ await loadPage();
 
     {metaStatus?.last_meta_sync && (
 
-      <p className="text-xs text-gray-500 mt-3">
+  <p className="text-xs text-gray-500 mt-3">
 
-        Last Sync:
-        {" "}
-        {new Date(
-          metaStatus.last_meta_sync
-        ).toLocaleString()}
+    Last Sync:{" "}
+    {new Date(metaStatus.last_meta_sync).toLocaleString()}
 
-      </p>
+  </p>
+
+
 
     )}
 
