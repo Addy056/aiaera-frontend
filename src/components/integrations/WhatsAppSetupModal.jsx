@@ -8,19 +8,19 @@ export default function WhatsAppSetupModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
 
-      <div className="w-full max-w-2xl rounded-3xl border border-white/10 bg-[#0f0f12] p-8">
+      <div className="w-full max-w-2xl rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
 
         <div className="flex items-center justify-between mb-8">
 
           <div>
 
-            <h2 className="text-2xl font-bold text-white mb-2">
+            <h2 className="mb-2 text-2xl font-semibold text-slate-900">
               Connect WhatsApp
             </h2>
 
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-slate-600">
               Complete Meta setup in a few minutes.
             </p>
 
@@ -28,7 +28,7 @@ export default function WhatsAppSetupModal({
 
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white"
+            className="text-slate-500 hover:text-slate-700"
           >
             ✕
           </button>

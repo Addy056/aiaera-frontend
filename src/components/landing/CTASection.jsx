@@ -11,212 +11,279 @@ const CTASection = () => {
   const navigate = useNavigate();
 
   return (
-    <section className="relative overflow-hidden py-28 md:py-36">
+    <section className="relative overflow-hidden bg-white py-28 lg:py-36">
+
       {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-violet-500/[0.03] to-transparent" />
 
-      <div className="absolute -top-40 -left-32 h-[420px] w-[420px] rounded-full bg-violet-600/20 blur-[160px]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(124,58,237,0.08),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(139,92,246,0.08),transparent_35%)]" />
 
-      <div className="absolute -bottom-40 -right-32 h-[420px] w-[420px] rounded-full bg-blue-600/20 blur-[160px]" />
+      <div className="absolute -top-40 -left-40 h-96 w-96 rounded-full bg-violet-200 blur-[120px]" />
 
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:48px_48px]" />
+      <div className="absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-purple-100 blur-[120px]" />
 
-      <div className="relative z-10 mx-auto max-w-7xl px-6 md:px-10">
-        <div className="relative overflow-hidden rounded-[40px] border border-white/10 bg-white/[0.05] backdrop-blur-3xl shadow-[0_30px_100px_rgba(0,0,0,0.45)]">
+      <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
 
-          {/* Glow */}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(168,85,247,0.18),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(59,130,246,0.16),transparent_35%)]" />
+        <div className="relative overflow-hidden rounded-[40px] border border-violet-100 bg-gradient-to-br from-violet-600 via-violet-600 to-purple-600 shadow-[0_35px_80px_rgba(124,58,237,0.25)]">
 
-          {/* Animated Border */}
-          <div className="absolute inset-0 rounded-[40px] border border-white/10" />
+          {/* Decorative Glow */}
 
-          {/* Floating Cards */}
-          <div className="hidden lg:flex absolute left-10 top-12 items-center gap-4 rounded-3xl border border-white/10 bg-black/20 backdrop-blur-2xl px-5 py-4 shadow-xl">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.16),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.12),transparent_35%)]" />
 
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-500/20">
-              <Bot className="h-6 w-6 text-violet-300" />
+          {/* Floating Card */}
+
+          <div className="absolute left-10 top-10 hidden lg:flex items-center gap-4 rounded-3xl border border-white/20 bg-white/10 px-5 py-4 backdrop-blur-xl">
+
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15">
+
+              <Bot
+                size={24}
+                className="text-white"
+              />
+
             </div>
 
             <div>
-              <p className="text-xs uppercase tracking-widest text-white/45">
+
+              <p className="text-xs font-semibold uppercase tracking-widest text-violet-100">
+
                 AI Assistant
+
               </p>
 
-              <p className="font-semibold">
-                Responding Instantly
+              <p className="font-semibold text-white">
+
+                Working 24/7
+
               </p>
+
             </div>
+
           </div>
 
-          <div className="hidden lg:flex absolute right-10 bottom-12 items-center gap-4 rounded-3xl border border-white/10 bg-black/20 backdrop-blur-2xl px-5 py-4 shadow-xl">
+          <div className="absolute right-10 bottom-10 hidden lg:flex items-center gap-4 rounded-3xl border border-white/20 bg-white/10 px-5 py-4 backdrop-blur-xl">
 
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/20">
-              <ShieldCheck className="h-6 w-6 text-emerald-300" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15">
+
+              <ShieldCheck
+                size={24}
+                className="text-white"
+              />
+
             </div>
 
             <div>
-              <p className="text-xs uppercase tracking-widest text-white/45">
-                Secure Platform
+
+              <p className="text-xs font-semibold uppercase tracking-widest text-violet-100">
+
+                Enterprise
+
               </p>
 
-              <p className="font-semibold">
-                Enterprise Ready
+              <p className="font-semibold text-white">
+
+                Secure Platform
+
               </p>
+
             </div>
+
           </div>
 
-          <div className="relative z-10 px-8 py-20 md:px-16 md:py-28">
+          <div className="relative z-10 px-8 py-20 text-center md:px-16 lg:py-24">
 
             {/* Badge */}
-            <div className="mx-auto mb-8 inline-flex items-center gap-2 rounded-full border border-violet-400/20 bg-white/[0.05] px-5 py-2 text-violet-200 backdrop-blur-2xl">
 
-              <Sparkles size={16} />
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-5 py-2 backdrop-blur-xl">
 
-              <span className="font-medium">
+              <Sparkles
+                size={16}
+                className="text-yellow-300"
+              />
+
+              <span className="font-medium text-white">
+
                 AI Automation Platform
+
               </span>
+
             </div>
 
             {/* Heading */}
-            <h2 className="mx-auto max-w-5xl text-center text-5xl font-black leading-[1.05] md:text-7xl">
+
+            <h2 className="mx-auto mt-8 max-w-5xl text-4xl font-black leading-tight text-white md:text-6xl">
 
               Put AI To Work
 
               <br />
 
-              <span className="bg-gradient-to-r from-violet-300 via-fuchsia-300 to-blue-300 bg-clip-text text-transparent">
+              <span className="text-violet-100">
+
                 For Your Business
+
               </span>
+
             </h2>
 
             {/* Description */}
-            <p className="mx-auto mt-8 max-w-3xl text-center text-lg leading-8 text-white/65 md:text-xl">
 
-              Train an AI assistant using your website, PDFs and business
-              information. Capture more leads, automate customer support,
-              schedule appointments and engage customers 24/7 from a single
-              platform.
+            <p className="mx-auto mt-8 max-w-3xl text-lg leading-8 text-violet-100">
+
+              Train your AI assistant using your website, PDFs and business
+              knowledge. Automate customer support, capture leads and book
+              appointments while your business grows around the clock.
+
             </p>
 
             {/* Feature Pills */}
+
             <div className="mt-10 flex flex-wrap justify-center gap-4">
 
               {[
                 "Website AI",
-                "Lead Generation",
-                "Appointment Booking",
+                "Lead Capture",
                 "WhatsApp",
                 "Facebook",
                 "Instagram",
-                "Multi-language AI",
+                "Appointment Booking",
+                "Multi-language",
               ].map((item) => (
+
                 <div
                   key={item}
-                  className="rounded-full border border-white/10 bg-white/[0.05] px-5 py-3 text-sm text-white/80 backdrop-blur-xl"
+                  className="rounded-full border border-white/20 bg-white/10 px-5 py-3 text-sm font-medium text-white backdrop-blur-xl"
                 >
+
                   {item}
+
                 </div>
+
               ))}
+
             </div>
 
             {/* CTA Buttons */}
-            <div className="mt-14 flex flex-wrap items-center justify-center gap-5">
+
+            <div className="mt-14 flex flex-wrap justify-center gap-5">
 
               <button
                 onClick={() => navigate("/signup")}
-                className="group inline-flex items-center gap-3 rounded-2xl bg-gradient-to-r from-violet-600 to-blue-600 px-10 py-5 text-lg font-semibold shadow-[0_15px_50px_rgba(99,102,241,0.45)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_60px_rgba(99,102,241,0.55)]"
+                className="group flex items-center gap-3 rounded-2xl bg-white px-9 py-5 text-lg font-semibold text-violet-700 shadow-xl transition-all duration-300 hover:-translate-y-1"
               >
-                Start Free
+
+                Start Free Trial
 
                 <ArrowRight
                   size={20}
                   className="transition-transform duration-300 group-hover:translate-x-1"
                 />
+
               </button>
 
               <button
                 onClick={() => navigate("/login")}
-                className="rounded-2xl border border-white/10 bg-white/[0.05] px-10 py-5 text-lg font-medium backdrop-blur-xl transition-all duration-300 hover:bg-white/[0.08]"
+                className="rounded-2xl border border-white/20 bg-white/10 px-9 py-5 text-lg font-medium text-white backdrop-blur-xl transition hover:bg-white/20"
               >
+
                 Login
+
               </button>
+
             </div>
                         {/* Trust Indicators */}
+
             <div className="mt-16 flex flex-wrap items-center justify-center gap-8">
 
-              <div className="flex items-center gap-2 text-white/70">
-                <CheckCircle2
-                  size={18}
-                  className="text-emerald-400"
-                />
+              {[
+                "No Credit Card Required",
+                "Setup in Under 5 Minutes",
+                "Cancel Anytime",
+              ].map((item) => (
 
-                <span>No Credit Card Required</span>
-              </div>
+                <div
+                  key={item}
+                  className="flex items-center gap-2 text-white"
+                >
 
-              <div className="flex items-center gap-2 text-white/70">
-                <CheckCircle2
-                  size={18}
-                  className="text-emerald-400"
-                />
+                  <CheckCircle2
+                    size={18}
+                    className="text-emerald-300"
+                  />
 
-                <span>Setup in Under 5 Minutes</span>
-              </div>
+                  <span className="font-medium">
 
-              <div className="flex items-center gap-2 text-white/70">
-                <CheckCircle2
-                  size={18}
-                  className="text-emerald-400"
-                />
+                    {item}
 
-                <span>Cancel Anytime</span>
-              </div>
+                  </span>
+
+                </div>
+
+              ))}
+
             </div>
 
-            {/* Bottom Stats */}
-            <div className="mt-20 grid gap-6 border-t border-white/10 pt-10 md:grid-cols-3">
+            {/* Statistics */}
 
-              <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-xl">
+            <div className="mt-20 grid gap-6 border-t border-white/20 pt-10 md:grid-cols-3">
 
-                <h3 className="text-4xl font-black bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
+              <div className="rounded-3xl border border-white/15 bg-white/10 p-6 backdrop-blur-xl">
+
+                <h3 className="text-5xl font-black text-white">
+
                   24/7
+
                 </h3>
 
-                <p className="mt-2 text-white/60">
-                  AI responds instantly to every visitor without interruption.
+                <p className="mt-3 leading-7 text-violet-100">
+
+                  AI responds instantly to every customer
+                  without interruptions.
+
                 </p>
+
               </div>
 
-              <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-xl">
+              <div className="rounded-3xl border border-white/15 bg-white/10 p-6 backdrop-blur-xl">
 
-                <h3 className="text-4xl font-black bg-gradient-to-r from-violet-300 to-blue-300 bg-clip-text text-transparent">
+                <h3 className="text-5xl font-black text-white">
+
                   10K+
+
                 </h3>
 
-                <p className="mt-2 text-white/60">
-                  Customer conversations automated through AI assistants.
+                <p className="mt-3 leading-7 text-violet-100">
+
+                  Automated customer conversations handled
+                  by intelligent AI assistants.
+
                 </p>
+
               </div>
 
-              <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-xl">
+              <div className="rounded-3xl border border-white/15 bg-white/10 p-6 backdrop-blur-xl">
 
-                <h3 className="text-4xl font-black bg-gradient-to-r from-emerald-300 to-cyan-300 bg-clip-text text-transparent">
+                <h3 className="text-5xl font-black text-white">
+
                   99.9%
+
                 </h3>
 
-                <p className="mt-2 text-white/60">
-                  Reliable platform built for modern businesses.
+                <p className="mt-3 leading-7 text-violet-100">
+
+                  Reliable enterprise infrastructure built
+                  for modern businesses.
+
                 </p>
+
               </div>
 
             </div>
 
           </div>
 
-          {/* Bottom Gradient Line */}
-          <div className="absolute bottom-0 left-0 h-[2px] w-full bg-gradient-to-r from-violet-600 via-fuchsia-500 to-blue-600" />
-
         </div>
+
       </div>
+
     </section>
   );
 };

@@ -1,5 +1,4 @@
 import { motion } from "framer-motion";
-
 import ConnectionBadge from "./ConnectionBadge";
 
 export default function IntegrationCard({
@@ -15,73 +14,69 @@ export default function IntegrationCard({
 }) {
   return (
     <motion.div
-      whileHover={{
-        y: -4,
-      }}
-      transition={{
-        duration: 0.2,
-      }}
+      whileHover={{ y: -2 }}
+      transition={{ duration: 0.2 }}
       className={`
         group
         relative
         overflow-hidden
-        rounded-3xl
+        rounded-2xl
         border
-        border-white/10
-        bg-white/[0.04]
-        backdrop-blur-2xl
-        p-6
+        border-slate-200
+        bg-white
+        p-5
+        shadow-sm
         transition-all
         duration-300
-        hover:border-purple-500/30
-        hover:shadow-[0_0_60px_rgba(127,90,240,0.18)]
+        hover:border-violet-300
+        hover:shadow-lg
         ${className}
       `}
     >
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[#7f5af0]/10 via-transparent to-transparent opacity-80 transition-opacity group-hover:opacity-100" />
-
       <div className="relative z-10">
-        <div className="mb-6 flex items-start justify-between gap-4">
-          <div className="flex items-start gap-4">
+        {/* Header */}
+        <div className="mb-5 flex items-start justify-between gap-4">
+          <div className="flex items-start gap-3">
             <div
               className="
                 flex
-                h-14
-                w-14
+                h-12
+                w-12
+                shrink-0
                 items-center
                 justify-center
-                rounded-2xl
+                rounded-xl
                 border
-                border-purple-500/20
-                bg-[#7f5af0]/15
-                text-purple-400
+                border-violet-200
+                bg-violet-50
+                text-violet-600
               "
             >
               {icon}
             </div>
 
-            <div>
-              <h2 className="mb-1 text-lg font-semibold text-white">
+            <div className="min-w-0">
+              <h2 className="text-base font-semibold text-slate-900">
                 {title}
               </h2>
 
               {subtitle && (
-                <p className="max-w-sm text-sm text-gray-400">
+                <p className="mt-1 max-w-xs text-sm leading-5 text-slate-500">
                   {subtitle}
                 </p>
               )}
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-3">
             <ConnectionBadge status={status} />
-
             {actions}
           </div>
         </div>
 
+        {/* Body */}
         {loading ? (
-          <div className="flex h-40 items-center justify-center text-sm text-gray-400">
+          <div className="flex h-36 items-center justify-center text-sm text-slate-500">
             Loading...
           </div>
         ) : (
@@ -90,8 +85,9 @@ export default function IntegrationCard({
           </div>
         )}
 
+        {/* Footer */}
         {footer && (
-          <div className="mt-6 border-t border-white/10 pt-5">
+          <div className="mt-5 border-t border-slate-200 pt-5">
             {footer}
           </div>
         )}

@@ -7,7 +7,7 @@ export default function SetupStep({
   return (
     <div className="flex gap-4">
 
-      <div className="w-8 h-8 rounded-xl bg-[#7f5af0]/20 text-purple-400 flex items-center justify-center text-sm font-semibold">
+      <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-violet-50 text-sm font-semibold text-violet-600">
 
         {step}
 
@@ -15,11 +15,11 @@ export default function SetupStep({
 
       <div>
 
-        <h3 className="text-sm font-medium text-white mb-1">
+        <h3 className="mb-1 text-sm font-medium text-slate-900">
           {title}
         </h3>
 
-        <p className="text-xs text-gray-400 leading-relaxed">
+        <p className="text-xs leading-relaxed text-slate-600">
           {desc}
         </p>
 

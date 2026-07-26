@@ -16,42 +16,42 @@ const features = [
     icon: Bot,
     title: "AI Chatbot Builder",
     description:
-      "Build intelligent AI assistants using your website, PDFs, documents and business knowledge without writing code.",
+      "Train intelligent AI assistants using your website, PDFs, documents and business knowledge without writing a single line of code.",
     badge: "AI Powered",
   },
   {
     icon: Globe,
     title: "Website Integration",
     description:
-      "Deploy your chatbot anywhere with a lightweight script that installs in less than one minute.",
+      "Deploy your AI assistant to any website with a lightweight script in under one minute.",
     badge: "Easy Setup",
   },
   {
     icon: MessageSquare,
     title: "Omnichannel Messaging",
     description:
-      "Automate conversations across WhatsApp, Facebook Messenger and Instagram from one dashboard.",
+      "Manage conversations across WhatsApp, Facebook and Instagram from one unified dashboard.",
     badge: "Multi Channel",
   },
   {
     icon: Calendar,
     title: "Appointment Booking",
     description:
-      "Schedule meetings automatically using Calendly, Google Meet, Zoom, Microsoft Teams or custom links.",
+      "Book meetings automatically with Calendly, Zoom, Google Meet, Microsoft Teams or custom links.",
     badge: "Automation",
   },
   {
     icon: BarChart3,
     title: "Lead Management",
     description:
-      "Capture customer details, qualify leads automatically and manage everything from one place.",
+      "Capture, qualify and organize leads automatically while keeping every conversation in one place.",
     badge: "CRM Ready",
   },
   {
     icon: Languages,
     title: "Multilingual AI",
     description:
-      "Serve customers worldwide with natural conversations in multiple languages using advanced AI.",
+      "Serve customers in multiple languages with natural AI conversations anywhere in the world.",
     badge: "Global",
   },
 ];
@@ -60,44 +60,42 @@ const FeaturesSection = () => {
   return (
     <section
       id="features"
-      className="relative overflow-hidden py-32"
+      className="relative overflow-hidden bg-white py-28"
     >
       {/* Background */}
 
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(139,92,246,0.12),transparent_30%),radial-gradient(circle_at_bottom_right,rgba(59,130,246,0.10),transparent_35%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(124,58,237,0.08),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(139,92,246,0.08),transparent_35%)]" />
 
-      <div className="absolute -top-48 -left-40 h-[520px] w-[520px] rounded-full bg-violet-600/15 blur-[170px]" />
+      <div className="absolute -top-40 -left-32 h-96 w-96 rounded-full bg-violet-200 blur-[120px]" />
 
-      <div className="absolute -bottom-48 -right-40 h-[520px] w-[520px] rounded-full bg-blue-600/15 blur-[170px]" />
+      <div className="absolute -bottom-40 -right-32 h-96 w-96 rounded-full bg-purple-100 blur-[120px]" />
 
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:48px_48px]" />
-
-      <div className="relative z-10 mx-auto max-w-7xl px-6 md:px-10">
+      <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
 
         {/* Header */}
 
-        <div className="mx-auto mb-24 max-w-4xl text-center">
+        <div className="mx-auto mb-20 max-w-4xl text-center">
 
-          <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-violet-500/20 bg-white/[0.05] px-5 py-2 backdrop-blur-xl">
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-5 py-2">
 
             <Sparkles
               size={16}
-              className="text-violet-300"
+              className="text-violet-600"
             />
 
-            <span className="text-sm text-violet-200">
+            <span className="text-sm font-semibold text-violet-700">
               Powerful AI Platform
             </span>
 
           </div>
 
-          <h2 className="text-5xl font-black leading-[1.05] md:text-7xl">
+          <h2 className="text-4xl font-black leading-tight text-slate-900 md:text-6xl">
 
             Everything You Need
 
             <br />
 
-            <span className="bg-gradient-to-r from-violet-300 via-fuchsia-300 to-blue-300 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-violet-600 to-purple-500 bg-clip-text text-transparent">
 
               To Automate Your Business
 
@@ -105,18 +103,18 @@ const FeaturesSection = () => {
 
           </h2>
 
-          <p className="mx-auto mt-8 max-w-3xl text-lg leading-8 text-white/65 md:text-xl">
+          <p className="mx-auto mt-8 max-w-3xl text-lg leading-8 text-slate-600">
 
             AIAERA combines AI-powered customer support,
             lead generation, appointment booking,
             multilingual conversations and business automation
-            into one enterprise-ready platform.
+            into one modern platform.
 
           </p>
 
         </div>
 
-        {/* Feature Grid */}
+        {/* Feature Cards */}
 
         <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
 
@@ -128,76 +126,52 @@ const FeaturesSection = () => {
 
               <div
                 key={feature.title}
-                className="group relative overflow-hidden rounded-[34px] border border-white/10 bg-white/[0.04] p-8 backdrop-blur-3xl transition-all duration-500 hover:-translate-y-3 hover:border-violet-500/30 hover:shadow-[0_30px_80px_rgba(99,102,241,0.18)]"
+                className="group rounded-3xl border border-slate-200 bg-white p-8 shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-violet-200 hover:shadow-2xl"
               >
 
-                {/* Hover Background */}
+                <div className="mb-6 inline-flex rounded-full bg-violet-50 px-4 py-2 text-xs font-bold uppercase tracking-wider text-violet-700">
 
-                <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 via-transparent to-blue-500/10 opacity-0 transition-all duration-500 group-hover:opacity-100" />
+                  {feature.badge}
 
-                {/* Glow */}
+                </div>
 
-                <div className="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-violet-500/10 blur-3xl opacity-0 transition-all duration-500 group-hover:opacity-100" />
+                <div className="mb-8 flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-violet-600 to-purple-500 shadow-lg shadow-violet-200 transition-transform duration-300 group-hover:scale-110">
 
-                <div className="relative z-10">
+                  <Icon
+                    size={34}
+                    className="text-white"
+                  />
 
-                  {/* Badge */}
+                </div>
 
-                  <div className="mb-6 inline-flex rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-xs font-semibold uppercase tracking-widest text-violet-200">
+                <h3 className="text-2xl font-bold text-slate-900">
 
-                    {feature.badge}
+                  {feature.title}
 
-                  </div>
+                </h3>
 
-                  {/* Icon */}
+                <p className="mt-5 leading-8 text-slate-600">
 
-                  <div className="mb-8 flex h-20 w-20 items-center justify-center rounded-[28px] bg-gradient-to-br from-violet-600 to-blue-600 shadow-[0_20px_50px_rgba(99,102,241,0.45)] transition-all duration-500 group-hover:scale-110 group-hover:rotate-6">
+                  {feature.description}
 
-                    <Icon
-                      size={36}
-                      className="text-white"
+                </p>
+
+                <div className="mt-8 flex items-center justify-between">
+
+                  <span className="font-semibold text-violet-600">
+
+                    Learn More
+
+                  </span>
+
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-50 transition-all duration-300 group-hover:bg-violet-600">
+
+                    <ArrowUpRight
+                      size={18}
+                      className="text-violet-600 transition-all duration-300 group-hover:rotate-45 group-hover:text-white"
                     />
 
                   </div>
-
-                  {/* Title */}
-
-                  <h3 className="text-2xl font-bold">
-
-                    {feature.title}
-
-                  </h3>
-
-                  {/* Description */}
-
-                  <p className="mt-5 leading-8 text-white/60">
-
-                    {feature.description}
-
-                  </p>
-
-                  {/* Bottom Action */}
-
-                  <div className="mt-8 flex items-center justify-between">
-
-                    <span className="text-sm font-medium text-violet-300">
-
-                      Learn More
-
-                    </span>
-
-                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05] transition-all duration-300 group-hover:bg-violet-600 group-hover:border-violet-600">
-
-                      <ArrowUpRight
-                        size={18}
-                        className="transition-transform duration-300 group-hover:rotate-45"
-                      />
-
-                    </div>
-
-                  </div>
-
-                  <div className="mt-8 h-px w-full bg-gradient-to-r from-transparent via-white/15 to-transparent" />
 
                 </div>
 
@@ -211,59 +185,70 @@ const FeaturesSection = () => {
 
         <div className="mt-24 grid gap-8 lg:grid-cols-3">
 
-          <div className="rounded-[34px] border border-white/10 bg-white/[0.04] p-8 backdrop-blur-3xl">
+          <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-xl">
 
-            <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-3xl bg-gradient-to-br from-violet-600 to-blue-600">
+            <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-3xl bg-gradient-to-br from-violet-600 to-purple-500 shadow-lg shadow-violet-200">
 
-              <Workflow size={28} />
+              <Workflow
+                size={28}
+                className="text-white"
+              />
 
             </div>
 
-            <h3 className="text-2xl font-bold">
+            <h3 className="text-2xl font-bold text-slate-900">
               End-to-End Automation
             </h3>
 
-            <p className="mt-5 leading-8 text-white/60">
-              From answering customer questions to capturing leads and booking
-              appointments, AIAERA automates your entire customer journey.
+            <p className="mt-5 leading-8 text-slate-600">
+              Automate your complete customer journey—from answering questions
+              and qualifying leads to scheduling appointments and collecting
+              customer information.
             </p>
 
           </div>
 
-          <div className="rounded-[34px] border border-white/10 bg-white/[0.04] p-8 backdrop-blur-3xl">
+          <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-xl">
 
-            <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-3xl bg-gradient-to-br from-emerald-500 to-cyan-500">
+            <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-3xl bg-gradient-to-br from-emerald-500 to-cyan-500 shadow-lg shadow-emerald-200">
 
-              <ShieldCheck size={28} />
+              <ShieldCheck
+                size={28}
+                className="text-white"
+              />
 
             </div>
 
-            <h3 className="text-2xl font-bold">
+            <h3 className="text-2xl font-bold text-slate-900">
               Secure & Reliable
             </h3>
 
-            <p className="mt-5 leading-8 text-white/60">
-              Enterprise-grade security, reliable infrastructure and scalable AI
-              built for startups, agencies and growing businesses.
+            <p className="mt-5 leading-8 text-slate-600">
+              Enterprise-grade infrastructure with secure integrations,
+              dependable uptime and scalable AI built for businesses of every
+              size.
             </p>
 
           </div>
 
-          <div className="rounded-[34px] border border-white/10 bg-white/[0.04] p-8 backdrop-blur-3xl">
+          <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-xl">
 
-            <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-3xl bg-gradient-to-br from-orange-500 to-pink-500">
+            <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-3xl bg-gradient-to-br from-orange-500 to-pink-500 shadow-lg shadow-orange-200">
 
-              <Sparkles size={28} />
+              <Sparkles
+                size={28}
+                className="text-white"
+              />
 
             </div>
 
-            <h3 className="text-2xl font-bold">
-              Fast Deployment
+            <h3 className="text-2xl font-bold text-slate-900">
+              Launch in Minutes
             </h3>
 
-            <p className="mt-5 leading-8 text-white/60">
-              Train your AI, customize the chatbot and deploy it to your website
-              within minutes without any coding knowledge.
+            <p className="mt-5 leading-8 text-slate-600">
+              Upload your business knowledge, customize your chatbot and deploy
+              it to your website within minutes—no coding required.
             </p>
 
           </div>
@@ -272,88 +257,80 @@ const FeaturesSection = () => {
 
         {/* Statistics */}
 
-        <div className="mt-28 grid gap-8 md:grid-cols-3">
+        <div className="mt-24 grid gap-8 md:grid-cols-3">
 
-          <div className="group rounded-[36px] border border-white/10 bg-white/[0.04] p-10 text-center backdrop-blur-3xl transition-all duration-300 hover:-translate-y-2 hover:border-violet-500/30">
+          {[
+            {
+              value: "99%",
+              title: "Faster Responses",
+              text: "Respond instantly to customers with AI available 24/7.",
+            },
+            {
+              value: "24/7",
+              title: "Always Available",
+              text: "Never miss another inquiry, even outside business hours.",
+            },
+            {
+              value: "500+",
+              title: "Growing Businesses",
+              text: "Businesses trust AIAERA to automate conversations and generate leads.",
+            },
+          ].map((stat) => (
 
-            <h3 className="bg-gradient-to-r from-violet-300 to-blue-300 bg-clip-text text-6xl font-black text-transparent">
+            <div
+              key={stat.title}
+              className="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-xl"
+            >
 
-              99%
+              <h3 className="bg-gradient-to-r from-violet-600 to-purple-500 bg-clip-text text-5xl font-black text-transparent">
 
-            </h3>
+                {stat.value}
 
-            <p className="mt-4 text-lg font-medium">
-              Faster Customer Response
-            </p>
+              </h3>
 
-            <p className="mt-3 leading-7 text-white/55">
-              Deliver instant AI responses around the clock and improve customer
-              satisfaction.
-            </p>
+              <h4 className="mt-4 text-xl font-bold text-slate-900">
 
-          </div>
+                {stat.title}
 
-          <div className="group rounded-[36px] border border-white/10 bg-white/[0.04] p-10 text-center backdrop-blur-3xl transition-all duration-300 hover:-translate-y-2 hover:border-violet-500/30">
+              </h4>
 
-            <h3 className="bg-gradient-to-r from-violet-300 to-blue-300 bg-clip-text text-6xl font-black text-transparent">
+              <p className="mt-4 leading-7 text-slate-600">
 
-              24/7
+                {stat.text}
 
-            </h3>
+              </p>
 
-            <p className="mt-4 text-lg font-medium">
-              AI Business Automation
-            </p>
+            </div>
 
-            <p className="mt-3 leading-7 text-white/55">
-              Never miss another customer inquiry with intelligent AI available
-              day and night.
-            </p>
-
-          </div>
-
-          <div className="group rounded-[36px] border border-white/10 bg-white/[0.04] p-10 text-center backdrop-blur-3xl transition-all duration-300 hover:-translate-y-2 hover:border-violet-500/30">
-
-            <h3 className="bg-gradient-to-r from-violet-300 to-blue-300 bg-clip-text text-6xl font-black text-transparent">
-
-              500+
-
-            </h3>
-
-            <p className="mt-4 text-lg font-medium">
-              Growing Businesses
-            </p>
-
-            <p className="mt-3 leading-7 text-white/55">
-              Businesses trust AIAERA to automate conversations, generate leads
-              and increase productivity.
-            </p>
-
-          </div>
+          ))}
 
         </div>
 
         {/* Bottom Highlights */}
 
-        <div className="mt-24 flex flex-wrap justify-center gap-5">
+        <div className="mt-20 flex flex-wrap justify-center gap-4">
 
           {[
             "Website AI",
             "WhatsApp",
             "Facebook",
             "Instagram",
-            "Appointment Booking",
             "Lead Capture",
-            "Analytics",
+            "Appointment Booking",
             "CRM Ready",
+            "Analytics",
             "Multi-language",
           ].map((item) => (
+
             <div
               key={item}
-              className="rounded-full border border-white/10 bg-white/[0.05] px-6 py-3 text-sm font-medium text-white/75 backdrop-blur-xl transition-all duration-300 hover:border-violet-500/30 hover:bg-violet-500/10"
+              className="rounded-full border border-violet-200 bg-violet-50 px-5 py-3 text-sm font-semibold text-violet-700 transition hover:bg-violet-100"
             >
+
               {item}
+
             </div>
+
           ))}
 
         </div>

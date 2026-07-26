@@ -11,107 +11,43 @@ import {
   Sparkles,
   Crown,
   ChevronRight,
+  Search,
+  Bell,
 } from "lucide-react";
 
-import {
-  NavLink,
-  Outlet,
-} from "react-router-dom";
+import { NavLink, Outlet } from "react-router-dom";
 
-import {
-  useContext,
-  useState,
-} from "react";
+import { useContext, useState } from "react";
 
-import {
-  AuthContext,
-} from "../context/AuthContext";
+import { AuthContext } from "../context/AuthContext";
 
 import { supabase } from "../lib/supabase";
 
 import logo from "../assets/logo.png";
 
 export default function MainLayout() {
+  const { user, loading, subscription, isExpired } = useContext(AuthContext);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  /*
-  ========================================
-  AUTH CONTEXT
-  ========================================
-  */
-  const {
-    user,
-    loading,
-    subscription,
-    isExpired,
-  } = useContext(
-    AuthContext
-  );
+  const userEmail = user?.email || "";
 
-  /*
-  ========================================
-  STATES
-  ========================================
-  */
-  const [
-    sidebarOpen,
-    setSidebarOpen,
-  ] = useState(false);
+  const handleLogout = async () => {
+    try {
+      setSidebarOpen(false);
 
-  /*
-  ========================================
-  USER EMAIL
-  ========================================
-  */
-  const userEmail =
-    user?.email || "";
+      const { error } = await supabase.auth.signOut();
 
-  /*
-  ========================================
-  LOGOUT
-  ========================================
-  */
-  const handleLogout =
-    async () => {
-
-      try {
-
-        setSidebarOpen(
-          false
-        );
-
-        const {
-          error,
-        } =
-          await supabase.auth.signOut();
-
-        if (error) {
-
-          console.error(
-            "Logout Error:",
-            error.message
-          );
-
-          return;
-        }
-
-        window.location.href =
-          "/";
-
-      } catch (err) {
-
-        console.error(
-          "Logout Failed:",
-          err
-        );
+      if (error) {
+        console.error("Logout Error:", error.message);
+        return;
       }
-    };
 
-  
-  /*
-  ========================================
-  LINKS
-  ========================================
-  */
+      window.location.href = "/";
+    } catch (err) {
+      console.error("Logout Failed:", err);
+    }
+  };
+
   const workspaceLinks = [
     {
       name: "Dashboard",
@@ -148,609 +84,288 @@ export default function MainLayout() {
     },
   ];
 
-  /*
-  ========================================
-  LOADING
-  ========================================
-  */
+  const navLinkClassName = ({ isActive }) =>
+    `group flex h-[44px] items-center justify-between rounded-lg border px-2.5 transition-all duration-200 ${
+      isActive
+        ? "border-violet-200 bg-violet-50 text-violet-700"
+        : "border-transparent bg-white text-slate-700 hover:border-slate-200 hover:bg-slate-50"
+    }`;
+
   if (loading) {
-
     return (
-
-      <div className="min-h-screen bg-[#050816] flex items-center justify-center text-white overflow-hidden relative">
-
-        {/* GLOW */}
-        <div className="absolute top-[-140px] left-[-140px] w-[320px] h-[320px] bg-purple-600/20 blur-[140px] rounded-full"></div>
-
-        <div className="absolute bottom-[-140px] right-[-140px] w-[320px] h-[320px] bg-blue-600/20 blur-[140px] rounded-full"></div>
-
-        {/* CONTENT */}
-        <div className="relative z-10 flex flex-col items-center gap-5">
-
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center px-6">
+        <div className="flex flex-col items-center gap-4 text-center">
           <div className="relative">
-
-            <div className="absolute inset-0 bg-purple-500/20 blur-[35px] rounded-full"></div>
-
-            <div className="relative w-16 h-16 rounded-full border-[5px] border-purple-500/10 border-t-purple-500 animate-spin"></div>
-
+            <div className="h-14 w-14 rounded-full border-2 border-violet-200 border-t-violet-600 animate-spin"></div>
           </div>
-
-          <p className="text-sm text-gray-400 tracking-wide">
-
-            Loading Workspace...
-
-          </p>
-
+          <div>
+            <p className="text-lg font-semibold text-slate-900">Loading workspace</p>
+            <p className="mt-1 text-sm text-slate-500">Preparing your dashboard...</p>
+          </div>
         </div>
-
       </div>
     );
   }
 
   return (
-
-    <div className="min-h-screen bg-[#050816] text-white flex overflow-hidden">
-
-      {/* BACKGROUND */}
-      <div className="fixed top-[-220px] left-[-220px] w-[450px] h-[450px] bg-purple-600/10 blur-[160px] rounded-full"></div>
-
-      <div className="fixed bottom-[-220px] right-[-220px] w-[450px] h-[450px] bg-blue-600/10 blur-[160px] rounded-full"></div>
-
-      {/* MOBILE TOPBAR */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 z-50 bg-[rgba(11,17,32,0.78)] backdrop-blur-3xl border-b border-white/[0.06] flex items-center justify-between px-4 shadow-[0_10px_40px_rgba(0,0,0,0.35)]">
-
-        {/* LOGO */}
-        <div className="flex items-center gap-3">
-
-          <div className="relative">
-
-            <div className="absolute inset-0 bg-purple-500/20 blur-[20px] rounded-2xl"></div>
-
-            <div className="
-              relative
-              w-11
-              h-11
-              rounded-2xl
-              overflow-hidden
-              border
-              border-white/10
-              bg-gradient-to-br
-              from-white/[0.08]
-              to-white/[0.02]
-              backdrop-blur-xl
-              shadow-[0_10px_30px_rgba(127,90,240,0.18)]
-            ">
-
-              <img
-                src={logo}
-                alt="AIAERA"
-                className="w-full h-full object-cover"
-              />
-
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900">
+      <div className="fixed left-0 right-0 top-0 z-50 h-14 border-b border-slate-200 bg-white/95 px-4 backdrop-blur-sm lg:hidden">
+        <div className="flex h-full items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white p-1 shadow-sm">
+              <img src={logo} alt="AIAERA" className="h-full w-full object-cover" />
             </div>
-
+            <div>
+              <h1 className="text-base font-semibold tracking-tight text-slate-900">AIAERA</h1>
+              <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400">AI Business Automation</p>
+            </div>
           </div>
 
-          <div>
-
-            <h1 className="text-lg font-black tracking-tight">
-
-              AIAERA
-
-            </h1>
-
-            <p className="text-[10px] text-gray-400">
-
-              AI Workspace
-
-            </p>
-
-          </div>
-
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 transition hover:border-violet-200 hover:text-violet-600"
+          >
+            {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
+          </button>
         </div>
-
-        {/* MENU */}
-        <button
-          onClick={() =>
-            setSidebarOpen(
-              !sidebarOpen
-            )
-          }
-          className="
-            w-11
-            h-11
-            rounded-2xl
-            bg-white/[0.04]
-            border
-            border-white/[0.06]
-            flex
-            items-center
-            justify-center
-            backdrop-blur-xl
-            shadow-[0_10px_25px_rgba(0,0,0,0.25)]
-          "
-        >
-
-          {sidebarOpen ? (
-            <X size={18} />
-          ) : (
-            <Menu size={18} />
-          )}
-
-        </button>
-
       </div>
 
-      {/* MOBILE OVERLAY */}
       {sidebarOpen && (
-
         <div
-          className="fixed inset-0 bg-black/70 backdrop-blur-md z-40 lg:hidden"
-          onClick={() =>
-            setSidebarOpen(false)
-          }
+          className="fixed inset-0 z-40 bg-slate-950/25 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
         />
-
       )}
 
-      {/* SIDEBAR */}
       <aside
-        className={`
-          fixed top-0 left-0 z-50
-          h-screen w-[290px]
-          bg-[rgba(11,17,32,0.82)]
-          backdrop-blur-3xl
-          border-r border-white/[0.06]
-          shadow-[0_0_60px_rgba(0,0,0,0.45)]
-          flex flex-col
-          transition-all duration-300
-          overflow-hidden
-
-          ${
-            sidebarOpen
-              ? "translate-x-0"
-              : "-translate-x-full"
-          }
-
-          lg:translate-x-0
-        `}
+        className={`fixed left-0 top-0 z-50 flex h-screen w-[220px] flex-col border-r border-slate-200 bg-white transition-all duration-200 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        } lg:translate-x-0`}
       >
-
-        {/* GLOW */}
-        <div className="absolute top-[-80px] right-[-80px] w-[220px] h-[220px] bg-purple-500/10 blur-[120px] rounded-full"></div>
-
-        {/* GLASS OVERLAY */}
-        <div className="absolute inset-0 bg-gradient-to-b from-white/[0.03] to-transparent pointer-events-none"></div>
-
-        {/* LOGO */}
-        <div className="relative z-10 px-6 pt-6 pb-5 border-b border-white/[0.05]">
-
-          <div className="flex items-center gap-4">
-
-            <div className="relative">
-
-              <div className="absolute inset-0 bg-purple-500/20 blur-[20px] rounded-3xl"></div>
-
-              <div className="
-                relative
-                w-14
-                h-14
-                rounded-[22px]
-                overflow-hidden
-                border
-                border-white/10
-                bg-gradient-to-br
-                from-white/[0.08]
-                to-white/[0.02]
-                shadow-[0_10px_30px_rgba(127,90,240,0.18)]
-                backdrop-blur-xl
-              ">
-
-                <img
-                  src={logo}
-                  alt="AIAERA"
-                  className="w-full h-full object-cover"
-                />
-
-              </div>
-
+        <div className="border-b border-slate-200 px-3 py-4">
+          <div className="flex items-center gap-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white p-1">
+              <img src={logo} alt="AIAERA" className="h-full w-full object-cover" />
             </div>
-
             <div>
-
-              <h1 className="text-2xl font-black tracking-tight">
-
-                AIAERA
-
-              </h1>
-
-              <div className="flex items-center gap-2 mt-1">
-
-                <Sparkles
-                  size={11}
-                  className="text-purple-300"
-                />
-
-                <span className="text-[11px] text-gray-400">
-
+              <h1 className="text-sm font-semibold tracking-tight text-slate-900">AIAERA</h1>
+              <div className="mt-0.5 flex items-center gap-1.5">
+                <Sparkles size={9} className="text-violet-500" />
+                <span className="text-[9px] font-medium uppercase tracking-[0.18em] text-slate-400">
                   AI Business Automation
-
                 </span>
-
               </div>
-
             </div>
-
           </div>
-
         </div>
 
-        {/* EXPIRED */}
         {isExpired && (
-
-          <div className="mx-4 mt-4 rounded-[26px] border border-red-500/20 bg-gradient-to-br from-red-500/10 to-red-500/5 p-4 backdrop-blur-xl shadow-[0_10px_30px_rgba(239,68,68,0.08)]">
-
+          <div className="mx-4 mt-4 rounded-2xl border border-red-200 bg-red-50 p-4">
             <div className="flex items-start gap-3">
-
-              <div className="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center">
-
-                <Crown
-                  size={16}
-                  className="text-red-300"
-                />
-
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-100 text-red-600">
+                <Crown size={16} />
               </div>
-
               <div>
-
-                <h3 className="text-sm font-semibold text-red-200 mb-1">
-
-                  Subscription Expired
-
-                </h3>
-
-                <p className="text-[11px] text-red-100/70 leading-relaxed">
-
+                <h3 className="text-sm font-semibold text-red-700">Subscription Expired</h3>
+                <p className="mt-1 text-[11px] leading-relaxed text-red-600/80">
                   Features are temporarily paused until renewal.
-
                 </p>
-
               </div>
-
             </div>
-
           </div>
-
         )}
 
-        {/* NAVIGATION */}
-        <div className="relative z-10 flex-1 overflow-y-auto px-4 py-5">
+        <div className="flex-1 overflow-y-auto px-2.5 py-3">
+          <div className="mb-5">
+            <p className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-400">
+              Workspace
+            </p>
+            <div className="space-y-1.5">
+              {workspaceLinks.map((item) => {
+                const Icon = item.icon;
 
-          {/* WORKSPACE */}
-          <div className="mb-8">
-
-            <div className="px-3 mb-3">
-
-              <p className="text-[11px] uppercase tracking-[2px] text-gray-500 font-semibold">
-
-                Workspace
-
-              </p>
-
-            </div>
-
-            <div className="space-y-2">
-
-              {workspaceLinks.map(
-                (item) => {
-
-                  const Icon =
-                    item.icon;
-
-                  return (
-
-                    <NavLink
-                      key={item.path}
-                      to={item.path}
-                      onClick={() =>
-                        setSidebarOpen(false)
-                      }
-                      className={({
-                        isActive,
-                      }) =>
-                        `
-                          group
-                          flex
-                          items-center
-                          justify-between
-                          px-4
-                          h-[60px]
-                          rounded-[22px]
-                          transition-all
-                          duration-300
-                          border
-                          ${
-                            isActive
-                              ? `
-                                bg-[linear-gradient(135deg,rgba(127,90,240,0.28),rgba(59,130,246,0.22))]
-                                border-purple-400/20
-                                shadow-[0_10px_50px_rgba(127,90,240,0.28)]
-                                backdrop-blur-xl
-                              `
-                              : `
-                                bg-white/[0.025]
-                                border-white/[0.04]
-                                hover:bg-white/[0.05]
-                                hover:border-white/[0.08]
-                                hover:translate-x-[2px]
-                              `
-                          }
-                        `
-                      }
-                    >
-
-                      <div className="flex items-center gap-4">
-
-                        <div className="
-                          w-10
-                          h-10
-                          rounded-xl
-                          bg-gradient-to-br
-                          from-white/[0.08]
-                          to-white/[0.02]
-                          border
-                          border-white/[0.05]
-                          backdrop-blur-xl
-                          flex
-                          items-center
-                          justify-center
-                        ">
-
-                          <Icon size={18} />
-
+                return (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setSidebarOpen(false)}
+                    className={navLinkClassName}
+                  >
+                    {({ isActive }) => (
+                      <>
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`flex h-9 w-9 items-center justify-center rounded-lg border ${
+                              isActive
+                                ? "border-violet-600 bg-violet-600 text-white"
+                                : "border-violet-100 bg-violet-50 text-violet-600"
+                            }`}
+                          >
+                            <Icon size={16} />
+                          </div>
+                          <span className="text-sm font-medium">{item.name}</span>
                         </div>
 
-                        <span className="font-medium">
-
-                          {item.name}
-
-                        </span>
-
-                      </div>
-
-                      <ChevronRight
-                        size={16}
-                        className="opacity-50 group-hover:translate-x-1 transition-all"
-                      />
-
-                    </NavLink>
-
-                  );
-                }
-              )}
-
+                        <ChevronRight size={16} className="text-slate-400 transition group-hover:translate-x-0.5" />
+                      </>
+                    )}
+                  </NavLink>
+                );
+              })}
             </div>
-
           </div>
 
-          {/* SETTINGS */}
           <div>
+            <p className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-400">
+              Settings
+            </p>
+            <div className="space-y-1.5">
+              {settingsLinks.map((item) => {
+                const Icon = item.icon;
 
-            <div className="px-3 mb-3">
-
-              <p className="text-[11px] uppercase tracking-[2px] text-gray-500 font-semibold">
-
-                Settings
-
-              </p>
-
-            </div>
-
-            <div className="space-y-2">
-
-              {settingsLinks.map(
-                (item) => {
-
-                  const Icon =
-                    item.icon;
-
-                  return (
-
-                    <NavLink
-                      key={item.path}
-                      to={item.path}
-                      onClick={() =>
-                        setSidebarOpen(false)
-                      }
-                      className={({
-                        isActive,
-                      }) =>
-                        `
-                          group
-                          flex
-                          items-center
-                          justify-between
-                          px-4
-                          h-[60px]
-                          rounded-[22px]
-                          transition-all
-                          duration-300
-                          border
-                          ${
-                            isActive
-                              ? `
-                                bg-[linear-gradient(135deg,rgba(127,90,240,0.28),rgba(59,130,246,0.22))]
-                                border-purple-400/20
-                                shadow-[0_10px_50px_rgba(127,90,240,0.28)]
-                                backdrop-blur-xl
-                              `
-                              : `
-                                bg-white/[0.025]
-                                border-white/[0.04]
-                                hover:bg-white/[0.05]
-                                hover:border-white/[0.08]
-                                hover:translate-x-[2px]
-                              `
-                          }
-                        `
-                      }
-                    >
-
-                      <div className="flex items-center gap-4">
-
-                        <div className="
-                          w-10
-                          h-10
-                          rounded-xl
-                          bg-gradient-to-br
-                          from-white/[0.08]
-                          to-white/[0.02]
-                          border
-                          border-white/[0.05]
-                          backdrop-blur-xl
-                          flex
-                          items-center
-                          justify-center
-                        ">
-
-                          <Icon size={18} />
-
+                return (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setSidebarOpen(false)}
+                    className={navLinkClassName}
+                  >
+                    {({ isActive }) => (
+                      <>
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`flex h-10 w-10 items-center justify-center rounded-xl border ${
+                              isActive
+                                ? "border-violet-600 bg-violet-600 text-white"
+                                : "border-violet-100 bg-violet-50 text-violet-600"
+                            }`}
+                          >
+                            <Icon size={18} />
+                          </div>
+                          <span className="text-sm font-medium">{item.name}</span>
                         </div>
 
-                        <span className="font-medium">
-
-                          {item.name}
-
-                        </span>
-
-                      </div>
-
-                      <ChevronRight
-                        size={16}
-                        className="opacity-50 group-hover:translate-x-1 transition-all"
-                      />
-
-                    </NavLink>
-
-                  );
-                }
-              )}
-
+                        <ChevronRight size={16} className="text-slate-400 transition group-hover:translate-x-0.5" />
+                      </>
+                    )}
+                  </NavLink>
+                );
+              })}
             </div>
-
           </div>
-
         </div>
 
-        {/* BOTTOM */}
-        <div className="relative z-10 p-4 border-t border-white/[0.05]">
-
-          {/* USER */}
-          <div className="
-            rounded-[28px]
-            border
-            border-white/[0.06]
-            bg-gradient-to-br
-            from-white/[0.06]
-            to-white/[0.02]
-            backdrop-blur-2xl
-            p-4
-            mb-4
-            shadow-[0_10px_40px_rgba(0,0,0,0.25)]
-          ">
-
-            <div className="flex items-center gap-3">
-
-              <div className="
-                w-12
-                h-12
-                rounded-2xl
-                bg-[linear-gradient(135deg,#7f5af0,#5b8cff)]
-                shadow-[0_10px_30px_rgba(127,90,240,0.35)]
-                flex
-                items-center
-                justify-center
-                font-bold
-                text-lg
-              ">
-
-                {userEmail?.charAt(0)?.toUpperCase() ||
-                  "A"}
-
+        <div className="border-t border-slate-200 p-2.5">
+          <div className="mb-2.5 rounded-xl border border-slate-200 bg-slate-50 p-2.5">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-violet-600 font-semibold text-white">
+                {userEmail?.charAt(0)?.toUpperCase() || "A"}
               </div>
 
               <div className="min-w-0">
-
-                <h3 className="text-sm font-semibold truncate">
-
-                  {userEmail ||
-                    "User"}
-
-                </h3>
-
-                <p className="text-xs text-gray-400 truncate">
-
-                  {subscription?.plan ||
-  "Free"}{" "}
-plan
-
-                </p>
-
+                <h3 className="truncate text-sm font-semibold text-slate-900">{userEmail || "User"}</h3>
+                <p className="truncate text-xs text-slate-500">{subscription?.plan || "Free"} plan</p>
               </div>
-
             </div>
-
           </div>
 
-          {/* LOGOUT */}
           <button
-            onClick={
-              handleLogout
-            }
-            className="
-              w-full
-              h-[58px]
-              rounded-[22px]
-              bg-gradient-to-br
-              from-red-500/12
-              to-red-500/5
-              border
-              border-red-500/15
-              hover:from-red-500/20
-              hover:to-red-500/10
-              shadow-[0_8px_30px_rgba(239,68,68,0.12)]
-              transition-all
-              duration-300
-              flex
-              items-center
-              justify-center
-              gap-3
-              text-red-300
-              font-medium
-            "
+            onClick={handleLogout}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 font-medium text-red-600 transition hover:bg-red-50"
           >
-
             <LogOut size={18} />
-
             Logout
-
           </button>
-
         </div>
-
       </aside>
 
-      {/* MAIN */}
-      <main className="flex-1 lg:ml-[290px] min-h-screen">
+      <main className="min-h-screen lg:ml-[220px]">
+        <div className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur-sm">
+          <div className="mx-auto flex h-[64px] max-w-[1440px] items-center justify-between gap-3 px-4 sm:px-6 lg:px-8 xl:px-10">
+            <div className="hidden flex-1 md:flex">
+              <label className="flex w-full max-w-xl items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500">
+                <Search size={16} className="text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search"
+                  className="w-full border-0 bg-transparent outline-none placeholder:text-slate-400"
+                />
+              </label>
+            </div>
 
-        <div className="p-4 lg:p-10 pt-20 lg:pt-10 relative z-10">
+            <div className="ml-auto flex items-center gap-2 sm:gap-3">
+              <button className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-violet-200 hover:text-violet-600">
+                <Bell size={18} />
+              </button>
 
-          <Outlet />
+              <div className="hidden items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 sm:flex">
+                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
+                <span className="text-sm font-medium text-slate-700">{subscription?.plan || "Free"} plan</span>
+              </div>
 
+              <div className="flex items-center gap-2.5 rounded-full border border-slate-200 bg-white px-2 py-1.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-violet-600 font-semibold text-white">
+                  {userEmail?.charAt(0)?.toUpperCase() || "A"}
+                </div>
+                <div className="hidden pr-1 sm:block">
+                  <p className="text-sm font-semibold text-slate-900">{userEmail || "User"}</p>
+                  <p className="text-xs text-slate-500">Workspace access</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-      </main>
+        <div className="mx-auto w-full max-w-[1440px] px-4 py-4 sm:px-6 lg:px-8 lg:py-5 xl:px-10">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 lg:p-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="max-w-2xl">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-violet-600">Workspace overview</p>
+                <h2 className="mt-1.5 text-xl font-semibold tracking-tight text-slate-900">
+                  Keep your business automation moving.
+                </h2>
+                <p className="mt-1.5 text-sm leading-6 text-slate-600">
+                  Review leads, appointments, and automations from one focused workspace.
+                </p>
+              </div>
 
+              <div className="flex flex-wrap items-center gap-2">
+                <NavLink
+                  to="/app/builder"
+                  className="inline-flex items-center justify-center rounded-lg bg-violet-600 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-violet-700"
+                >
+                  Open Builder
+                </NavLink>
+                <NavLink
+                  to="/app/appointments"
+                  className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                >
+                  View Appointments
+                </NavLink>
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-2.5 md:grid-cols-3">
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-400">Plan</p>
+                <p className="mt-1 text-sm font-semibold text-slate-900">{subscription?.plan || "Free"}</p>
+              </div>
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-400">Status</p>
+                <p className="mt-1 text-sm font-semibold text-slate-900">{isExpired ? "Paused" : "Active"}</p>
+              </div>
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-400">Workspace</p>
+                <p className="mt-1 text-sm font-semibold text-slate-900">Ready for action</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-5">
+            <Outlet />
+          </div>
+        </div>
+      </main>
     </div>
   );
 }

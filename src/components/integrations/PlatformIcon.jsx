@@ -17,16 +17,18 @@ import {
 import { FaInstagram } from "react-icons/fa";
 
 const icons = {
-  // Existing
+  // Communication
   whatsapp: MessageCircle,
   facebook: MessageSquare,
   instagram: FaInstagram,
-  calendly: Calendar,
-  maps: MapPinned,
 
   // Providers
   meta: Boxes,
+  calendly: Calendar,
   meetings: Calendar,
+  maps: MapPinned,
+
+  // Categories
   business: Building2,
   productivity: Briefcase,
   payments: CreditCard,
@@ -45,13 +47,13 @@ export default function PlatformIcon({
   size = 20,
   className = "",
 }) {
-  const Icon =
-    icons[type] || Boxes;
+  const Icon = icons[type] || Boxes;
 
   return (
     <Icon
       size={size}
-      className={className}
+      strokeWidth={2}
+      className={`shrink-0 ${className}`}
     />
   );
 }

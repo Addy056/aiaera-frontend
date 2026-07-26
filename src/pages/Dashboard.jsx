@@ -12,6 +12,8 @@ import {
   Lock,
   MessageSquare,
   Phone,
+  BarChart3,
+  CheckCircle2,
 } from "lucide-react";
 
 import { Link } from "react-router-dom";
@@ -22,6 +24,8 @@ import {
 } from "react";
 
 import { supabase } from "../lib/supabase";
+import PageHeader from "../components/common/PageHeader";
+import SectionHeader from "../components/common/SectionHeader";
 
 export default function Dashboard() {
 
@@ -358,875 +362,201 @@ export default function Dashboard() {
   ];
 
   return (
-
-    <div className="space-y-5 text-white">
-
-      {/* EXPIRED */}
+    <div className="space-y-6">
       {stats.expired && (
-
-        <div className="
-          rounded-[30px]
-          border
-          border-red-500/20
-          bg-gradient-to-br
-          from-red-500/10
-          to-red-500/5
-          p-6
-          flex
-          flex-col
-          lg:flex-row
-          lg:items-center
-          lg:justify-between
-          gap-5
-          shadow-[0_10px_40px_rgba(239,68,68,0.12)]
-        ">
-
-          <div className="flex items-start gap-4">
-
-            <div className="w-12 h-12 rounded-2xl bg-red-500/20 flex items-center justify-center shrink-0">
-
-              <AlertTriangle
-                size={20}
-                className="text-red-300"
-              />
-
+        <div className="flex flex-col gap-4 rounded-2xl border border-red-200 bg-red-50 p-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-600">
+              <AlertTriangle size={18} />
             </div>
-
             <div>
-
-              <h3 className="font-semibold text-red-200 mb-1 text-lg">
-
-                Subscription Expired
-
-              </h3>
-
-              <p className="text-sm text-red-100/80 max-w-xl">
-
-                Your chatbot is temporarily paused.
-                Renew your plan to continue using all AI features.
-
-              </p>
-
+              <h3 className="text-base font-semibold text-red-700">Subscription Expired</h3>
+              <p className="mt-1 text-sm leading-6 text-red-600/80">Your workspace is in read-only mode until renewal.</p>
             </div>
-
           </div>
-
-          <Link
-            to="/app/pricing"
-            className="
-              h-12
-              px-6
-              rounded-2xl
-              bg-white
-              text-black
-              font-semibold
-              flex
-              items-center
-              justify-center
-              hover:opacity-90
-              transition-all
-              shrink-0
-            "
-          >
-
+          <Link to="/app/pricing" className="inline-flex items-center justify-center rounded-xl bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700">
             Renew Plan
-
           </Link>
-
         </div>
-
       )}
 
-      {/* HERO */}
-      <div className="
-        relative
-        overflow-hidden
-        rounded-[34px]
-        border
-        border-white/[0.08]
-        bg-gradient-to-br
-        from-[#7f5af0]/20
-        via-[#111827]
-        to-blue-500/10
-        p-7
-        shadow-[0_20px_80px_rgba(0,0,0,0.35)]
-      ">
+      <PageHeader
+        eyebrow="Workspace overview"
+        title={stats.expired ? "Your workspace needs a quick refresh" : "Keep your business automation moving."}
+        description="Review your assistants, leads, appointments, and plan health from one streamlined view."
+        actionLabel="Open Builder"
+        actionTo="/app/builder"
+      />
 
-        <div className="absolute top-[-100px] right-[-100px] w-[260px] h-[260px] bg-purple-500/20 blur-[120px] rounded-full"></div>
-
-        <div className="relative flex flex-col xl:flex-row xl:items-center xl:justify-between gap-8">
-
-          <div>
-
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.05] border border-white/[0.08] mb-4">
-
-              <Sparkles
-                size={13}
-                className="text-purple-300"
-              />
-
-              <span className="text-xs text-gray-300">
-
-                Your AI Business Dashboard
-
-              </span>
-
-            </div>
-
-            <h1 className="text-4xl font-black tracking-tight mb-3">
-
-              Welcome Back 👋
-
-            </h1>
-
-            <p className="text-gray-300 text-sm max-w-xl leading-relaxed">
-
-              See your chatbot activity, leads,
-              appointments, and plan status in one place.
-
-            </p>
-
-          </div>
-
-          <Link
-            to="/app/builder"
-            className={`
-              h-14
-              px-7
-              rounded-2xl
-              flex
-              items-center
-              justify-center
-              gap-3
-              font-semibold
-              transition-all
-              duration-300
-              shrink-0
-              ${
-                stats.expired
-                  ? "bg-white/5 text-gray-500 cursor-not-allowed pointer-events-none"
-                  : `
-                    bg-gradient-to-r
-                    from-[#7f5af0]
-                    to-blue-500
-                    shadow-[0_10px_40px_rgba(127,90,240,0.35)]
-                    hover:scale-[1.02]
-                  `
-              }
-            `}
-          >
-
-            <Plus size={18} />
-
-            Create Your AI Chatbot
-
-          </Link>
-
-        </div>
-      </div>
-      {/* MAIN STATS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-
-        {statCards.map(
-          (
-            card,
-            index
-          ) => {
-
-            const Icon =
-              card.icon;
-
-            return (
-
-              <div
-                key={index}
-                className="
-                  rounded-[28px]
-                  border
-                  border-white/[0.08]
-                  bg-gradient-to-br
-                  from-white/[0.05]
-                  to-white/[0.02]
-                  p-5
-                  shadow-[0_10px_40px_rgba(0,0,0,0.25)]
-                "
-              >
-
-                <div className="
-                  w-12
-                  h-12
-                  rounded-2xl
-                  bg-gradient-to-br
-                  from-[#7f5af0]/20
-                  to-blue-500/10
-                  border
-                  border-white/[0.06]
-                  flex
-                  items-center
-                  justify-center
-                  mb-5
-                ">
-
-                  <Icon
-                    size={20}
-                    className="text-purple-300"
-                  />
-
-                </div>
-
-                <h2 className="text-4xl font-black mb-1">
-
-                  {card.value}
-
-                </h2>
-
-                <p className="text-gray-400 text-sm">
-
-                  {card.title}
-
-                </p>
-
-              </div>
-
-            );
-          }
-        )}
-
-      </div>
-
-      {/* PLAN + QUICK ACTIONS */}
-      <div className="grid grid-cols-1 xl:grid-cols-[1.1fr_1fr] gap-4">
-
-        {/* PLAN */}
-        <div className="
-          rounded-[30px]
-          border
-          border-white/[0.08]
-          bg-gradient-to-br
-          from-white/[0.05]
-          to-white/[0.02]
-          p-6
-          shadow-[0_10px_40px_rgba(0,0,0,0.25)]
-        ">
-
-          <div className="flex items-center justify-between mb-6">
-
+      <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
             <div>
-
-              <p className="text-gray-400 text-sm mb-1">
-
-                Current Plan
-
-              </p>
-
-              <h2 className="text-3xl font-black">
-
-                {stats.plan}
-
-              </h2>
-
+              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-400">Current plan</p>
+              <h2 className="mt-1 text-xl font-semibold tracking-tight text-slate-900">{stats.plan}</h2>
             </div>
-
-            <div className="
-              w-12
-              h-12
-              rounded-2xl
-              bg-gradient-to-br
-              from-[#7f5af0]/20
-              to-blue-500/10
-              border
-              border-white/[0.06]
-              flex
-              items-center
-              justify-center
-            ">
-
-              <Crown
-                size={20}
-                className="text-yellow-300"
-              />
-
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+              <Crown size={18} />
             </div>
-
           </div>
 
-          <div className="space-y-5">
-
-            <div>
-
-              <div className="flex items-center justify-between mb-2">
-
-                <span className="text-sm text-gray-300">
-
-                  AI Messages
-
-                </span>
-
-                <span className="text-sm font-semibold">
-
-                  {stats.messages_used} / {stats.messages_limit}
-
-                </span>
-
-              </div>
-
-              <div className="w-full h-3 rounded-full bg-white/10 overflow-hidden">
-
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-[#7f5af0] to-blue-500"
-                  style={{
-                    width: `${
-                      (
-                        stats.messages_used /
-                        stats.messages_limit
-                      ) * 100
-                    }%`,
-                  }}
-                />
-
-              </div>
-
+          <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <div className="flex items-center justify-between text-sm text-slate-600">
+              <span>AI messages</span>
+              <span className="font-medium text-slate-900">{stats.messages_used} / {stats.messages_limit}</span>
             </div>
-
-            <div className="grid grid-cols-2 gap-3">
-
-              <SimpleInfoCard
-                label="Days Left"
-                value={
-                  stats.expired
-                    ? "0"
-                    : daysLeft
-                }
-                icon={Zap}
-              />
-
-              <SimpleInfoCard
-                label="Chatbots"
-                value={
-                  stats.chatbots
-                }
-                icon={Bot}
-              />
-
+            <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-slate-200">
+              <div className="h-full rounded-full bg-violet-600" style={{ width: `${Math.min(100, (stats.messages_used / Math.max(1, stats.messages_limit)) * 100)}%` }} />
             </div>
-
-            <Link
-              to="/app/pricing"
-              className="
-                w-full
-                h-12
-                rounded-2xl
-                bg-white
-                text-black
-                font-semibold
-                flex
-                items-center
-                justify-center
-                hover:opacity-90
-                transition-all
-              "
-            >
-
-              {stats.expired
-                ? "Renew Subscription"
-                : "Manage Subscription"}
-
-            </Link>
-
           </div>
 
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <SimpleInfoCard label="Days left" value={stats.expired ? "0" : daysLeft} icon={Zap} />
+            <SimpleInfoCard label="Chatbots" value={stats.chatbots} icon={Bot} />
+          </div>
         </div>
 
-        {/* QUICK ACTIONS */}
-        <div className="
-          rounded-[30px]
-          border
-          border-white/[0.08]
-          bg-gradient-to-br
-          from-white/[0.05]
-          to-white/[0.02]
-          p-6
-          shadow-[0_10px_40px_rgba(0,0,0,0.25)]
-        ">
-
-          <div className="mb-5">
-
-            <h2 className="text-2xl font-bold mb-2">
-
-              Quick Actions
-
-            </h2>
-
-            <p className="text-sm text-gray-400">
-
-              Easy shortcuts to manage your AI business.
-
-            </p>
-
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <SectionHeader title="Quick actions" description="Move through the most common tasks without friction." />
+            <div className="mt-4 space-y-3">
+              <ActionCard to="/app/builder" icon={Bot} title="Create AI chatbot" desc="Build your chatbot in minutes" disabled={stats.expired} />
+              <ActionCard to="/app/leads" icon={Users} title="Review leads" desc="See the latest customer inquiries" disabled={false} />
+              <ActionCard to="/app/integrations" icon={Phone} title="Connect channels" desc="Wire up WhatsApp and other tools" disabled={false} />
+            </div>
           </div>
 
-          <div className="space-y-3">
-
-            <ActionCard
-              to="/app/builder"
-              icon={Bot}
-              title="Create AI Chatbot"
-              desc="Build your chatbot in minutes"
-              disabled={
-                stats.expired
-              }
-            />
-
-            <ActionCard
-              to="/app/leads"
-              icon={Users}
-              title="View Leads"
-              desc="See customer inquiries"
-              disabled={false}
-            />
-
-            <ActionCard
-              to="/app/integrations"
-              icon={Phone}
-              title="Connect WhatsApp"
-              desc="Connect your social channels"
-              disabled={false}
-            />
-
-            <ActionCard
-              to="/app/pricing"
-              icon={Crown}
-              title="Manage Subscription"
-              desc="Upgrade or renew your plan"
-              disabled={false}
-            />
-
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-400">Snapshot</p>
+                <h3 className="mt-1 text-base font-semibold text-slate-900">This week at a glance</h3>
+              </div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+                <BarChart3 size={18} />
+              </div>
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p className="text-sm font-medium text-slate-900">{stats.leads}</p>
+                <p className="mt-1 text-sm text-slate-600">Leads captured</p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p className="text-sm font-medium text-slate-900">{stats.appointments}</p>
+                <p className="mt-1 text-sm text-slate-600">Appointments booked</p>
+              </div>
+            </div>
           </div>
-
         </div>
-
       </div>
-            {/* CHATBOTS */}
-      <div className="
-        rounded-[30px]
-        border
-        border-white/[0.08]
-        bg-gradient-to-br
-        from-white/[0.05]
-        to-white/[0.02]
-        p-6
-        shadow-[0_10px_40px_rgba(0,0,0,0.25)]
-      ">
 
-        <div className="flex items-center justify-between mb-6">
+      <div className="grid gap-4 md:grid-cols-3">
+        {statCards.map((card, index) => {
+          const Icon = card.icon;
+          return (
+            <div key={index} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+                <Icon size={18} />
+              </div>
+              <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-900">{card.value}</h2>
+              <p className="mt-1 text-sm text-slate-600">{card.title}</p>
+            </div>
+          );
+        })}
+      </div>
 
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-
-            <h2 className="text-2xl font-bold mb-1">
-
-              Your Chatbots
-
-            </h2>
-
-            <p className="text-sm text-gray-400">
-
-              Manage all your AI assistants here.
-
-            </p>
-
+            <h2 className="text-lg font-semibold tracking-tight text-slate-900">Your chatbots</h2>
+            <p className="mt-1 text-sm text-slate-600">Keep your assistants organized and ready to respond.</p>
           </div>
-
-          <div className="
-            px-4
-            py-2
-            rounded-xl
-            bg-white/[0.04]
-            border
-            border-white/[0.06]
-            text-sm
-            text-gray-300
-          ">
-
-            {stats.chatbots} Total
-
-          </div>
-
+          <div className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-medium text-slate-600">{stats.chatbots} total</div>
         </div>
 
         {chatbots.length === 0 ? (
-
-          <div className="
-            rounded-[26px]
-            border
-            border-dashed
-            border-white/[0.08]
-            p-10
-            text-center
-          ">
-
-            <div className="
-              w-16
-              h-16
-              rounded-3xl
-              bg-gradient-to-br
-              from-[#7f5af0]/20
-              to-blue-500/10
-              border
-              border-white/[0.06]
-              flex
-              items-center
-              justify-center
-              mx-auto
-              mb-5
-            ">
-
-              <Bot
-                size={28}
-                className="text-purple-300"
-              />
-
+          <div className="mt-6 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-10 text-center">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-50 text-violet-600">
+              <Bot size={24} />
             </div>
-
-            <h3 className="text-xl font-semibold mb-2">
-
-              No Chatbots Yet
-
-            </h3>
-
-            <p className="text-gray-400 text-sm mb-6">
-
-              Create your first AI chatbot to start collecting leads and automating replies.
-
-            </p>
-
-            <Link
-              to="/app/builder"
-              className="
-                inline-flex
-                items-center
-                gap-2
-                px-5
-                h-12
-                rounded-2xl
-                bg-gradient-to-r
-                from-[#7f5af0]
-                to-blue-500
-                font-semibold
-                shadow-[0_10px_40px_rgba(127,90,240,0.35)]
-              "
-            >
-
-              <Plus size={16} />
-
-              Create Chatbot
-
+            <h3 className="mt-4 text-lg font-semibold text-slate-900">No chatbots yet</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-600">Create your first AI assistant to start capturing leads and booking appointments.</p>
+            <Link to="/app/builder" className="mt-5 inline-flex items-center justify-center rounded-xl bg-violet-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-violet-700">
+              <Plus size={16} className="mr-2" />
+              Create chatbot
             </Link>
-
           </div>
-
         ) : (
-
-          <div className="space-y-3">
-
-            {chatbots.map(
-              (bot) => (
-
-                <div
-                  key={bot.id}
-                  className="
-                    flex
-                    items-center
-                    justify-between
-                    rounded-[24px]
-                    border
-                    border-white/[0.08]
-                    bg-white/[0.03]
-                    p-4
-                  "
-                >
-
-                  <div className="flex items-center gap-4">
-
-                    <div className="
-                      w-12
-                      h-12
-                      rounded-2xl
-                      bg-gradient-to-br
-                      from-[#7f5af0]/20
-                      to-blue-500/10
-                      border
-                      border-white/[0.06]
-                      flex
-                      items-center
-                      justify-center
-                    ">
-
-                      <MessageSquare
-                        size={18}
-                        className="text-purple-300"
-                      />
-
-                    </div>
-
-                    <div>
-
-                      <h3 className="font-semibold">
-
-                        {bot.bot_name ||
-                          "AI Assistant"}
-
-                      </h3>
-
-                      <p className="text-sm text-gray-400">
-
-                        Created on{" "}
-                        {new Date(
-                          bot.created_at
-                        ).toLocaleDateString()}
-
-                      </p>
-
-                    </div>
-
+          <div className="mt-6 space-y-3">
+            {chatbots.map((bot) => (
+              <div key={bot.id} className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+                    <MessageSquare size={18} />
                   </div>
-
-                  <button
-                    disabled={
-                      stats.expired
-                    }
-                    onClick={() =>
-                      deleteChatbot(
-                        bot.id
-                      )
-                    }
-                    className={`
-                      w-11
-                      h-11
-                      rounded-2xl
-                      flex
-                      items-center
-                      justify-center
-                      transition-all
-                      ${
-                        stats.expired
-                          ? "bg-white/5 text-gray-500 cursor-not-allowed"
-                          : "bg-red-500/10 hover:bg-red-500/20"
-                      }
-                    `}
-                  >
-
-                    {stats.expired ? (
-                      <Lock
-                        size={16}
-                      />
-                    ) : (
-                      <Trash2
-                        size={16}
-                        className="text-red-400"
-                      />
-                    )}
-
-                  </button>
-
+                  <div>
+                    <h3 className="font-medium text-slate-900">{bot.bot_name || "AI Assistant"}</h3>
+                    <p className="text-sm text-slate-600">Created on {new Date(bot.created_at).toLocaleDateString()}</p>
+                  </div>
                 </div>
 
-              )
-            )}
-
+                <button
+                  disabled={stats.expired}
+                  onClick={() => deleteChatbot(bot.id)}
+                  className={`inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-medium transition ${stats.expired ? "cursor-not-allowed bg-slate-100 text-slate-400" : "bg-white text-red-600 hover:bg-red-50"}`}
+                >
+                  {stats.expired ? <Lock size={16} /> : <Trash2 size={16} />}
+                </button>
+              </div>
+            ))}
           </div>
-
         )}
-
       </div>
-
-   </div>
+    </div>
   );
 }
 
-/*
-========================================
-ACTION CARD
-========================================
-*/
-function ActionCard({
-  to,
-  icon: Icon,
-  title,
-  desc,
-  disabled,
-}) {
-
+function ActionCard({ to, icon: Icon, title, desc, disabled }) {
   if (disabled) {
-
     return (
-
-      <div className="
-        flex
-        items-center
-        justify-between
-        rounded-2xl
-        border
-        border-white/[0.06]
-        bg-white/[0.03]
-        p-4
-        opacity-60
-        cursor-not-allowed
-      ">
-
-        <div className="flex items-center gap-4">
-
-          <div className="
-            w-11
-            h-11
-            rounded-2xl
-            bg-white/[0.04]
-            border
-            border-white/[0.06]
-            flex
-            items-center
-            justify-center
-          ">
-
-            <Lock size={17} />
-
+      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-4 opacity-70">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+            <Lock size={16} />
           </div>
-
           <div>
-
-            <h3 className="font-semibold text-sm">
-
-              {title}
-
-            </h3>
-
-            <p className="text-xs text-gray-400">
-
-              Subscription expired
-
-            </p>
-
+            <h3 className="text-sm font-medium text-slate-900">{title}</h3>
+            <p className="text-sm text-slate-600">Subscription expired</p>
           </div>
-
         </div>
-
       </div>
-
     );
   }
 
   return (
-
-    <Link
-      to={to}
-      className="
-        group
-        flex
-        items-center
-        justify-between
-        rounded-2xl
-        border
-        border-white/[0.08]
-        bg-white/[0.03]
-        p-4
-        hover:bg-white/[0.05]
-        transition-all
-      "
-    >
-
-      <div className="flex items-center gap-4">
-
-        <div className="
-          w-11
-          h-11
-          rounded-2xl
-          bg-gradient-to-br
-          from-[#7f5af0]/20
-          to-blue-500/10
-          border
-          border-white/[0.06]
-          flex
-          items-center
-          justify-center
-        ">
-
-          <Icon
-            size={18}
-            className="text-purple-300"
-          />
-
+    <Link to={to} className="group flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4 transition hover:border-violet-200 hover:bg-slate-50">
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+          <Icon size={16} />
         </div>
-
         <div>
-
-          <h3 className="font-semibold text-sm">
-
-            {title}
-
-          </h3>
-
-          <p className="text-xs text-gray-400">
-
-            {desc}
-
-          </p>
-
+          <h3 className="text-sm font-medium text-slate-900">{title}</h3>
+          <p className="text-sm text-slate-600">{desc}</p>
         </div>
-
       </div>
-
-      <ArrowRight
-        size={17}
-        className="group-hover:translate-x-1 transition-all text-gray-400"
-      />
-
+      <ArrowRight size={16} className="text-slate-400 transition group-hover:translate-x-0.5" />
     </Link>
-
   );
 }
 
-/*
-========================================
-SIMPLE INFO CARD
-========================================
-*/
-function SimpleInfoCard({
-  label,
-  value,
-  icon: Icon,
-}) {
-
+function SimpleInfoCard({ label, value, icon: Icon }) {
   return (
-
-    <div className="
-      rounded-2xl
-      border
-      border-white/[0.08]
-      bg-white/[0.03]
-      p-4
-    ">
-
-      <div className="flex items-center justify-between mb-3">
-
-        <p className="text-xs text-gray-400">
-
-          {label}
-
-        </p>
-
-        <Icon
-          size={15}
-          className="text-purple-300"
-        />
-
+    <div className="rounded-xl border border-slate-200 bg-white p-3">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-slate-600">{label}</p>
+        <Icon size={15} className="text-violet-600" />
       </div>
-
-      <h3 className="text-2xl font-bold">
-
-        {value}
-
-      </h3>
-
+      <h3 className="mt-3 text-xl font-semibold text-slate-900">{value}</h3>
     </div>
-
   );
 }

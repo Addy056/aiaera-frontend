@@ -1,12 +1,30 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Menu,
   X,
-  Sparkles,
   ArrowRight,
-  ChevronRight,
+  Sparkles,
 } from "lucide-react";
+
+const navigation = [
+  {
+    label: "Features",
+    id: "features",
+  },
+  {
+    label: "Integrations",
+    id: "integrations",
+  },
+  {
+    label: "Pricing",
+    id: "pricing",
+  },
+  {
+    label: "FAQ",
+    id: "faq",
+  },
+];
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -16,12 +34,13 @@ const Navbar = () => {
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
+      setScrolled(window.scrollY > 15);
     };
 
     window.addEventListener("scroll", handleScroll);
 
-    return () => window.removeEventListener("scroll", handleScroll);
+    return () =>
+      window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const scrollToSection = (id) => {
@@ -38,59 +57,49 @@ const Navbar = () => {
 
   return (
     <>
-      <nav
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-          scrolled
-            ? "py-4"
-            : "py-6"
+      <header
+        className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
+          scrolled ? "py-3" : "py-5"
         }`}
       >
-        {/* Aurora Glow */}
-
-        <div className="absolute inset-0 pointer-events-none">
-
-          <div className="absolute left-1/2 top-0 h-40 w-[650px] -translate-x-1/2 rounded-full bg-violet-600/10 blur-[140px]" />
-
-        </div>
-
-        <div className="relative mx-auto max-w-7xl px-6 md:px-10">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
 
           <div
-            className={`flex items-center justify-between rounded-[24px] border transition-all duration-500 ${
+            className={`flex items-center justify-between rounded-2xl transition-all duration-300 ${
               scrolled
-                ? "border-white/10 bg-black/45 backdrop-blur-3xl shadow-[0_20px_70px_rgba(0,0,0,0.45)] px-7 py-4"
-                : "border-transparent bg-transparent px-0 py-0"
+                ? "border border-slate-200 bg-white/90 px-6 py-4 shadow-xl backdrop-blur-xl"
+                : "bg-transparent px-0 py-0"
             }`}
           >
 
             {/* Logo */}
 
-            <div
+            <button
               onClick={() => navigate("/")}
-              className="group flex cursor-pointer items-center gap-4"
+              className="group flex items-center gap-4"
             >
 
-              <div className="relative">
-
-                <div className="absolute inset-0 rounded-2xl bg-violet-500/30 blur-xl opacity-80 group-hover:scale-125 transition-all duration-500" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600 to-violet-500 shadow-lg shadow-violet-200">
 
                 <img
                   src="/favicon.png"
                   alt="AIAERA"
-                  className="relative h-12 w-12 rounded-2xl shadow-[0_20px_45px_rgba(99,102,241,0.35)] transition-all duration-300 group-hover:rotate-3 group-hover:scale-105"
+                  className="h-7 w-7 object-contain"
                 />
 
               </div>
 
-              <div>
+              <div className="text-left">
 
-                <h1 className="bg-gradient-to-r from-white via-white to-violet-200 bg-clip-text text-2xl font-black tracking-wide text-transparent">
+                <h1 className="text-2xl font-black tracking-tight text-slate-900">
+
                   AIAERA
+
                 </h1>
 
-                <div className="mt-1 flex items-center gap-1 text-xs text-violet-200">
+                <div className="flex items-center gap-1 text-xs font-medium text-violet-600">
 
-                  <Sparkles size={11} />
+                  <Sparkles size={12} />
 
                   AI Business Platform
 
@@ -98,61 +107,52 @@ const Navbar = () => {
 
               </div>
 
-            </div>
+            </button>
 
-            {/* Desktop Menu */}
+            {/* Desktop Navigation */}
 
-            <div className="hidden lg:flex items-center gap-10">
+            <nav className="hidden items-center gap-10 lg:flex">
 
-              {[
-                {
-                  label: "Features",
-                  id: "features",
-                },
-                {
-                  label: "Pricing",
-                  id: "pricing",
-                },
-                {
-                  label: "Contact",
-                  id: "footer",
-                },
-              ].map((item) => (
+              {navigation.map((item) => (
+
                 <button
-                  key={item.label}
+                  key={item.id}
                   onClick={() => scrollToSection(item.id)}
-                  className="group relative text-[15px] font-medium text-white/70 transition-all hover:text-white"
+                  className="relative text-[15px] font-semibold text-slate-600 transition hover:text-violet-600"
                 >
 
                   {item.label}
 
-                  <span className="absolute -bottom-2 left-0 h-[2px] w-0 rounded-full bg-gradient-to-r from-violet-500 to-blue-500 transition-all duration-300 group-hover:w-full" />
+                  <span className="absolute -bottom-2 left-0 h-0.5 w-0 rounded-full bg-violet-600 transition-all duration-300 hover:w-full group-hover:w-full" />
 
                 </button>
+
               ))}
 
-            </div>
+            </nav>
 
-            {/* Desktop Buttons */}
+            {/* Desktop Actions */}
 
-            <div className="hidden lg:flex items-center gap-4">
+            <div className="hidden items-center gap-4 lg:flex">
 
               <button
                 onClick={() => navigate("/login")}
-                className="rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-3 font-medium text-white/80 backdrop-blur-xl transition-all duration-300 hover:border-violet-500/30 hover:bg-white/[0.08] hover:text-white"
+                className="rounded-xl border border-slate-200 bg-white px-6 py-3 font-semibold text-slate-700 transition hover:border-violet-300 hover:text-violet-600"
               >
+
                 Login
+
               </button>
 
               <button
                 onClick={() => navigate("/signup")}
-                className="group inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-blue-600 px-7 py-3 font-semibold shadow-[0_20px_45px_rgba(99,102,241,0.35)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_25px_60px_rgba(99,102,241,0.5)]"
+                className="group flex items-center gap-2 rounded-xl bg-violet-600 px-6 py-3 font-semibold text-white shadow-lg shadow-violet-200 transition-all duration-300 hover:-translate-y-0.5 hover:bg-violet-700"
               >
 
-                Start Free
+                Start Free Trial
 
                 <ArrowRight
-                  size={17}
+                  size={18}
                   className="transition-transform duration-300 group-hover:translate-x-1"
                 />
 
@@ -160,11 +160,11 @@ const Navbar = () => {
 
             </div>
 
-            {/* Mobile Button */}
+            {/* Mobile Menu Button */}
 
             <button
               onClick={() => setMobileMenu(!mobileMenu)}
-              className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05] backdrop-blur-xl lg:hidden"
+              className="flex h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-white shadow-sm lg:hidden"
             >
 
               {mobileMenu ? (
@@ -179,31 +179,25 @@ const Navbar = () => {
 
         </div>
 
-      </nav>
-           {/* Mobile Menu */}
+      </header>
+      {/* Mobile Menu */}
 
       {mobileMenu && (
-        <div className="fixed left-4 right-4 top-[88px] z-40 lg:hidden">
+        <div className="fixed inset-x-4 top-24 z-40 lg:hidden">
 
-          <div className="overflow-hidden rounded-[32px] border border-white/10 bg-black/70 backdrop-blur-3xl shadow-[0_30px_80px_rgba(0,0,0,0.45)]">
+          <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
 
-            {/* Glow */}
+            <div className="border-b border-slate-100 px-6 py-5">
 
-            <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 via-transparent to-blue-500/10" />
-
-            <div className="relative z-10 p-7">
-
-              {/* Header */}
-
-              <div className="mb-6 flex items-center justify-between">
+              <div className="flex items-center justify-between">
 
                 <div>
 
-                  <h3 className="text-lg font-bold">
+                  <h3 className="text-lg font-bold text-slate-900">
                     Navigation
                   </h3>
 
-                  <p className="mt-1 text-sm text-white/50">
+                  <p className="mt-1 text-sm text-slate-500">
                     Explore AIAERA
                   </p>
 
@@ -211,111 +205,81 @@ const Navbar = () => {
 
                 <button
                   onClick={() => setMobileMenu(false)}
-                  className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.05]"
+                  className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 transition hover:bg-slate-50"
                 >
                   <X size={18} />
                 </button>
 
               </div>
 
-              {/* Navigation */}
+            </div>
 
-              <div className="space-y-3">
+            <div className="space-y-2 p-6">
 
-                {[
-                  {
-                    label: "Features",
-                    id: "features",
-                  },
-                  {
-                    label: "Pricing",
-                    id: "pricing",
-                  },
-                  {
-                    label: "Contact",
-                    id: "footer",
-                  },
-                ].map((item) => (
-                  <button
-                    key={item.label}
-                    onClick={() => scrollToSection(item.id)}
-                    className="group flex w-full items-center justify-between rounded-2xl border border-white/5 bg-white/[0.04] px-5 py-4 text-left transition-all duration-300 hover:border-violet-500/30 hover:bg-white/[0.07]"
-                  >
-
-                    <span className="font-medium text-white/80 group-hover:text-white">
-                      {item.label}
-                    </span>
-
-                    <ChevronRight
-                      size={18}
-                      className="text-white/40 transition-transform duration-300 group-hover:translate-x-1 group-hover:text-violet-300"
-                    />
-
-                  </button>
-                ))}
-
-              </div>
-
-              {/* Divider */}
-
-              <div className="my-7 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-
-              {/* CTA */}
-
-              <div className="space-y-4">
+              {navigation.map((item) => (
 
                 <button
-                  onClick={() => {
-                    navigate("/login");
-                    setMobileMenu(false);
-                  }}
-                  className="w-full rounded-2xl border border-white/10 bg-white/[0.05] py-4 font-medium transition-all duration-300 hover:bg-white/[0.08]"
-                >
-                  Login
-                </button>
-
-                <button
-                  onClick={() => {
-                    navigate("/signup");
-                    setMobileMenu(false);
-                  }}
-                  className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-blue-600 py-4 font-semibold shadow-[0_15px_45px_rgba(99,102,241,0.4)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_60px_rgba(99,102,241,0.5)]"
+                  key={item.id}
+                  onClick={() => scrollToSection(item.id)}
+                  className="flex w-full items-center justify-between rounded-2xl px-5 py-4 text-left font-semibold text-slate-700 transition-all hover:bg-violet-50 hover:text-violet-600"
                 >
 
-                  Start Free
+                  {item.label}
 
-                  <ArrowRight
-                    size={18}
-                    className="transition-transform duration-300 group-hover:translate-x-1"
-                  />
+                  <ArrowRight size={18} />
 
                 </button>
 
-              </div>
+              ))}
 
-              {/* Bottom Trust */}
+            </div>
 
-              <div className="mt-8 rounded-2xl border border-violet-500/20 bg-gradient-to-r from-violet-500/10 to-blue-500/10 p-4">
+            <div className="border-t border-slate-100 p-6">
+
+              <button
+                onClick={() => {
+                  navigate("/login");
+                  setMobileMenu(false);
+                }}
+                className="mb-3 w-full rounded-xl border border-slate-200 bg-white py-3 font-semibold text-slate-700 transition hover:border-violet-300 hover:text-violet-600"
+              >
+
+                Login
+
+              </button>
+
+              <button
+                onClick={() => {
+                  navigate("/signup");
+                  setMobileMenu(false);
+                }}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 py-3 font-semibold text-white shadow-lg shadow-violet-200 transition hover:bg-violet-700"
+              >
+
+                Start Free Trial
+
+                <ArrowRight size={18} />
+
+              </button>
+
+              <div className="mt-6 rounded-2xl bg-violet-50 p-4">
 
                 <div className="flex items-center gap-3">
 
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/20">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-600 text-white">
 
-                    <Sparkles
-                      size={18}
-                      className="text-violet-300"
-                    />
+                    <Sparkles size={18} />
 
                   </div>
 
                   <div>
 
-                    <p className="font-semibold">
-                      Start Free Today
+                    <p className="font-semibold text-slate-900">
+                      Build Your AI Employee
                     </p>
 
-                    <p className="text-sm text-white/55">
-                      No credit card required.
+                    <p className="text-sm text-slate-500">
+                      Start free. No credit card required.
                     </p>
 
                   </div>
@@ -330,6 +294,7 @@ const Navbar = () => {
 
         </div>
       )}
+
     </>
   );
 };

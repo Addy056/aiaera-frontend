@@ -297,759 +297,205 @@ const completedCount =
   }
 
   return (
-
-    <div className="min-h-screen text-white space-y-6">
-
-      {/* EXPIRED */}
+    <div className="space-y-6 text-slate-900">
       {isExpired && (
-
-        <div className="rounded-[28px] border border-red-500/20 bg-red-500/10 p-5 flex items-start gap-4">
-
-          <div className="w-12 h-12 rounded-2xl bg-red-500/20 flex items-center justify-center">
-
-            <AlertTriangle
-              size={20}
-              className="text-red-300"
-            />
-
+        <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-5">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-600">
+            <AlertTriangle size={18} />
           </div>
-
           <div>
-
-            <h3 className="text-lg font-semibold text-red-200 mb-1">
-
-              Subscription Expired
-
-            </h3>
-
-            <p className="text-sm text-red-100/80">
-
-              Your appointments are available in read-only mode.
-              Renew your subscription to reactivate automations.
-
-            </p>
-
+            <h3 className="text-base font-semibold text-red-700">Subscription Expired</h3>
+            <p className="mt-1 text-sm leading-6 text-red-600/80">Your appointments are available in read-only mode until your subscription is renewed.</p>
           </div>
-
         </div>
-
       )}
 
-      {/* HERO */}
-      <div className="relative overflow-hidden rounded-[32px] border border-white/10 bg-gradient-to-br from-[#7f5af0]/20 via-[#111827] to-[#050816] p-8">
-
-        <div className="absolute top-[-120px] right-[-120px] w-[260px] h-[260px] bg-purple-500/20 blur-[120px] rounded-full"></div>
-
-        <div className="relative z-10 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-6">
-
-          {/* LEFT */}
-          <div>
-
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-5">
-
-              <Sparkles
-                size={14}
-                className="text-purple-300"
-              />
-
-              <span className="text-xs text-gray-300">
-
-                AI Appointment Management
-
-              </span>
-
-            </div>
-
-            <h1 className="text-5xl font-black tracking-[-2px] mb-3">
-
-              Appointments
-
-            </h1>
-
-            <p className="text-gray-400 max-w-2xl leading-relaxed">
-
-              Manage AI-booked meetings and customer appointments.
-
-            </p>
-
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-2xl">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-violet-600">Appointment management</p>
+            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">Appointments</h1>
+            <p className="mt-2 text-sm leading-6 text-slate-600">Manage AI-booked meetings and customer appointments from one clean workspace.</p>
           </div>
-
-          {/* RIGHT */}
-          <div className="flex items-center gap-4 flex-wrap">
-
-            {/* PLAN */}
-            <div className="h-[56px] px-5 rounded-2xl border border-purple-500/20 bg-purple-500/10 flex items-center gap-3">
-
-              <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
-
-                <Crown
-                  size={16}
-                  className="text-yellow-300"
-                />
-
-              </div>
-
-              <div>
-
-                <p className="text-[10px] text-gray-400 uppercase">
-
-                  Current Plan
-
-                </p>
-
-                <h3 className="text-sm font-semibold uppercase">
-
-                  {subscription?.plan ||
-                    "trial"}
-
-                </h3>
-
-              </div>
-
-            </div>
-
-            {/* COUNT */}
-            <div className="h-[56px] px-5 rounded-2xl border border-white/10 bg-white/[0.03] flex items-center gap-3">
-
-              <div className="w-10 h-10 rounded-xl bg-white/[0.05] flex items-center justify-center">
-
-                <Calendar
-                  size={16}
-                  className="text-purple-300"
-                />
-
-              </div>
-
-              <div>
-
-                <p className="text-[10px] text-gray-400 uppercase">
-
-                  Total
-
-                </p>
-
-                <h3 className="text-sm font-semibold">
-
-                  {
-                    appointments.length
-                  } Appointments
-
-                </h3>
-
-              </div>
-
-            </div>
-
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">{subscription?.plan || "trial"}</div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">{appointments.length} total</div>
           </div>
-
         </div>
-
       </div>
 
-      {/* STATS */}
-     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-5">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <StatCard icon={<Calendar size={18} />} title="Total" value={appointments.length} />
+        <StatCard icon={<Clock3 size={18} />} title="Pending" value={pendingCount} />
+        <StatCard icon={<Calendar size={18} />} title="Accepted" value={acceptedCount} />
+        <StatCard icon={<Users size={18} />} title="Rejected" value={rejectedCount} />
+        <StatCard icon={<Video size={18} />} title="Completed" value={completedCount} />
+      </div>
 
-  <StatCard
-    icon={<Calendar size={20} />}
-    title="Total"
-    value={appointments.length}
-    color="from-purple-500/20 to-purple-500/5"
-  />
-
-  <StatCard
-    icon={<Clock3 size={20} />}
-    title="Pending"
-    value={pendingCount}
-    color="from-yellow-500/20 to-yellow-500/5"
-  />
-
-  <StatCard
-    icon={<Calendar size={20} />}
-    title="Accepted"
-    value={acceptedCount}
-    color="from-green-500/20 to-green-500/5"
-  />
-
-  <StatCard
-    icon={<Users size={20} />}
-    title="Rejected"
-    value={rejectedCount}
-    color="from-red-500/20 to-red-500/5"
-  />
-
-  <StatCard
-    icon={<Video size={20} />}
-    title="Completed"
-    value={completedCount}
-    color="from-blue-500/20 to-blue-500/5"
-  />
-
-</div>
-
-      {/* SEARCH */}
-      <div className="rounded-[28px] border border-white/10 bg-white/[0.03] backdrop-blur-xl p-5">
-
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
         <div className="relative">
-
-          <Search
-            size={18}
-            className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500"
-          />
-
+          <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             placeholder="Search appointments..."
             value={search}
-            onChange={(e) =>
-              setSearch(
-                e.target.value
-              )
-            }
-            className="w-full h-[60px] rounded-2xl bg-[#0B1120] border border-white/10 pl-14 pr-5 text-white placeholder:text-gray-500 outline-none focus:border-purple-500 transition-all"
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-[50px] w-full rounded-xl border border-slate-200 bg-slate-50 pl-14 pr-5 text-sm text-slate-700 outline-none transition focus:border-violet-400"
           />
-
         </div>
-
       </div>
 
-      {/* TABLE */}
-      <div className="rounded-[32px] border border-white/10 bg-white/[0.03] backdrop-blur-xl overflow-hidden">
-
-        {/* HEADER */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-white/10">
-
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5">
           <div>
-
-            <h2 className="text-xl font-bold mb-1">
-
-              Scheduled Meetings
-
-            </h2>
-
-            <p className="text-sm text-gray-400">
-
-              Review customer appointments.
-
-            </p>
-
+            <h2 className="text-xl font-semibold tracking-tight text-slate-900">Scheduled meetings</h2>
+            <p className="mt-1 text-sm text-slate-600">Review customer appointments and move them through their lifecycle.</p>
           </div>
-
-          <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center">
-
-            <Video
-              size={18}
-              className="text-purple-300"
-            />
-
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+            <Video size={18} />
           </div>
-
         </div>
 
-        {/* TABLE */}
-<div className="overflow-x-auto">
-
-  <table className="w-full">
-
-    <thead>
-
-      <tr className="border-b border-white/10 bg-white/[0.02]">
-
-        <th className="text-left px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-400">
-
-          Customer
-
-        </th>
-
-        <th className="text-left px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-400">
-
-          Meeting
-
-        </th>
-
-        <th className="text-left px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-400">
-
-          Status
-
-        </th>
-
-        <th className="text-left px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-400">
-
-          Date
-
-        </th>
-
-        <th className="text-right px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-400">
-
-          Actions
-
-        </th>
-
-      </tr>
-
-    </thead>
-
-
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-slate-200 bg-slate-50">
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Customer</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Meeting</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Status</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Date</th>
+                <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Actions</th>
+              </tr>
+            </thead>
 
             <tbody>
-
               {filteredAppointments.length === 0 ? (
-
                 <tr>
-
-                 <td
-  colSpan="5"
-  className="py-20 text-center"
->
-
+                  <td colSpan="5" className="px-6 py-20 text-center">
                     <div className="flex flex-col items-center">
-
-                      <div className="w-16 h-16 rounded-3xl bg-white/5 flex items-center justify-center mb-5">
-
-                        <Calendar
-                          size={26}
-                          className="text-gray-500"
-                        />
-
+                      <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
+                        <Calendar size={24} />
                       </div>
-
-                      <h3 className="text-lg font-semibold mb-2">
-
-                        No Appointments Yet
-
-                      </h3>
-
-                      <p className="text-gray-400">
-
-                        AI-booked meetings will appear here.
-
-                      </p>
-
+                      <h3 className="text-lg font-semibold text-slate-900">No appointments yet</h3>
+                      <p className="mt-2 text-sm text-slate-600">AI-booked meetings will appear here as soon as they are created.</p>
                     </div>
-
                   </td>
-
                 </tr>
-
               ) : (
-
-                filteredAppointments.map(
-                  (item) => (
-
-                    <tr
-                      key={item.id}
-                      className="border-b border-white/5 hover:bg-white/[0.03] transition-all"
-                    >
-
-                      {/* CUSTOMER */}
-                      <td className="px-6 py-5">
-
-                        <div className="flex items-center gap-4">
-
-                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#7f5af0]/30 to-blue-500/10 border border-white/10 flex items-center justify-center">
-
-                            <Users
-                              size={18}
-                              className="text-purple-300"
-                            />
-
-                          </div>
-
-                          <div>
-
-                            <h3 className="font-semibold text-white">
-
-                              {item.customer_name ||
-                                "Unknown"}
-
-                            </h3>
-
-                            <p className="text-sm text-gray-400">
-
-                              {item.customer_email ||
-                                "No Email"}
-
-                            </p>
-
-                          </div>
-
+                filteredAppointments.map((item) => (
+                  <tr key={item.id} className="border-b border-slate-100 transition hover:bg-slate-50">
+                    <td className="px-6 py-5">
+                      <div className="flex items-center gap-4">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-50 text-violet-600">
+                          <Users size={18} />
                         </div>
-
-                      </td>
-
-                      {/* LINK */}
-                      <td className="px-6 py-5">
-
-                        {item.meeting_link ? (
-
-                          <a
-                            href={
-                              item.meeting_link
-                            }
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 text-sm transition-all"
-                          >
-
-                            Open Meeting
-
-                            <ExternalLink
-                              size={14}
-                            />
-
-                          </a>
-
-                        ) : (
-
-                          <span className="text-sm text-gray-500">
-
-                            No Link
-
-                          </span>
-
-                        )}
-
-                      </td>
-                      <td className="px-6 py-5">
-
-  <span
-    className={`
-      px-3
-      py-1
-      rounded-full
-      text-xs
-      font-semibold
-
-      ${
-        item.status === "accepted"
-          ? "bg-green-500/20 text-green-300"
-          : item.status === "rejected"
-          ? "bg-red-500/20 text-red-300"
-          : item.status === "completed"
-          ? "bg-blue-500/20 text-blue-300"
-          : "bg-yellow-500/20 text-yellow-300"
-      }
-    `}
-  >
-    {item.status || "pending"}
-  </span>
-
-</td>
-                      {/* DATE */}
-                      <td className="px-6 py-5">
-
-                        <div className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.03] border border-white/5">
-
-                          <Calendar
-                            size={14}
-                            className="text-purple-300"
-                          />
-
-                          <span className="text-sm text-gray-300">
-
-                            {new Date(
-                              item.created_at
-                            ).toLocaleDateString()}
-
-                          </span>
-
+                        <div>
+                          <h3 className="font-semibold text-slate-900">{item.customer_name || "Unknown"}</h3>
+                          <p className="text-sm text-slate-600">{item.customer_email || "No Email"}</p>
                         </div>
+                      </div>
+                    </td>
 
-                      </td>
+                    <td className="px-6 py-5">
+                      {item.meeting_link ? (
+                        <a href={item.meeting_link} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-4 py-2 text-sm font-medium text-violet-700 transition hover:bg-violet-100">
+                          Open meeting
+                          <ExternalLink size={14} />
+                        </a>
+                      ) : (
+                        <span className="text-sm text-slate-500">No link</span>
+                      )}
+                    </td>
 
-                      {/* ACTION */}
-                      <td className="px-6 py-5">
+                    <td className="px-6 py-5">
+                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${item.status === "accepted" ? "bg-emerald-50 text-emerald-700" : item.status === "rejected" ? "bg-rose-50 text-rose-700" : item.status === "completed" ? "bg-sky-50 text-sky-700" : "bg-amber-50 text-amber-700"}`}>
+                        {item.status || "pending"}
+                      </span>
+                    </td>
 
-                        <div className="flex items-center justify-end gap-3">
+                    <td className="px-6 py-5">
+                      <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+                        <Calendar size={14} className="text-violet-600" />
+                        <span>{new Date(item.created_at).toLocaleDateString()}</span>
+                      </div>
+                    </td>
 
-                          <button
-                            onClick={() =>
-                              setSelectedAppointment(
-                                item
-                              )
-                            }
-                            className="w-11 h-11 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/5 flex items-center justify-center transition-all"
-                          >
-
-                            <Eye size={16} />
-
-                          </button>
-
-                          <div className="flex gap-2">
-
-  {item.status === "pending" &&
-    !isExpired && (
-
-      <>
-        <button
-          onClick={() =>
-            updateStatus(
-              item.id,
-              "accepted"
-            )
-          }
-          className="px-3 py-2 rounded-xl bg-green-500/20 text-green-300"
-        >
-          Accept
-        </button>
-
-        <button
-          onClick={() =>
-            updateStatus(
-              item.id,
-              "rejected"
-            )
-          }
-          className="px-3 py-2 rounded-xl bg-red-500/20 text-red-300"
-        >
-          Reject
-        </button>
-      </>
-    )}
-
-  {item.status === "accepted" &&
-    !isExpired && (
-
-      <button
-        onClick={() =>
-          updateStatus(
-            item.id,
-            "completed"
-          )
-        }
-        className="px-3 py-2 rounded-xl bg-blue-500/20 text-blue-300"
-      >
-        Complete
-      </button>
-    )}
-
-</div>
-
+                    <td className="px-6 py-5">
+                      <div className="flex items-center justify-end gap-3">
+                        <button onClick={() => setSelectedAppointment(item)} className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50">
+                          <Eye size={16} />
+                        </button>
+                        <div className="flex gap-2">
+                          {item.status === "pending" && !isExpired && (
+                            <>
+                              <button onClick={() => updateStatus(item.id, "accepted")} className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700 transition hover:bg-emerald-100">Accept</button>
+                              <button onClick={() => updateStatus(item.id, "rejected")} className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700 transition hover:bg-rose-100">Reject</button>
+                            </>
+                          )}
+                          {item.status === "accepted" && !isExpired && (
+                            <button onClick={() => updateStatus(item.id, "completed")} className="rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-medium text-sky-700 transition hover:bg-sky-100">Complete</button>
+                          )}
                         </div>
-
-                      </td>
-
-                    </tr>
-
-                  )
-                )
-
+                      </div>
+                    </td>
+                  </tr>
+                ))
               )}
-
             </tbody>
-
           </table>
-
         </div>
-
       </div>
 
-      {/* MODAL */}
       {selectedAppointment && (
-
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
-
-          <div className="w-full max-w-2xl rounded-[32px] border border-white/10 bg-[#0B1120] p-8">
-
-            <div className="flex items-center justify-between mb-8">
-
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 p-4">
+          <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-8 shadow-xl">
+            <div className="mb-8 flex items-center justify-between">
               <div>
-
-                <h2 className="text-2xl font-bold mb-2">
-
-                  Appointment Details
-
-                </h2>
-
-                <p className="text-gray-400 text-sm">
-
-                  Meeting information
-
-                </p>
-
+                <h2 className="text-2xl font-semibold tracking-tight text-slate-900">Appointment details</h2>
+                <p className="mt-1 text-sm text-slate-600">Meeting information and contact details.</p>
               </div>
-
-              <button
-                onClick={() =>
-                  setSelectedAppointment(
-                    null
-                  )
-                }
-                className="w-12 h-12 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] flex items-center justify-center"
-              >
-
+              <button onClick={() => setSelectedAppointment(null)} className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-600 transition hover:bg-slate-100">
                 <X size={18} />
-
               </button>
-
             </div>
 
             <div className="space-y-5">
-
-              <DetailCard
-                title="Customer Name"
-                value={
-                  selectedAppointment.customer_name
-                }
-                icon={
-                  <Users
-                    size={16}
-                  />
-                }
-              />
-
-              <DetailCard
-                title="Customer Email"
-                value={
-                  selectedAppointment.customer_email
-                }
-                icon={
-                  <Users
-                    size={16}
-                  />
-                }
-              />
-              <DetailCard
-  title="Customer Phone"
-  value={
-    selectedAppointment.customer_phone
-  }
-  icon={
-    <Users size={16} />
-  }
-/>
-<DetailCard
-  title="Status"
-  value={
-    selectedAppointment.status
-  }
-  icon={
-    <Clock3 size={16} />
-  }
-/>
-              <DetailCard
-                title="Meeting Link"
-                value={
-                  selectedAppointment.meeting_link
-                }
-                icon={
-                  <Video
-                    size={16}
-                  />
-                }
-              />
-
-              <DetailCard
-                title="Created At"
-                value={new Date(
-                  selectedAppointment.created_at
-                ).toLocaleString()}
-                icon={
-                  <Calendar
-                    size={16}
-                  />
-                }
-              />
-
+              <DetailCard title="Customer Name" value={selectedAppointment.customer_name} icon={<Users size={16} />} />
+              <DetailCard title="Customer Email" value={selectedAppointment.customer_email} icon={<Users size={16} />} />
+              <DetailCard title="Customer Phone" value={selectedAppointment.customer_phone} icon={<Users size={16} />} />
+              <DetailCard title="Status" value={selectedAppointment.status} icon={<Clock3 size={16} />} />
+              <DetailCard title="Meeting Link" value={selectedAppointment.meeting_link} icon={<Video size={16} />} />
+              <DetailCard title="Created At" value={new Date(selectedAppointment.created_at).toLocaleString()} icon={<Calendar size={16} />} />
             </div>
-
           </div>
-
         </div>
-
       )}
-
     </div>
   );
 }
 
-/*
-========================================
-STAT CARD
-========================================
-*/
-function StatCard({
-  icon,
-  title,
-  value,
-  color,
-}) {
-
+function StatCard({ icon, title, value }) {
   return (
-
-    <div className={`
-      relative
-      overflow-hidden
-      rounded-[28px]
-      border
-      border-white/10
-      bg-gradient-to-br
-      ${color}
-      p-6
-    `}>
-
-      <div className="absolute top-[-50px] right-[-50px] w-[120px] h-[120px] bg-white/5 blur-[50px] rounded-full"></div>
-
-      <div className="relative z-10">
-
-        <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center mb-6">
-
-          {icon}
-
-        </div>
-
-        <h2 className="text-4xl font-black mb-2">
-
-          {value}
-
-        </h2>
-
-        <p className="text-gray-300">
-
-          {title}
-
-        </p>
-
-      </div>
-
-    </div>
-
-  );
-}
-
-/*
-========================================
-DETAIL CARD
-========================================
-*/
-function DetailCard({
-  title,
-  value,
-  icon,
-}) {
-
-  return (
-
-    <div>
-
-      <div className="flex items-center gap-2 mb-3 text-sm text-gray-400">
-
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
         {icon}
-
-        <span>
-
-          {title}
-
-        </span>
-
       </div>
-
-      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-white break-words">
-
-        {value || "N/A"}
-
-      </div>
-
+      <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-900">{value}</h2>
+      <p className="mt-1 text-sm text-slate-600">{title}</p>
     </div>
+  );
+}
 
+function DetailCard({ title, value, icon }) {
+  return (
+    <div>
+      <div className="mb-3 flex items-center gap-2 text-sm text-slate-500">
+        {icon}
+        <span>{title}</span>
+      </div>
+      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 break-words">
+        {value || "N/A"}
+      </div>
+    </div>
   );
 }

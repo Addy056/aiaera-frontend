@@ -446,163 +446,37 @@ export default function Leads() {
   }
 
   return (
-
-    <div className="min-h-screen text-white space-y-6">
-
-      {/* EXPIRED */}
-      {isExpired &&
-        !isAdmin && (
-
-          <div className="rounded-[28px] border border-red-500/20 bg-red-500/10 p-5 flex items-start gap-4">
-
-            <div className="w-12 h-12 rounded-2xl bg-red-500/20 flex items-center justify-center">
-
-              <AlertTriangle
-                size={20}
-                className="text-red-300"
-              />
-
-            </div>
-
-            <div>
-
-              <h3 className="text-lg font-semibold text-red-200 mb-1">
-
-                Subscription Expired
-
-              </h3>
-
-              <p className="text-sm text-red-100/80">
-
-                Leads are available in read-only mode.
-                Renew your subscription to export and manage leads.
-
-              </p>
-
-            </div>
-
+    <div className="space-y-6 text-slate-900">
+      {isExpired && !isAdmin && (
+        <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-5">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-600">
+            <AlertTriangle size={18} />
           </div>
-
-        )}
-
-      {/* HERO */}
-      <div className="relative overflow-hidden rounded-[32px] border border-white/10 bg-gradient-to-br from-[#7f5af0]/20 via-[#111827] to-[#050816] p-8">
-
-        <div className="absolute top-[-120px] right-[-120px] w-[260px] h-[260px] bg-purple-500/20 blur-[120px] rounded-full"></div>
-
-        <div className="relative z-10 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-6">
-
-          {/* LEFT */}
           <div>
-
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-5">
-
-              <Sparkles
-                size={14}
-                className="text-purple-300"
-              />
-
-              <span className="text-xs text-gray-300">
-
-                AI Lead Management
-
-              </span>
-
-            </div>
-
-            <h1 className="text-5xl font-black tracking-[-2px] mb-3">
-
-              Leads Dashboard
-
-            </h1>
-
-            <p className="text-gray-400 max-w-2xl leading-relaxed">
-
-              View, manage, and export customer leads collected
-              from your AI chatbots and automations.
-
-            </p>
-
+            <h3 className="text-base font-semibold text-red-700">Subscription Expired</h3>
+            <p className="mt-1 text-sm leading-6 text-red-600/80">Leads are available in read-only mode until your subscription is renewed.</p>
           </div>
-
-          {/* RIGHT */}
-          <div className="flex items-center gap-4 flex-wrap">
-
-            {/* PLAN */}
-            <div className="h-[56px] px-5 rounded-2xl border border-purple-500/20 bg-purple-500/10 flex items-center gap-3">
-
-              <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
-
-                <Crown
-                  size={16}
-                  className="text-yellow-300"
-                />
-
-              </div>
-
-              <div>
-
-                <p className="text-[10px] text-gray-400 uppercase">
-
-                  Current Plan
-
-                </p>
-
-                <h3 className="text-sm font-semibold uppercase">
-
-                  {subscription?.plan ||
-                    "trial"}
-
-                </h3>
-
-              </div>
-
-            </div>
-
-            {/* EXPORT */}
-            <button
-              onClick={exportCSV}
-              disabled={
-                isExpired &&
-                !isAdmin
-              }
-              className={`
-                h-[56px]
-                px-6
-                rounded-2xl
-                transition-all
-                flex
-                items-center
-                gap-3
-                font-medium
-                ${
-                  isExpired &&
-                  !isAdmin
-                    ? "bg-white/5 text-gray-500 cursor-not-allowed"
-                    : "bg-[#7f5af0] hover:opacity-90 shadow-[0_10px_40px_rgba(127,90,240,0.35)]"
-                }
-              `}
-            >
-
-              {isExpired &&
-              !isAdmin ? (
-                <Lock size={16} />
-              ) : (
-                <Download size={16} />
-              )}
-
-              Export CSV
-
-            </button>
-
-          </div>
-
         </div>
+      )}
 
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-2xl">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-violet-600">Lead management</p>
+            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">Leads dashboard</h1>
+            <p className="mt-2 text-sm leading-6 text-slate-600">Review, organize, and export customer leads collected by your automations.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">{subscription?.plan || "trial"}</div>
+            <button onClick={exportCSV} disabled={isExpired && !isAdmin} className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition ${isExpired && !isAdmin ? "cursor-not-allowed bg-slate-100 text-slate-400" : "bg-violet-600 text-white hover:bg-violet-700"}`}>
+              {isExpired && !isAdmin ? <Lock size={16} /> : <Download size={16} />}
+              Export CSV
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* STATS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <div className="grid gap-4 md:grid-cols-3">
 
         <ModernStatCard
           icon={
@@ -645,8 +519,7 @@ export default function Leads() {
 
       </div>
 
-      {/* SEARCH */}
-      <div className="rounded-[28px] border border-white/10 bg-white/[0.03] backdrop-blur-xl p-5">
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
 
         <div className="relative">
 
@@ -659,22 +532,17 @@ export default function Leads() {
             type="text"
             placeholder="Search leads by name, email, or message..."
             value={search}
-            onChange={(e) =>
-              setSearch(
-                e.target.value
-              )
-            }
-            className="w-full h-[60px] rounded-2xl bg-[#0B1120] border border-white/10 pl-14 pr-5 text-white placeholder:text-gray-500 outline-none focus:border-purple-500 transition-all"
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-[50px] w-full rounded-xl border border-slate-200 bg-slate-50 pl-14 pr-5 text-sm text-slate-700 outline-none transition focus:border-violet-400"
           />
 
         </div>
 
       </div>
 
-      {/* TABLE */}
-      <div className="rounded-[32px] border border-white/10 bg-white/[0.03] backdrop-blur-xl overflow-hidden">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
 
-        <div className="flex items-center justify-between px-6 py-5 border-b border-white/10">
+        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5">
 
           <div>
 
@@ -709,7 +577,7 @@ export default function Leads() {
 
             <thead>
 
-              <tr className="border-b border-white/10 bg-white/[0.02]">
+              <tr className="border-b border-slate-200 bg-slate-50">
 
                 <th className="text-left px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-400">
 
@@ -787,7 +655,7 @@ export default function Leads() {
 
                     <tr
                       key={lead.id}
-                      className="border-b border-white/5 hover:bg-white/[0.03] transition-all"
+                      className="border-b border-slate-100 transition hover:bg-slate-50"
                     >
 
                       {/* CUSTOMER */}
@@ -948,9 +816,9 @@ export default function Leads() {
       {/* MODAL */}
       {selectedLead && (
 
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 p-4">
 
-          <div className="w-full max-w-2xl rounded-[32px] border border-white/10 bg-[#0B1120] p-8">
+          <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-8 shadow-xl">
 
             <div className="flex items-center justify-between mb-8">
 
@@ -1073,28 +941,15 @@ function ModernStatCard({
 
   return (
 
-    <div className={`
-      relative
-      overflow-hidden
-      rounded-[28px]
-      border
-      border-white/10
-      bg-gradient-to-br
-      ${color}
-      p-6
-    `}>
-
-      <div className="absolute top-[-50px] right-[-50px] w-[120px] h-[120px] bg-white/5 blur-[50px] rounded-full"></div>
-
+    <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="relative z-10">
-
-        <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center mb-6">
+        <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
 
           {icon}
 
         </div>
 
-        <h2 className="text-4xl font-black mb-2">
+        <h2 className="mb-2 text-3xl font-semibold tracking-tight text-slate-900">
 
           {value}
 

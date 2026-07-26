@@ -1,0 +1,414 @@
+/*
+==================================================
+AIAERA V2 DESIGN SYSTEM
+==================================================
+*/
+
+/*
+==================================================
+DESIGN TOKENS
+==================================================
+*/
+
+:root {
+  /* Brand */
+  --primary: #7c3aed;
+  --primary-hover: #6d28d9;
+  --secondary: #8b5cf6;
+  --accent: #a855f7;
+
+  /* Backgrounds */
+  --background: #f4f7fb;
+  --surface: #ffffff;
+  --surface-secondary: #f8fafc;
+
+  /* Text */
+  --heading: #0f172a;
+  --body: #334155;
+  --muted: #64748b;
+
+  /* Borders */
+  --border: #cbd5e1;
+  --border-light: #e2e8f0;
+  --border-strong: #94a3b8;
+
+  /* Status */
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+
+  /* Radius */
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(15,23,42,.06);
+  --shadow-md: 0 8px 24px rgba(15,23,42,.08);
+  --shadow-lg: 0 18px 48px rgba(15,23,42,.10);
+
+  --transition: all .2s ease;
+}
+
+/*
+==================================================
+LAYOUT
+==================================================
+*/
+
+.page-container {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 32px;
+}
+
+.page-section {
+  margin-top: 32px;
+}
+
+/*
+==================================================
+CARDS
+==================================================
+*/
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.card-padding {
+  padding: 24px;
+}
+
+/*
+==================================================
+GLASS CARD
+==================================================
+*/
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+}
+
+/*
+==================================================
+BUTTONS
+==================================================
+*/
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  height: 52px;
+
+  padding: 0 22px;
+
+  border: none;
+
+  border-radius: 14px;
+
+  font-weight: 600;
+
+  transition: var(--transition);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  color: white;
+
+  background: linear-gradient(
+    135deg,
+    var(--primary),
+    var(--secondary)
+  );
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+
+  box-shadow: 0 15px 35px rgba(124, 58, 237, 0.25);
+}
+
+.btn-secondary {
+  background: white;
+  color: var(--heading);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+  background: #f8fafc;
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: white;
+}
+
+.btn-success {
+  background: var(--success);
+  color: white;
+}
+
+/*
+==================================================
+INPUTS
+==================================================
+*/
+
+.input {
+  width: 100%;
+  height: 54px;
+
+  padding: 0 18px;
+
+  background: white;
+
+  color: var(--heading);
+
+  border: 1px solid var(--border);
+
+  border-radius: 14px;
+
+  transition: var(--transition);
+}
+
+.input::placeholder {
+  color: var(--muted);
+}
+
+.input:focus {
+  outline: none;
+
+  border-color: var(--primary);
+
+  box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.12);
+}
+
+.textarea {
+  min-height: 120px;
+  resize: vertical;
+  padding: 16px;
+}
+
+/*
+==================================================
+BADGES
+==================================================
+*/
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 6px 14px;
+
+  border-radius: 999px;
+
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.badge-primary {
+  background: rgba(124, 58, 237, 0.12);
+  color: var(--primary);
+}
+
+.badge-success {
+  background: rgba(34, 197, 94, 0.12);
+  color: var(--success);
+}
+
+.badge-warning {
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--warning);
+}
+
+.badge-danger {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--danger);
+}
+
+/*
+==================================================
+HEADINGS
+==================================================
+*/
+
+.page-title {
+  color: var(--heading);
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.section-title {
+  color: var(--heading);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.text-muted {
+  color: var(--muted);
+}
+
+/*
+==================================================
+TABLE
+==================================================
+*/
+
+.table-container {
+  background: white;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.table-container table {
+  width: 100%;
+}
+
+.table-container thead {
+  background: #f8fafc;
+}
+
+.table-container th,
+.table-container td {
+  padding: 16px 20px;
+  text-align: left;
+}
+
+.table-container tbody tr {
+  border-top: 1px solid var(--border);
+}
+
+.table-container tbody tr:hover {
+  background: #fafafa;
+}
+
+/*
+==================================================
+ALERTS
+==================================================
+*/
+
+.alert {
+  padding: 16px;
+  border-radius: 16px;
+  font-size: 14px;
+}
+
+.alert-success {
+  color: var(--success);
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.alert-warning {
+  color: var(--warning);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.alert-danger {
+  color: var(--danger);
+  background: rgba(239, 68, 68, 0.08);
+}
+
+/*
+==================================================
+ANIMATIONS
+==================================================
+*/
+
+.hover-lift {
+  transition: var(--transition);
+}
+
+.hover-lift:hover {
+  transform: translateY(-3px);
+}
+
+.fade-in {
+  animation: fadeIn 0.4s ease;
+}
+
+.fade-up {
+  animation: fadeUp 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/*
+==================================================
+UTILITY
+==================================================
+*/
+
+.border-default {
+  border: 1px solid var(--border);
+}
+
+.shadow-card {
+  box-shadow: var(--shadow-sm);
+}
+
+.rounded-card {
+  border-radius: var(--radius-xl);
+}
+
+.bg-page {
+  background: var(--background);
+}
+
+.bg-surface {
+  background: var(--surface);
+}
+
+.text-heading {
+  color: var(--heading);
+}
+
+.text-body {
+  color: var(--body);
+}

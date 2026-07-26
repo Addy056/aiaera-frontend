@@ -570,191 +570,60 @@ await loadPage();
 
   return (
     <>
-      <WhatsAppSetupModal
-        open={showWhatsAppModal}
-        onClose={() =>
-          setShowWhatsAppModal(false)
-        }
-      />
+      <WhatsAppSetupModal open={showWhatsAppModal} onClose={() => setShowWhatsAppModal(false)} />
 
-    
-
-      <div className="space-y-6 text-white">
-
-        {/* EXPIRED BANNER */}
+      <div className="space-y-6 text-slate-900">
         {isExpired && (
-
-          <div className="rounded-3xl border border-red-500/20 bg-red-500/10 p-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-
-            <div className="flex items-start gap-4">
-
-              <div className="w-12 h-12 rounded-2xl bg-red-500/20 flex items-center justify-center">
-
-                <AlertTriangle
-                  size={20}
-                  className="text-red-300"
-                />
-
-              </div>
-
-              <div>
-
-                <h3 className="text-lg font-semibold text-red-200 mb-1">
-
-                  Subscription Expired
-
-                </h3>
-
-                <p className="text-sm text-red-100/80">
-
-                  Your integrations and automations are currently paused.
-                  Renew your subscription to reactivate them.
-
-                </p>
-
-              </div>
-
+          <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-5">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-600">
+              <AlertTriangle size={18} />
             </div>
-
+            <div>
+              <h3 className="text-base font-semibold text-red-700">Subscription expired</h3>
+              <p className="mt-1 text-sm leading-6 text-red-600/80">Your integrations and automations are currently paused until your subscription is renewed.</p>
+            </div>
           </div>
-
         )}
 
-        {/* HEADER */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-
-          <div>
-
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/[0.04] mb-3">
-
-              <Sparkles
-                size={12}
-                className="text-purple-400"
-              />
-
-              <span className="text-[11px] text-gray-300">
-                AI Automation Hub
-              </span>
-
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-2xl">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-violet-600">Automation hub</p>
+              <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">Integrations</h1>
+              <p className="mt-2 text-sm leading-6 text-slate-600">Connect your communication channels and automate customer conversations with AI.</p>
             </div>
-
-            <h1 className="text-3xl font-bold mb-2">
-              Integrations
-            </h1>
-
-            <p className="text-sm text-gray-400 max-w-xl">
-              Connect communication channels and automate customer conversations with AI.
-            </p>
-
+            <button onClick={handleSave} disabled={loading || isExpired} className={`inline-flex h-12 items-center justify-center gap-2 rounded-xl px-6 text-sm font-medium transition ${isExpired ? "cursor-not-allowed bg-slate-100 text-slate-400" : "bg-violet-600 text-white hover:bg-violet-700"}`}>
+              {loading ? <Loader2 size={16} className="animate-spin" /> : isExpired ? <Lock size={16} /> : <Save size={16} />}
+              {isExpired ? "Subscription expired" : loading ? "Saving..." : "Save integrations"}
+            </button>
           </div>
-
-          <button
-            onClick={handleSave}
-            disabled={
-              loading ||
-              isExpired
-            }
-            className={`
-              h-12
-              px-6
-              rounded-2xl
-              flex
-              items-center
-              justify-center
-              gap-2
-              text-sm
-              font-medium
-              transition-all
-              ${
-                isExpired
-                  ? "bg-white/5 text-gray-500 cursor-not-allowed"
-                  : "bg-[#7f5af0] hover:opacity-90 shadow-[0_0_30px_rgba(127,90,240,0.35)]"
-              }
-            `}
-          >
-
-            {loading ? (
-              <Loader2
-                size={16}
-                className="animate-spin"
-              />
-            ) : isExpired ? (
-              <Lock size={16} />
-            ) : (
-              <Save size={16} />
-            )}
-
-            {isExpired
-              ? "Subscription Expired"
-              : loading
-              ? "Saving..."
-              : "Save Integrations"}
-
-          </button>
-
         </div>
-      {showMetaSuccess && (
 
-  <div className="rounded-2xl border border-green-500/20 bg-green-500/10 p-4 flex items-center gap-3">
+        {showMetaSuccess && (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 flex items-center gap-3">
+            <CheckCircle2 size={18} className="text-emerald-600" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-emerald-700">Meta connected successfully</p>
+              <p className="mt-1 text-xs text-emerald-700/80">{metaMessage}</p>
+            </div>
+          </div>
+        )}
 
-    <CheckCircle2
-      size={18}
-      className="text-green-400"
-    />
-
-    <div className="flex-1">
-
-      <p className="text-sm font-medium text-green-200">
-        Meta Connected Successfully
-      </p>
-
-      <p className="text-xs text-green-300 mt-1">
-        {metaMessage}
-      </p>
-
-    </div>
-
-  </div>
-
-)}
-        {/* SUCCESS */}
         {success && (
-
-          <div className="rounded-2xl border border-green-500/20 bg-green-500/10 p-4 flex items-center gap-3">
-
-            <CheckCircle2
-              size={18}
-              className="text-green-400"
-            />
-
-            <p className="text-sm text-green-200">
-              {success}
-            </p>
-
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 flex items-center gap-3">
+            <CheckCircle2 size={18} className="text-emerald-600" />
+            <p className="text-sm text-emerald-700">{success}</p>
           </div>
-
         )}
 
-        {/* ERROR */}
         {error && (
-
-          <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 flex items-center gap-3">
-
-            <AlertTriangle
-              size={18}
-              className="text-red-400"
-            />
-
-            <p className="text-sm text-red-200">
-              {error}
-            </p>
-
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 flex items-center gap-3">
+            <AlertTriangle size={18} className="text-rose-600" />
+            <p className="text-sm text-rose-700">{error}</p>
           </div>
-
         )}
 
-        {/* GRID */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
 
           {/* WHATSAPP */}
           <div className="relative">
@@ -787,33 +656,31 @@ await loadPage();
                 }
               `}>
 
-                <div className="flex items-center justify-between">
+               <div className="flex items-center justify-between">
 
-                  <div>
+    <div>
 
-                    <h3 className="text-sm font-medium">
-                      Automation
-                    </h3>
+        <h3 className="text-sm font-medium text-slate-900">
+            WhatsApp Automation
+        </h3>
 
-                    <p className="text-xs text-gray-400">
-                      Enable AI auto replies
-                    </p>
+        <p className="text-xs text-slate-500">
+            Enable AI auto replies
+        </p>
 
-                  </div>
+    </div>
 
-                  <AutomationToggle
-                    enabled={
-                      form.whatsapp_enabled
-                    }
-                    onChange={(value) =>
-                      handleToggle(
-                        "whatsapp_enabled",
-                        value
-                      )
-                    }
-                  />
+    <AutomationToggle
+        enabled={form.whatsapp_enabled}
+        onChange={(value) =>
+            handleToggle(
+                "whatsapp_enabled",
+                value
+            )
+        }
+    />
 
-                </div>
+</div>
 
                 <IntegrationInput
                   name="whatsapp_phone_id"
@@ -825,15 +692,60 @@ await loadPage();
                 />
 
                 <IntegrationInput
-                  name="whatsapp_access_token"
-                  placeholder="Permanent Access Token"
-                  value={
-                    form.whatsapp_access_token
-                  }
-                  onChange={handleChange}
-                />
+    name="whatsapp_access_token"
+    placeholder="Permanent Access Token"
+    value={form.whatsapp_access_token}
+    onChange={handleChange}
+/>
 
-              </div>
+<div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+
+    <div className="flex items-center justify-between">
+
+        <span className="text-sm font-medium text-slate-700">
+            Cloud API
+        </span>
+
+        <span
+            className={
+                form.whatsapp_access_token
+                    ? "text-emerald-600 text-sm font-medium"
+                    : "text-rose-600 text-sm font-medium"
+            }
+        >
+            {form.whatsapp_access_token
+                ? "Connected"
+                : "Disconnected"}
+        </span>
+
+    </div>
+
+</div>
+
+<div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+
+    <div className="flex items-center justify-between">
+
+        <span className="text-sm font-medium text-slate-700">
+            Setup Guide
+        </span>
+
+        <button
+            onClick={() => setShowWhatsAppModal(true)}
+            className="text-sm font-medium text-violet-600 hover:text-violet-700"
+        >
+            Open
+        </button>
+
+    </div>
+
+    <p className="mt-2 text-xs text-slate-500">
+        View the complete WhatsApp Cloud API setup instructions.
+    </p>
+
+</div>
+
+</div>
 
             </IntegrationCard>
 
@@ -849,11 +761,11 @@ await loadPage();
             )}
 
             <IntegrationCard
-              title="Facebook Messenger"
-              subtitle="Automate Messenger conversations with AI."
+              title="Meta Platform"
+              subtitle="Manage Facebook Messenger and Instagram DM automation from one place."
               icon={
-                <PlatformIcon type="facebook" />
-              }
+    <PlatformIcon type="meta" />
+}
               status={
   metaStatus?.meta_connected
     ? "connected"
@@ -872,30 +784,51 @@ await loadPage();
 
                 <div className="flex items-center justify-between">
 
-                  <div>
+    <div>
 
-                    <h3 className="text-sm font-medium">
-                      Automation
-                    </h3>
+        <h3 className="text-sm font-medium text-slate-900">
+            Facebook Automation
+        </h3>
 
-                    <p className="text-xs text-gray-400">
-                      Enable Messenger AI
-                    </p>
+        <p className="text-xs text-slate-500">
+            Enable Messenger AI replies
+        </p>
 
-                  </div>
+    </div>
 
-                  <AutomationToggle
-  enabled={form.facebook_enabled}
-  disabled={!metaStatus?.meta_connected}
-                    onChange={(value) =>
-                      handleToggle(
-                        "facebook_enabled",
-                        value
-                      )
-                    }
-                  />
+    <AutomationToggle
+        enabled={form.facebook_enabled}
+        disabled={!metaStatus?.meta_connected}
+        onChange={(value) =>
+            handleToggle("facebook_enabled", value)
+        }
+    />
 
-                </div>
+</div>
+
+<div className="flex items-center justify-between">
+
+    <div>
+
+        <h3 className="text-sm font-medium text-slate-900">
+            Instagram Automation
+        </h3>
+
+        <p className="text-xs text-slate-500">
+            Enable Instagram AI replies
+        </p>
+
+    </div>
+
+    <AutomationToggle
+        enabled={form.instagram_enabled}
+        disabled={!metaStatus?.instagram_enabled}
+        onChange={(value) =>
+            handleToggle("instagram_enabled", value)
+        }
+    />
+
+</div>
 
           <div className="space-y-4">
 
@@ -923,11 +856,42 @@ await loadPage();
 
   <div className="mt-4">
 
-    <p className="text-xs text-gray-400">
+    <p className="text-xs text-slate-500">
   Facebook Page
 </p>
+<div className="rounded-xl border border-slate-200 bg-slate-50 p-4 mt-4">
 
-<p className="text-sm font-medium mt-1">
+    <div className="flex items-center justify-between">
+
+        <span className="text-xs text-slate-500">
+            Instagram
+        </span>
+
+        <span
+            className={
+                metaStatus?.instagram_enabled
+                    ? "text-emerald-600 text-xs"
+                    : "text-rose-600 text-xs"
+            }
+        >
+            {metaStatus?.instagram_enabled
+                ? "Connected"
+                : "Disconnected"}
+        </span>
+
+    </div>
+
+    <p className="mt-3 text-xs text-slate-500">
+        Username
+    </p>
+
+    <p className="mt-1 text-sm font-medium text-slate-900">
+        {metaStatus?.instagram_username || "Not Connected"}
+    </p>
+
+</div>
+
+<p className="mt-1 text-sm font-medium text-slate-700">
   {metaStatus?.facebook_page_name || "Not Connected"}
 </p>
 
@@ -959,7 +923,7 @@ await loadPage();
         <button
   onClick={handleSyncMeta}
   disabled={metaLoading}
-  className="flex-1 h-11 rounded-2xl bg-purple-600 hover:opacity-90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+  className="flex-1 h-11 rounded-2xl bg-violet-600 hover:bg-violet-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
 >
   {metaLoading ? (
     <Loader2
@@ -976,7 +940,7 @@ await loadPage();
         <button
   onClick={handleDisconnectMeta}
   disabled={metaLoading}
-  className="flex-1 h-11 rounded-2xl bg-red-600 hover:opacity-90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+  className="flex-1 h-11 rounded-2xl bg-rose-600 hover:bg-rose-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
 >
   {metaLoading ? (
     <Loader2
@@ -997,7 +961,7 @@ await loadPage();
      <button
   onClick={handleConnectMeta}
   disabled={metaLoading}
-  className="w-full h-12 rounded-2xl bg-[#7f5af0] hover:opacity-90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+  className="w-full h-12 rounded-2xl bg-violet-600 hover:bg-violet-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
 >
   {metaLoading ? (
     <Loader2
@@ -1022,123 +986,9 @@ await loadPage();
 
           </div>
 
-          {/* INSTAGRAM */}
-          <div className="relative">
+          
 
-            {!isPro && (
-
-              <LockedOverlay />
-
-            )}
-
-            <IntegrationCard
-              title="Instagram DM Automation"
-              subtitle="Automate Instagram DMs using AI."
-              icon={
-                <PlatformIcon type="instagram" />
-              }
-              
-            status={
-  metaStatus?.instagram_enabled
-    ? "connected"
-    : "disconnected"
-}
-            >
-
-              <div className={`
-                space-y-5
-                ${
-                  !isPro
-                    ? "opacity-40 pointer-events-none"
-                    : ""
-                }
-              `}>
-
-                <div className="flex items-center justify-between">
-
-                  <div>
-
-                    <h3 className="text-sm font-medium">
-                      Automation
-                    </h3>
-
-                    <p className="text-xs text-gray-400">
-                      Enable Instagram AI replies
-                    </p>
-
-                  </div>
-
-                  <AutomationToggle
-  enabled={form.instagram_enabled}
-  disabled={!metaStatus?.instagram_enabled}
-                    onChange={(value) =>
-                      handleToggle(
-                        "instagram_enabled",
-                        value
-                      )
-                    }
-                  />
-
-                </div>
-
-               <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-
-  <div className="flex justify-between">
-
-    <span className="text-xs text-gray-400">
-      Status
-    </span>
-
-    <span
-  className={
-    metaStatus?.instagram_enabled
-      ? "text-green-400 text-xs"
-      : "text-red-400 text-xs"
-  }
->
-  {metaStatus?.instagram_enabled
-    ? "Connected"
-    : "Disconnected"}
-</span>
-
-  </div>
-
- <div className="mt-4">
-
-    <p className="text-xs text-gray-400">
-      Instagram
-    </p>
-
-    <p className="text-sm font-medium mt-1">
-
-  {metaStatus?.instagram_enabled
-    ? (metaStatus?.instagram_username || "Connected")
-    : "Not Connected"}
-
-</p>
-
-    {metaStatus?.last_meta_sync && (
-
-  <p className="text-xs text-gray-500 mt-3">
-
-    Last Sync:{" "}
-    {new Date(metaStatus.last_meta_sync).toLocaleString()}
-
-  </p>
-
-
-
-    )}
-
-</div>
-
-</div>
-
-              </div>
-
-            </IntegrationCard>
-
-          </div>
+           
 
           {/* APPOINTMENTS */}
           <IntegrationCard
@@ -1156,7 +1006,7 @@ await loadPage();
 
             <div className="space-y-4">
 
-              <label className="text-sm text-gray-300">
+              <label className="text-sm font-medium text-slate-700">
                 Meeting Provider
               </label>
 
@@ -1165,7 +1015,7 @@ await loadPage();
                 value={form.meeting_provider}
                 onChange={handleChange}
                 disabled={isExpired}
-                className="w-full h-[54px] rounded-2xl bg-[#0f172a]/90 border border-purple-500/30 px-4 text-sm text-white outline-none"
+                className="h-[54px] w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 outline-none transition focus:border-violet-400"
               >
 
                 <option value="calendly">
@@ -1244,7 +1094,7 @@ function LockedOverlay() {
 
   return (
 
-    <div className="absolute inset-0 z-20 rounded-3xl backdrop-blur-sm bg-black/40 border border-purple-500/20 flex items-center justify-center p-6">
+    <div className="absolute inset-0 z-20 flex items-center justify-center rounded-3xl border border-slate-200 bg-white/70 p-6 backdrop-blur-sm">
 
       <div className="text-center">
 
@@ -1257,13 +1107,13 @@ function LockedOverlay() {
 
         </div>
 
-        <h3 className="text-lg font-semibold mb-2">
+        <h3 className="mb-2 text-lg font-semibold text-slate-900">
 
           Pro Feature
 
         </h3>
 
-        <p className="text-sm text-gray-300 mb-5 max-w-[260px]">
+        <p className="mb-5 max-w-[260px] text-sm text-slate-600">
 
           Upgrade to Pro to unlock WhatsApp, Facebook, and Instagram AI automation.
 
@@ -1271,7 +1121,7 @@ function LockedOverlay() {
 
         <a
           href="/app/pricing"
-          className="inline-flex items-center justify-center h-11 px-5 rounded-2xl bg-[#7f5af0] hover:opacity-90 transition-all text-sm font-medium"
+          className="inline-flex h-11 items-center justify-center rounded-2xl bg-violet-600 px-5 text-sm font-medium text-white transition hover:bg-violet-700"
         >
 
           Upgrade To Pro

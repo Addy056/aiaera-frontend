@@ -1,618 +1,348 @@
-import {
-  useState,
-  useEffect,
-  useRef,
-  useContext,
-} from "react";
-
+import { useState, useEffect, useRef, useContext } from "react";
 import { supabase } from "../lib/supabase";
-
-import {
-  Link,
-  useNavigate,
-} from "react-router-dom";
-
+import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
-
 import {
   Bot,
   Sparkles,
-  ShieldCheck,
-  Rocket,
   Eye,
   EyeOff,
   ArrowRight,
   CheckCircle2,
-  Clock3,
+  CalendarCheck,
+  Users,
+  ShieldCheck,
+  Star,
 } from "lucide-react";
-
 import { motion } from "framer-motion";
-
 import logo from "../assets/aiaera-logo.png";
 
+const featureCards = [
+  {
+    icon: Bot,
+    title: "AI Chat Assistant",
+    description: "Replies instantly to customers with brand-safe conversations.",
+  },
+  {
+    icon: CalendarCheck,
+    title: "Appointment Booking",
+    description: "Automatically schedules meetings and qualifies leads in real time.",
+  },
+  {
+    icon: Users,
+    title: "Lead Capture",
+    description: "Converts visitors into qualified opportunities without friction.",
+  },
+];
+
+const backgroundDots = [
+  { top: "11%", left: "18%" },
+  { top: "24%", left: "72%" },
+  { top: "68%", left: "22%" },
+  { top: "78%", left: "78%" },
+];
+
 export default function Signup() {
-  const navigate =
-    useNavigate();
+  const navigate = useNavigate();
+  const { user, loading: authLoading } = useContext(AuthContext);
 
-  const {
-    user,
-    loading: authLoading,
-  } = useContext(
-    AuthContext
-  );
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
-  /*
-  =========================================
-  STATES
-  =========================================
-  */
-  const [email, setEmail] =
-    useState("");
+  const signupInProgress = useRef(false);
 
-  const [password, setPassword] =
-    useState("");
-
-  const [loading, setLoading] =
-    useState(false);
-
-  const [errorMsg, setErrorMsg] =
-    useState("");
-
-  const [successMsg, setSuccessMsg] =
-    useState("");
-
-  const [showPassword, setShowPassword] =
-    useState(false);
-
-  /*
-  =========================================
-  PREVENT DUPLICATE REQUESTS
-  =========================================
-  */
-  const signupInProgress =
-    useRef(false);
-
-  /*
-  =========================================
-  USE AUTH CONTEXT
-  REMOVE getSession()
-  TO PREVENT LOCK ERRORS
-  =========================================
-  */
   useEffect(() => {
-    if (
-      !authLoading &&
-      user
-    ) {
-      navigate(
-        "/app/dashboard",
-        {
-          replace: true,
-        }
-      );
+    if (!authLoading && user) {
+      navigate("/app/dashboard", { replace: true });
     }
-  }, [
-    user,
-    authLoading,
-    navigate,
-  ]);
+  }, [user, authLoading, navigate]);
 
-  /*
-  =========================================
-  SIGNUP
-  =========================================
-  */
-  const handleSignup =
-    async (e) => {
-      e.preventDefault();
+  const handleSignup = async (e) => {
+    e.preventDefault();
 
-      if (
-        loading ||
-        signupInProgress.current
-      ) {
-        return;
+    if (loading || signupInProgress.current) {
+      return;
+    }
+
+    signupInProgress.current = true;
+    setLoading(true);
+    setErrorMsg("");
+    setSuccessMsg("");
+
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+      });
+
+      if (error) {
+        if (error.message?.toLowerCase().includes("already registered")) {
+          throw new Error("Account already exists. Please login instead.");
+        }
+
+        throw error;
       }
 
-      signupInProgress.current =
-        true;
+      const createdUser = data?.user;
 
-      setLoading(true);
-
-      setErrorMsg("");
-
-      setSuccessMsg("");
-
-      try {
-        const {
-          data,
-          error,
-        } =
-          await supabase.auth.signUp(
-            {
-              email:
-                email.trim(),
-              password,
-            }
-          );
-
-        if (error) {
-          if (
-            error.message
-              ?.toLowerCase()
-              .includes(
-                "already registered"
-              )
-          ) {
-            throw new Error(
-              "Account already exists. Please login instead."
-            );
-          }
-
-          throw error;
-        }
-
-        const createdUser =
-          data?.user;
-
-        if (
-          !createdUser
-        ) {
-          throw new Error(
-            "Failed to create account"
-          );
-        }
-
-        /*
-        =========================================
-        CREATE TRIAL SUBSCRIPTION
-        =========================================
-        */
-        const expiresAt =
-          new Date();
-
-        expiresAt.setDate(
-          expiresAt.getDate() +
-            7
-        );
-
-        const {
-          error:
-            subscriptionError,
-        } =
-          await supabase
-            .from(
-              "user_subscriptions"
-            )
-            .upsert(
-              {
-                user_id:
-                  createdUser.id,
-                plan:
-                  "trial",
-                status:
-                  "active",
-                messages_used:
-                  0,
-                messages_limit:
-                  200,
-                started_at:
-                  new Date().toISOString(),
-                expires_at:
-                  expiresAt.toISOString(),
-              },
-              {
-                onConflict:
-                  "user_id",
-              }
-            );
-
-        if (
-          subscriptionError
-        ) {
-          console.error(
-            "SUBSCRIPTION ERROR:",
-            subscriptionError
-          );
-        }
-
-        setSuccessMsg(
-          "🎉 Account created successfully! Redirecting to login..."
-        );
-
-        setEmail("");
-        setPassword("");
-
-        setTimeout(() => {
-          navigate(
-            "/login"
-          );
-        }, 1800);
-      } catch (err) {
-        console.error(
-          "SIGNUP ERROR:",
-          err
-        );
-
-        if (
-          err?.message
-            ?.toLowerCase()
-            .includes(
-              "lock"
-            )
-        ) {
-          setErrorMsg(
-            "Authentication conflict detected. Please refresh and try again."
-          );
-        } else {
-          setErrorMsg(
-            err?.message ||
-              "Signup failed"
-          );
-        }
-      } finally {
-        setLoading(false);
-
-        signupInProgress.current =
-          false;
+      if (!createdUser) {
+        throw new Error("Failed to create account");
       }
-    };
 
-  /*
-  =========================================
-  LOADING
-  =========================================
-  */
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7);
+
+      const { error: subscriptionError } = await supabase.from("user_subscriptions").upsert(
+        {
+          user_id: createdUser.id,
+          plan: "trial",
+          status: "active",
+          messages_used: 0,
+          messages_limit: 200,
+          started_at: new Date().toISOString(),
+          expires_at: expiresAt.toISOString(),
+        },
+        { onConflict: "user_id" }
+      );
+
+      if (subscriptionError) {
+        console.error("SUBSCRIPTION ERROR:", subscriptionError);
+      }
+
+      setSuccessMsg("🎉 Account created successfully! Redirecting to login...");
+      setEmail("");
+      setPassword("");
+
+      setTimeout(() => {
+        navigate("/login");
+      }, 1800);
+    } catch (err) {
+      console.error("SIGNUP ERROR:", err);
+
+      if (err?.message?.toLowerCase().includes("lock")) {
+        setErrorMsg("Authentication conflict detected. Please refresh and try again.");
+      } else {
+        setErrorMsg(err?.message || "Signup failed");
+      }
+    } finally {
+      setLoading(false);
+      signupInProgress.current = false;
+    }
+  };
+
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#050816] flex items-center justify-center">
-        <div className="w-10 h-10 border-2 border-white/20 border-t-purple-500 rounded-full animate-spin"></div>
+      <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC]">
+        <div className="h-10 w-10 animate-spin rounded-full border-2 border-violet-200 border-t-violet-600" />
       </div>
     );
   }
 
-  return (    <div className="min-h-screen bg-[#050816] relative overflow-hidden flex items-center justify-center px-6 py-10">
+  return (
+    <div className="relative min-h-screen overflow-hidden bg-[#F8FAFC] text-slate-900">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(124,58,237,0.28),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(168,85,247,0.22),transparent_35%)]" />
+      <div className="absolute inset-0 opacity-[0.35] [background-image:linear-gradient(to_right,rgba(124,58,237,0.09)_1px,transparent_1px),linear-gradient(to_bottom,rgba(124,58,237,0.09)_1px,transparent_1px)] [background-size:44px_44px]" />
 
-      {/* BACKGROUND */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <motion.div
+        animate={{ x: [0, 10, 0], y: [0, -10, 0] }}
+        transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute right-[-8rem] top-[-8rem] h-72 w-72 rounded-full bg-fuchsia-400/25 blur-[120px]"
+      />
+      <motion.div
+        animate={{ x: [0, -12, 0], y: [0, 10, 0] }}
+        transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute bottom-[-6rem] left-[-6rem] h-80 w-80 rounded-full bg-violet-400/20 blur-[140px]"
+      />
 
-        <div className="absolute top-[-150px] left-[-120px] w-[450px] h-[450px] bg-purple-600/25 blur-[140px] rounded-full"></div>
-
-        <div className="absolute bottom-[-180px] right-[-120px] w-[500px] h-[500px] bg-blue-600/20 blur-[160px] rounded-full"></div>
-
-      </div>
-
-      {/* GRID */}
-      <div className="absolute inset-0 opacity-[0.04]">
-
-        <div className="h-full w-full bg-[linear-gradient(to_right,#ffffff_1px,transparent_1px),linear-gradient(to_bottom,#ffffff_1px,transparent_1px)] bg-[size:55px_55px]" />
-
-      </div>
-
-      {/* MAIN */}
-      <div className="relative z-10 w-full max-w-7xl grid lg:grid-cols-2 gap-20 items-center">
-
-        {/* LEFT SIDE */}
+      {backgroundDots.map((dot, index) => (
         <motion.div
-          initial={{
-            opacity: 0,
-            y: 40,
-          }}
-          animate={{
-            opacity: 1,
-            y: 0,
-          }}
-          transition={{
-            duration: 0.8,
-          }}
-          className="hidden lg:block"
-        >
+          key={`${dot.top}-${dot.left}`}
+          animate={{ y: [0, -10, 0], opacity: [0.25, 0.5, 0.25] }}
+          transition={{ duration: 8 + index, repeat: Infinity, ease: "easeInOut", delay: index * 0.4 }}
+          className="absolute h-2 w-2 rounded-full bg-[#A855F7]/70"
+          style={{ top: dot.top, left: dot.left }}
+        />
+      ))}
 
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/5 backdrop-blur-xl mb-8">
+      <div className="relative mx-auto flex min-h-screen max-w-7xl items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+        <div className="grid w-full items-center gap-8 lg:grid-cols-[55%_45%]">
+          <motion.div
+            initial={{ opacity: 0, x: -24 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
+            className="max-w-2xl"
+          >
+            <div className="mb-8 flex items-center gap-3 text-sm font-medium text-violet-700">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-violet-200/80 bg-white/80 shadow-sm backdrop-blur">
+                <img src={logo} alt="AIAERA" className="h-6 w-6 object-contain" />
+              </div>
+              <span className="rounded-full border border-violet-200/80 bg-violet-50 px-3 py-1 text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-violet-700">
+                Start Your AI Journey
+              </span>
+            </div>
 
-            <Sparkles className="w-4 h-4 text-purple-400" />
+            <h1 className="text-4xl font-semibold leading-tight tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
+              Build Your{" "}
+              <span className="bg-gradient-to-r from-[#7C3AED] via-[#8B5CF6] to-[#A855F7] bg-clip-text text-transparent">
+                AI Workforce
+              </span>
+            </h1>
+            <p className="mt-6 max-w-xl text-lg leading-8 text-slate-600 sm:text-xl">
+              Create AI assistants trained on your business, automate conversations,
+              capture qualified leads, and book meetings automatically.
+            </p>
 
-            <span className="text-sm text-gray-300">
-              Start Your 7-Day AI Automation Trial
-            </span>
+            <div className="mt-10 grid gap-4 sm:grid-cols-3">
+              {featureCards.map((feature, index) => {
+                const Icon = feature.icon;
+                return (
+                  <motion.div
+                    key={feature.title}
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.45, delay: 0.1 + index * 0.08 }}
+                    whileHover={{ y: -4, scale: 1.01 }}
+                    className="rounded-[24px] border border-violet-100/80 bg-white/70 p-5 shadow-[0_20px_50px_-24px_rgba(15,23,42,0.3)] backdrop-blur-xl"
+                  >
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600/15 to-fuchsia-500/15 text-violet-700">
+                      <Icon size={20} strokeWidth={1.8} />
+                    </div>
+                    <h3 className="mt-4 text-base font-semibold text-slate-900">{feature.title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">{feature.description}</p>
+                  </motion.div>
+                );
+              })}
+            </div>
 
-          </div>
+            <div className="mt-10 flex items-center gap-3 text-sm font-medium text-slate-600">
+              <div className="flex items-center gap-1 text-amber-500">
+                {[...Array(5)].map((_, index) => (
+                  <Star key={index} size={16} fill="currentColor" />
+                ))}
+              </div>
+              <span>Trusted by growing businesses.</span>
+            </div>
+          </motion.div>
 
-          <h1 className="text-7xl font-black leading-[0.92] tracking-[-4px] text-white mb-8">
-
-            Build Your
-
-            <span className="block bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
-
-              AI Workforce
-
-            </span>
-
-          </h1>
-
-          <p className="text-gray-400 text-xl leading-relaxed mb-14 max-w-xl">
-
-            Create AI assistants trained on your business,
-            automate customer conversations,
-            capture leads,
-            and deploy everywhere in minutes.
-
-          </p>
-
-          <div className="space-y-5">
-
-            <FeatureCard
-              icon={
-                <Bot className="text-purple-400" />
-              }
-              title="Website AI Chatbot"
-              desc="Deploy smart AI assistants on your website"
-            />
-
-            <FeatureCard
-              icon={
-                <Rocket className="text-blue-400" />
-              }
-              title="Lead & Appointment Automation"
-              desc="Capture leads and automate bookings"
-            />
-
-            <FeatureCard
-              icon={
-                <ShieldCheck className="text-pink-400" />
-              }
-              title="WhatsApp & Social AI"
-              desc="Unlock omnichannel automation with Pro"
-            />
-
-          </div>
-
-        </motion.div>
-
-        {/* RIGHT SIDE */}
-        <motion.div
-          initial={{
-            opacity: 0,
-            scale: 0.95,
-          }}
-          animate={{
-            opacity: 1,
-            scale: 1,
-          }}
-          transition={{
-            duration: 0.7,
-          }}
-          className="w-full max-w-md mx-auto relative"
-        >
-
-          <div className="relative rounded-[36px] p-[1px] bg-gradient-to-br from-purple-500/30 via-white/10 to-blue-500/30 shadow-[0_20px_120px_rgba(0,0,0,0.55)]">
-
-            <div className="relative bg-[#0B1120]/90 backdrop-blur-3xl rounded-[36px] p-8 overflow-hidden">
-
-              <div className="relative flex justify-center mb-10">
-
-                <div className="absolute w-24 h-24 bg-purple-500/20 blur-[55px] rounded-[28px]"></div>
-
-                <div className="relative w-[88px] h-[88px] rounded-[24px] border border-white/10 bg-[#0A0F1F] backdrop-blur-3xl flex items-center justify-center shadow-[0_20px_60px_rgba(124,58,237,0.35)]">
-
-                  <img
-                    src={logo}
-                    alt="AIAERA"
-                    className="w-16 h-16 object-contain"
-                  />
-
+          <motion.div
+            initial={{ opacity: 0, x: 24 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.7, ease: "easeOut", delay: 0.08 }}
+            className="flex justify-center lg:justify-end"
+          >
+            <div className="w-full max-w-[480px] rounded-[32px] border border-violet-100/80 bg-white/80 p-6 shadow-[0_30px_90px_-28px_rgba(124,58,237,0.35)] backdrop-blur-2xl sm:p-8 lg:p-9">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-violet-200/70 bg-violet-50">
+                    <img src={logo} alt="AIAERA logo" className="h-6 w-6 object-contain" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">AIAERA</p>
+                    <p className="text-xs text-slate-500">7-Day Free Trial</p>
+                  </div>
                 </div>
-
+                <span className="rounded-full border border-violet-200/80 bg-violet-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-violet-700">
+                  Secure
+                </span>
               </div>
 
-              <div className="text-center mb-8"></div>
-                            <div className="text-center mb-8">
-
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-purple-500/20 bg-purple-500/10 mb-5">
-
-                  <Clock3
-                    size={15}
-                    className="text-purple-300"
-                  />
-
-                  <span className="text-sm text-purple-200 font-medium">
-                    7-Day Free Trial
-                  </span>
-
-                </div>
-
-                <h2 className="text-5xl font-black text-white mb-3 tracking-[-2px]">
-
-                  Create Account
-
-                </h2>
-
-                <p className="text-gray-400 leading-relaxed">
-
-                  Start your AI automation journey today
-
+              <div className="mt-8">
+                <h2 className="text-3xl font-semibold tracking-tight text-slate-950">Create Your Account</h2>
+                <p className="mt-3 text-base leading-7 text-slate-600">
+                  Start building your AI workforce today.
                 </p>
-
               </div>
 
               {errorMsg && (
-
-                <div className="mb-5 p-4 rounded-2xl bg-red-500/15 border border-red-500/20 text-red-300 text-sm">
-
+                <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
                   {errorMsg}
-
                 </div>
-
               )}
-
               {successMsg && (
-
-                <div className="mb-5 p-4 rounded-2xl bg-green-500/15 border border-green-500/20 text-green-300 text-sm flex items-center gap-2">
-
+                <div className="mt-6 flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
                   <CheckCircle2 size={16} />
-
                   {successMsg}
-
                 </div>
-
               )}
 
-              <form onSubmit={handleSignup}>
-
-                <div className="mb-5">
-
-                  <label className="block text-sm text-gray-300 mb-2">
-
-                    Email Address
-
-                  </label>
-
+              <form onSubmit={handleSignup} className="mt-8 space-y-4">
+                <div className="group relative">
                   <input
+                    id="email"
                     type="email"
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
+                    autoComplete="email"
+                    className="h-[56px] w-full rounded-2xl border border-slate-200 bg-white px-4 text-[15px] text-slate-900 shadow-sm outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
+                    placeholder="Email address"
                     value={email}
-                    onChange={(e) =>
-                      setEmail(
-                        e.target.value
-                      )
-                    }
+                    onChange={(e) => setEmail(e.target.value)}
                     required
                   />
-
                 </div>
 
-                <div className="mb-6">
+                <div className="group relative">
+                  <input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="new-password"
+                    className="h-[56px] w-full rounded-2xl border border-slate-200 bg-white px-4 pr-12 text-[15px] text-slate-900 shadow-sm outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-2 text-slate-500 transition-colors hover:bg-violet-50 hover:text-violet-700"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
 
-                  <label className="block text-sm text-gray-300 mb-2">
-
-                    Password
-
-                  </label>
-
-                  <div className="relative">
-
-                    <input
-                      type={
-                        showPassword
-                          ? "text"
-                          : "password"
-                      }
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 pr-14 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
-                      value={password}
-                      onChange={(e) =>
-                        setPassword(
-                          e.target.value
-                        )
-                      }
-                      required
-                    />
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setShowPassword(
-                          !showPassword
-                        )
-                      }
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition"
-                    >
-
-                      {showPassword ? (
-                        <EyeOff size={20} />
-                      ) : (
-                        <Eye size={20} />
-                      )}
-
-                    </button>
-
-                  </div>
-
-                </div>                <button
+                <motion.button
+                  whileHover={{ y: -1, scale: 1.01, boxShadow: "0 16px 40px rgba(124, 58, 237, 0.25)" }}
+                  whileTap={{ scale: 0.99 }}
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:scale-[1.02] transition-all duration-300 text-white font-semibold py-4 rounded-2xl flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="flex h-[56px] w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#7C3AED] via-[#8B5CF6] to-[#A855F7] font-semibold text-white shadow-lg transition-all disabled:cursor-not-allowed disabled:opacity-80"
                 >
-
                   {loading ? (
-
-                    <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-
+                    <>
+                      <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4Z" />
+                      </svg>
+                      Creating account...
+                    </>
                   ) : (
-
                     <>
                       Start Free Trial
                       <ArrowRight size={18} />
                     </>
-
                   )}
-
-                </button>
-
+                </motion.button>
               </form>
 
-              <div className="mt-8 text-center">
+              <p className="mt-8 text-center text-sm text-slate-600">
+                Already have an account?{" "}
+                <Link to="/login" className="font-semibold text-violet-700 transition-colors hover:text-violet-800">
+                  Sign In
+                </Link>
+              </p>
 
-                <p className="text-gray-400">
-
-                  Already have an account?{" "}
-
-                  <Link
-                    to="/login"
-                    className="text-purple-400 font-semibold hover:text-purple-300"
-                  >
-                    Login
-                  </Link>
-
-                </p>
-
+              <div className="mt-8 flex items-center justify-center gap-2 text-xs font-medium uppercase tracking-[0.3em] text-slate-400">
+                <ShieldCheck size={14} />
+                <span>Protected by enterprise-grade security</span>
               </div>
-
             </div>
-
-          </div>
-
-        </motion.div>
-
+          </motion.div>
+        </div>
       </div>
-
     </div>
-  );
-}
-
-function FeatureCard({
-  icon,
-  title,
-  desc,
-}) {
-  return (
-    <motion.div
-      whileHover={{
-        y: -4,
-      }}
-      className="flex items-center gap-4 p-5 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl"
-    >
-
-      <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10">
-
-        {icon}
-
-      </div>
-
-      <div>
-
-        <h3 className="text-white font-semibold text-lg">
-
-          {title}
-
-        </h3>
-
-        <p className="text-gray-400 text-sm">
-
-          {desc}
-
-        </p>
-
-      </div>
-
-    </motion.div>
   );
 }

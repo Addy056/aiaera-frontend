@@ -366,19 +366,16 @@ export default function Pricing() {
 
   return (
 
-    <div className="min-h-screen text-white px-4 md:px-6 py-10 overflow-hidden relative">
+    <div className="relative min-h-screen overflow-hidden px-4 py-10 text-slate-900 md:px-6">
 
-      {/* BACKGROUND */}
-      <div className="absolute top-[-120px] left-[-120px] w-[320px] h-[320px] bg-purple-600/20 blur-[140px] rounded-full"></div>
-
-      <div className="absolute bottom-[-120px] right-[-120px] w-[320px] h-[320px] bg-blue-600/20 blur-[140px] rounded-full"></div>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(124,58,237,0.12),transparent_30%),radial-gradient(circle_at_bottom_right,rgba(168,85,247,0.1),transparent_35%)]" />
 
       <div className="relative z-10">
 
         {/* EXPIRED BANNER */}
         {subscriptionExpired && (
 
-          <div className="max-w-5xl mx-auto mb-8 rounded-3xl border border-red-500/20 bg-red-500/10 p-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="mx-auto mb-8 flex max-w-5xl flex-col gap-4 rounded-3xl border border-red-200 bg-red-50 p-5 lg:flex-row lg:items-center lg:justify-between">
 
             <div className="flex items-start gap-4">
 
@@ -393,13 +390,13 @@ export default function Pricing() {
 
               <div>
 
-                <h3 className="text-lg font-semibold text-red-200 mb-1">
+                <h3 className="mb-1 text-lg font-semibold text-red-700">
 
                   Subscription Expired
 
                 </h3>
 
-                <p className="text-sm text-red-100/80">
+                <p className="text-sm text-red-600/80">
 
                   Your chatbot and automations are currently paused.
                   Renew your subscription to reactivate all features.
@@ -415,16 +412,13 @@ export default function Pricing() {
         )}
 
         {/* HEADER */}
-        <div className="text-center mb-14">
+        <div className="mb-14 text-center">
 
-          <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full border border-white/10 bg-white/[0.03] mb-4">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-4 py-1">
 
-            <Sparkles
-              size={12}
-              className="text-purple-400"
-            />
+            <Sparkles size={12} className="text-violet-600" />
 
-            <span className="text-xs text-gray-300">
+            <span className="text-xs font-semibold uppercase tracking-[0.24em] text-violet-700">
 
               AI Automation Pricing
 
@@ -432,13 +426,13 @@ export default function Pricing() {
 
           </div>
 
-          <h1 className="text-5xl md:text-6xl font-black mb-4 tracking-[-2px]">
+          <h1 className="mb-4 text-5xl font-semibold tracking-[-2px] text-slate-900 md:text-6xl">
 
             Simple Pricing
 
           </h1>
 
-          <p className="text-gray-400 text-lg max-w-2xl mx-auto leading-relaxed">
+          <p className="mx-auto max-w-2xl text-lg leading-relaxed text-slate-600">
 
             Start your 7-day free trial and upgrade as your AI automation grows.
 
@@ -451,16 +445,16 @@ export default function Pricing() {
 
           <div className="max-w-md mx-auto mb-10">
 
-            <div className="rounded-3xl border border-purple-500/20 bg-gradient-to-br from-[#7f5af0]/20 to-blue-500/10 p-5 text-center">
+            <div className="rounded-3xl border border-violet-200 bg-white p-5 text-center shadow-sm">
 
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/10 mb-4">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-4 py-2">
 
                 <Crown
                   size={14}
                   className="text-yellow-300"
                 />
 
-                <span className="text-sm font-medium">
+                <span className="text-sm font-medium text-violet-700">
 
                   CURRENT PLAN
 
@@ -468,13 +462,13 @@ export default function Pricing() {
 
               </div>
 
-              <h2 className="text-3xl font-black uppercase mb-2">
+              <h2 className="mb-2 text-3xl font-semibold uppercase tracking-wide text-slate-900">
 
                 {currentPlan}
 
               </h2>
 
-              <p className="text-sm text-gray-300">
+              <p className="text-sm text-slate-600">
 
                 {subscriptionExpired
                   ? "Your plan has expired"
@@ -491,7 +485,7 @@ export default function Pricing() {
         {/* ERROR */}
         {error && (
 
-          <div className="max-w-xl mx-auto mb-8 bg-red-500/10 border border-red-500/20 text-red-300 p-4 rounded-2xl text-sm text-center backdrop-blur-xl">
+          <div className="mx-auto mb-8 max-w-xl rounded-2xl border border-rose-200 bg-rose-50 p-4 text-center text-sm text-rose-700">
 
             {error}
 
@@ -500,7 +494,7 @@ export default function Pricing() {
         )}
 
         {/* PLANS */}
-        <div className="grid lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+        <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-3">
 
           {/* TRIAL */}
           <PricingCard
@@ -613,17 +607,17 @@ export default function Pricing() {
         </div>
 
         {/* FEATURES SECTION */}
-        <div className="max-w-6xl mx-auto mt-24">
+        <div className="mx-auto mt-24 max-w-6xl">
 
           <div className="text-center mb-14">
 
-            <h2 className="text-4xl font-black mb-4">
+            <h2 className="mb-4 text-4xl font-semibold text-slate-900">
 
               Why Businesses Choose AIAERA
 
             </h2>
 
-            <p className="text-gray-400 text-lg">
+            <p className="text-lg text-slate-600">
 
               Powerful AI automation built for modern businesses.
 
@@ -698,10 +692,10 @@ function PricingCard({
 
     <div
   className={
-    `relative rounded-[32px] p-8 border overflow-hidden backdrop-blur-2xl transition-all duration-300 hover:scale-[1.02] ${
+    `relative overflow-hidden rounded-[32px] border p-8 shadow-sm transition-all duration-300 hover:scale-[1.02] ${
       highlight
-        ? "bg-gradient-to-br from-[#7f5af0]/30 to-[#9f7aea]/10 border-purple-500/30 shadow-[0_0_50px_rgba(127,90,240,0.25)]"
-        : "bg-white/[0.03] border-white/10"
+        ? "border-violet-200 bg-white shadow-[0_20px_50px_-24px_rgba(124,58,237,0.35)]"
+        : "border-slate-200 bg-white"
     }`
   }
     >
@@ -711,10 +705,10 @@ function PricingCard({
 
         <div
   className={
-    `absolute top-5 right-5 text-[10px] px-3 py-1 rounded-full font-semibold ${
+    `absolute right-5 top-5 rounded-full px-3 py-1 text-[10px] font-semibold ${
       highlight
-        ? "bg-purple-500 text-white"
-        : "bg-white/10 text-gray-200"
+        ? "bg-violet-600 text-white"
+        : "bg-slate-100 text-slate-700"
     }`
   }
 >
@@ -728,7 +722,7 @@ function PricingCard({
       {/* CURRENT */}
       {current && (
 
-        <div className="absolute top-5 left-5 text-[10px] px-3 py-1 rounded-full bg-green-500 text-white font-semibold">
+        <div className="absolute left-5 top-5 rounded-full bg-emerald-600 px-3 py-1 text-[10px] font-semibold text-white">
 
           ACTIVE
 
@@ -737,14 +731,14 @@ function PricingCard({
       )}
 
       {/* ICON */}
-      <div className="w-14 h-14 rounded-2xl bg-white/[0.05] border border-white/10 flex items-center justify-center mb-6">
+      <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border border-violet-200 bg-violet-50 text-violet-600">
 
         {icon}
 
       </div>
 
       {/* TITLE */}
-      <h3 className="text-2xl font-bold mb-2">
+      <h3 className="mb-2 text-2xl font-semibold text-slate-900">
 
         {title}
 
@@ -753,13 +747,13 @@ function PricingCard({
       {/* PRICE */}
       <div className="flex items-end gap-1 mb-6">
 
-        <span className="text-5xl font-black">
+        <span className="text-5xl font-semibold text-slate-900">
 
           {price}
 
         </span>
 
-        <span className="text-gray-400 mb-1">
+        <span className="mb-1 text-slate-500">
 
           {subtitle}
 
@@ -778,14 +772,13 @@ function PricingCard({
 
             <div
               key={index}
-              className="flex items-center gap-3 text-sm text-gray-300"
+              className="flex items-center gap-3 text-sm text-slate-600"
             >
 
-              <div className="w-5 h-5 rounded-full bg-purple-500/15 flex items-center justify-center">
+              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-50 text-violet-600">
 
                 <Check
                   size={12}
-                  className="text-purple-300"
                 />
 
               </div>
@@ -813,10 +806,10 @@ function PricingCard({
           trial
         }
         className={
-  `w-full h-12 rounded-2xl font-semibold transition-all flex items-center justify-center gap-2 ${
+  `flex h-12 w-full items-center justify-center gap-2 rounded-2xl font-semibold transition-all ${
     highlight
-      ? "bg-[#7f5af0] hover:opacity-90"
-      : "bg-white/[0.05] hover:bg-white/[0.08]"
+      ? "bg-violet-600 text-white hover:bg-violet-700"
+      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
   } ${
     current ||
     disabled ||
@@ -876,21 +869,21 @@ function FeatureBox({
 
   return (
 
-    <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-xl">
+    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
 
-      <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center mb-5 text-purple-300">
+      <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-50 text-violet-600">
 
         {icon}
 
       </div>
 
-      <h3 className="text-xl font-bold mb-3">
+      <h3 className="mb-3 text-xl font-semibold text-slate-900">
 
         {title}
 
       </h3>
 
-      <p className="text-gray-400 leading-relaxed text-sm">
+      <p className="text-sm leading-relaxed text-slate-600">
 
         {desc}
 
