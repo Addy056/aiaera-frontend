@@ -538,7 +538,7 @@ export default function Leads() {
 
             </h2>
 
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-slate-600">
 
               Manage customer inquiries.
 
@@ -607,7 +607,7 @@ export default function Leads() {
 
                     <div className="flex flex-col items-center">
 
-                      <div className="w-16 h-16 rounded-3xl bg-white/5 flex items-center justify-center mb-5">
+                      <div className="w-16 h-16 rounded-3xl bg-slate-100 flex items-center justify-center mb-5">
 
                         <Users
                           size={26}
@@ -616,13 +616,13 @@ export default function Leads() {
 
                       </div>
 
-                      <h3 className="text-lg font-semibold mb-2">
+                      <h3 className="mb-2 text-lg font-semibold text-slate-900">
 
                         No Leads Yet
 
                       </h3>
 
-                      <p className="text-gray-400">
+                      <p className="text-slate-500">
 
                         Leads collected from your AI chatbot will appear here.
 
@@ -660,21 +660,21 @@ export default function Leads() {
 
                           <div>
 
-                            <h3 className="font-semibold text-white">
+                            <h3 className="font-semibold text-slate-900">
 
                               {lead.name ||
                                 "Unknown"}
 
                             </h3>
 
-                            <p className="text-sm text-gray-400">
+                            <p className="text-sm text-slate-600">
 
                               {lead.email ||
                                 "No Email"}
 
                             </p>
 {lead.phone && (
-    <p className="text-purple-300">
+    <p className="text-sm text-slate-500">
       {lead.phone}
     </p>
   )}
@@ -688,7 +688,7 @@ export default function Leads() {
                       {/* MESSAGE */}
                       <td className="px-6 py-5 max-w-[380px]">
 
-                        <p className="text-sm text-gray-300 leading-relaxed line-clamp-2">
+                        <p className="text-sm text-slate-700 leading-relaxed line-clamp-2">
 
                           {lead.message ||
                             "No message"}
@@ -700,14 +700,14 @@ export default function Leads() {
                       {/* DATE */}
                       <td className="px-6 py-5">
 
-                        <div className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.03] border border-white/5">
+                        <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
 
                           <Calendar
                             size={14}
                             className="text-purple-300"
                           />
 
-                          <span className="text-sm text-gray-300">
+                          <span className="text-sm text-slate-700">
 
                             {new Date(
                               lead.created_at
@@ -730,8 +730,7 @@ export default function Leads() {
                                 lead
                               )
                             }
-                            className="w-11 h-11 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/5 flex items-center justify-center transition-all"
-                          >
+className="w-11 h-11 rounded-2xl border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 transition-all"                          >
 
                             <Eye
                               size={16}
@@ -760,7 +759,7 @@ export default function Leads() {
                               ${
                                 isExpired &&
                                 !isAdmin
-                                  ? "bg-white/5 text-gray-600 cursor-not-allowed"
+                                  ? "bg-slate-100 text-gray-600 cursor-not-allowed"
                                   : "bg-red-500/10 hover:bg-red-500/20 border border-red-500/10"
                               }
                             `}
@@ -940,7 +939,7 @@ function ModernStatCard({
 
         </h2>
 
-        <p className="text-gray-300">
+        <p className="text-slate-500">
 
           {title}
 
