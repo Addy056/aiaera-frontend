@@ -23,6 +23,7 @@ import {
 } from "react";
 
 import { supabase } from "../lib/supabase";
+import { leadsAPI } from "../lib/api";
 
 import { AuthContext } from "../context/AuthContext";
 
@@ -208,26 +209,11 @@ export default function Leads() {
 
         setLoading(true);
 
-        const {
-          data,
-          error,
-        } =
-          await supabase
-            .from("leads")
-            .select("*")
-            .eq(
-              "user_id",
-              user.id
-            )
-            .order(
-              "created_at",
-              {
-                ascending: false,
-              }
-            );
+        const response =
+          await leadsAPI.getLeads();
 
-        if (error)
-          throw error;
+        const data =
+          response?.leads || [];
 
         setLeads(
           data || []
@@ -818,19 +804,19 @@ export default function Leads() {
 
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 p-4">
 
-          <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-8 shadow-xl">
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-5 shadow-xl sm:p-6">
 
-            <div className="flex items-center justify-between mb-8">
+            <div className="mb-5 flex items-center gap-4">
 
               <div>
 
-                <h2 className="text-2xl font-bold mb-2">
+                <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
 
                   Lead Details
 
                 </h2>
 
-                <p className="text-gray-400 text-sm">
+                <p className="mt-1 text-sm text-slate-600">
 
                   Customer conversation details
 
@@ -844,7 +830,7 @@ export default function Leads() {
                     null
                   )
                 }
-                className="w-12 h-12 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] flex items-center justify-center"
+                className="ml-auto flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-600 transition hover:bg-slate-100"
               >
 
                 <X size={18} />
@@ -853,7 +839,7 @@ export default function Leads() {
 
             </div>
 
-            <div className="space-y-5">
+            <div className="flex flex-col gap-5">
 
               <ModernDetailCard
                 title="Customer Name"
@@ -891,7 +877,7 @@ export default function Leads() {
               />
 
               <ModernDetailCard
-                title="Message"
+                title="Reason for Inquiry"
                 value={
                   selectedLead.message
                 }
@@ -900,7 +886,6 @@ export default function Leads() {
                     size={16}
                   />
                 }
-                large
               />
 
               <ModernDetailCard
@@ -977,14 +962,13 @@ function ModernDetailCard({
   title,
   value,
   icon,
-  large,
 }) {
 
   return (
 
     <div>
 
-      <div className="flex items-center gap-2 mb-3 text-sm text-gray-400">
+      <div className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-500">
 
         {icon}
 
@@ -996,19 +980,7 @@ function ModernDetailCard({
 
       </div>
 
-      <div className={`
-        rounded-2xl
-        border
-        border-white/10
-        bg-white/[0.03]
-        p-5
-        text-white
-        ${
-          large
-            ? "min-h-[120px]"
-            : ""
-        }
-      `}>
+      <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm leading-6 text-slate-700 break-words">
 
         {value || "N/A"}
 

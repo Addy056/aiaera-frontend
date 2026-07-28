@@ -12,12 +12,15 @@ import {
   ExternalLink,
   Users,
   Video,
+  MessageSquare,
   Search,
   Eye,
   X,
   AlertTriangle,
   Lock,
   Clock3,
+  Trash2,
+  CheckCircle2,
 } from "lucide-react";
 
 import { supabase } from "../lib/supabase";
@@ -87,6 +90,13 @@ const completedCount =
 
   const [isExpired, setIsExpired] =
     useState(false);
+
+  const [deleteTarget, setDeleteTarget] =
+    useState(null);
+
+  const [toast, setToast] =
+    useState(null);
+
  const updateStatus =
   async (
     appointmentId,
@@ -109,6 +119,54 @@ const completedCount =
 
     }
   };
+
+  const showToast =
+    (type, message) => {
+      setToast({ type, message });
+      window.setTimeout(
+        () => setToast(null),
+        3500
+      );
+    };
+
+  const deleteAppointment =
+    async () => {
+      if (!deleteTarget)
+        return;
+
+      try {
+        await appointmentsAPI
+          .deleteAppointment(
+            deleteTarget.id
+          );
+
+        setAppointments((current) =>
+          current.filter(
+            (item) => item.id !== deleteTarget.id
+          )
+        );
+
+        setFilteredAppointments((current) =>
+          current.filter(
+            (item) => item.id !== deleteTarget.id
+          )
+        );
+
+        setDeleteTarget(null);
+        showToast(
+          "success",
+          "Appointment deleted successfully."
+        );
+      } catch (err) {
+        console.error(err);
+        setDeleteTarget(null);
+        showToast(
+          "error",
+          err.response?.data?.error ||
+            "Failed to delete appointment."
+        );
+      }
+    };
   /*
   ========================================
   INIT
@@ -178,28 +236,12 @@ const completedCount =
         APPOINTMENTS
         ========================================
         */
-        const {
-          data,
-          error,
-        } =
-          await supabase
-            .from(
-              "appointments"
-            )
-            .select("*")
-            .eq(
-              "user_id",
-              user.id
-            )
-            .order(
-              "created_at",
-              {
-                ascending: false,
-              }
-            );
+        const response =
+          await appointmentsAPI
+            .getAppointments();
 
-        if (error)
-          throw error;
+        const data =
+          response?.appointments || [];
 
         setAppointments(
           data || []
@@ -421,7 +463,7 @@ const completedCount =
                     </td>
 
                     <td className="px-6 py-5">
-                      <div className="flex items-center justify-end gap-3">
+                      <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
                         <button onClick={() => setSelectedAppointment(item)} className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50">
                           <Eye size={16} />
                         </button>
@@ -436,6 +478,19 @@ const completedCount =
                             <button onClick={() => updateStatus(item.id, "completed")} className="rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-medium text-sky-700 transition hover:bg-sky-100">Complete</button>
                           )}
                         </div>
+                        <button
+                          type="button"
+                          title="Delete appointment"
+                          onClick={() => setDeleteTarget(item)}
+                          disabled={isExpired}
+                          className={`flex h-10 w-10 items-center justify-center rounded-xl border transition-all ${isExpired ? "cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400" : "border-red-200 bg-red-50 text-red-500 hover:bg-red-100"}`}
+                        >
+                          {isExpired ? (
+                            <Lock size={16} />
+                          ) : (
+                            <Trash2 size={16} />
+                          )}
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -448,8 +503,8 @@ const completedCount =
 
       {selectedAppointment && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 p-4">
-          <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-8 shadow-xl">
-            <div className="mb-8 flex items-center justify-between">
+          <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-5 shadow-xl sm:p-6">
+            <div className="mb-5 flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-semibold tracking-tight text-slate-900">Appointment details</h2>
                 <p className="mt-1 text-sm text-slate-600">Meeting information and contact details.</p>
@@ -459,15 +514,54 @@ const completedCount =
               </button>
             </div>
 
-            <div className="space-y-5">
+            <div className="space-y-3">
               <DetailCard title="Customer Name" value={selectedAppointment.customer_name} icon={<Users size={16} />} />
               <DetailCard title="Customer Email" value={selectedAppointment.customer_email} icon={<Users size={16} />} />
               <DetailCard title="Customer Phone" value={selectedAppointment.customer_phone} icon={<Users size={16} />} />
+              <DetailCard title="Reason for Meeting" value={selectedAppointment.notes} icon={<MessageSquare size={16} />} />
               <DetailCard title="Status" value={selectedAppointment.status} icon={<Clock3 size={16} />} />
               <DetailCard title="Meeting Link" value={selectedAppointment.meeting_link} icon={<Video size={16} />} />
               <DetailCard title="Created At" value={new Date(selectedAppointment.created_at).toLocaleString()} icon={<Calendar size={16} />} />
             </div>
           </div>
+        </div>
+      )}
+
+      {deleteTarget && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/35 p-4">
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-xl">
+            <h2 className="text-xl font-semibold tracking-tight text-slate-900">Delete Appointment</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Are you sure you want to permanently delete this appointment?
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={deleteAppointment}
+                className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-medium text-red-600 transition hover:bg-red-100"
+              >
+                <Trash2 size={15} />
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {toast && (
+        <div className="fixed right-4 top-4 z-[70] flex max-w-sm items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-lg">
+          <CheckCircle2
+            size={18}
+            className={toast.type === "success" ? "text-emerald-600" : "text-red-500"}
+          />
+          <span>{toast.message}</span>
         </div>
       )}
     </div>
@@ -489,11 +583,11 @@ function StatCard({ icon, title, value }) {
 function DetailCard({ title, value, icon }) {
   return (
     <div>
-      <div className="mb-3 flex items-center gap-2 text-sm text-slate-500">
+      <div className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-500">
         {icon}
         <span>{title}</span>
       </div>
-      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 break-words">
+      <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm leading-6 text-slate-700 break-words">
         {value || "N/A"}
       </div>
     </div>
