@@ -170,6 +170,30 @@ export default function Builder() {
     loadTrainingFiles(chatbotId);
   }, [chatbotId, loadTrainingFiles]);
 
+  const ensureChatbot = async () => {
+    if (!user?.id) {
+      throw new Error("User is not authenticated");
+    }
+
+    const existingId = chatbotId || selectedChatbot?.id;
+    const payload = {
+      ...(existingId ? { id: existingId } : {}),
+      business_info: businessInfo || "",
+      website_url: website || "",
+      bot_name: theme.botName || DEFAULT_THEME.botName,
+      theme: { ...DEFAULT_THEME, ...theme },
+      status: "active",
+    };
+
+    const chatbot = await handleSaveChatbot(payload);
+    if (!chatbot?.id) {
+      throw new Error("Chatbot could not be saved");
+    }
+
+    setChatbotId(chatbot.id);
+    return chatbot.id;
+  };
+
   useEffect(() => {
 
     messagesEndRef.current?.scrollIntoView({
@@ -183,19 +207,8 @@ export default function Builder() {
   const saveChanges = async () => {
     if (saving) return;
 
-    if (!selectedChatbot || !chatbotId) {
-      showToast("Select or create a chatbot before saving.", "error");
-      return;
-    }
-
     try {
-      await handleSaveChatbot({
-        id: chatbotId,
-        business_info: businessInfo || "",
-        website_url: website || "",
-        bot_name: theme.botName || DEFAULT_THEME.botName,
-        theme: { ...DEFAULT_THEME, ...theme },
-      });
+      await ensureChatbot();
 
       const { error: integrationsError } = await saveIntegrations({
         ...(integrations || {}),
@@ -220,11 +233,6 @@ export default function Builder() {
 
       if (!file || uploading) return;
 
-      if (!chatbotId || !user?.id) {
-        showToast("Save the chatbot before uploading a logo.", "error");
-        return;
-      }
-
       if (!file.type.startsWith("image/")) {
         showToast("Please upload an image file.", "error");
         return;
@@ -236,6 +244,7 @@ export default function Builder() {
       }
 
       setUploading(true);
+      const activeChatbotId = await ensureChatbot();
 
       const fileExt =
         file.name
@@ -305,10 +314,7 @@ export default function Builder() {
           theme: updatedTheme,
           bot_name: updatedTheme.botName,
         })
-        .eq(
-          "id",
-          chatbotId
-        );
+        .eq("id", activeChatbotId);
 
       if (themeError) throw themeError;
       showToast("Logo uploaded successfully.");
@@ -327,11 +333,6 @@ export default function Builder() {
       !input.trim() ||
       sending
     ) return;
-
-    if (!chatbotId || !user?.id) {
-      showToast("Save the chatbot before using chat preview.", "error");
-      return;
-    }
 
     const userMessage =
       input;
@@ -407,6 +408,7 @@ export default function Builder() {
     try {
 
       setSending(true);
+      const activeChatbotId = await ensureChatbot();
 
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError) throw sessionError;
@@ -429,7 +431,7 @@ export default function Builder() {
                 userMessage,
 
               chatbot_id:
-                chatbotId,
+                activeChatbotId,
 
               session_id:
                 user.id,
@@ -475,15 +477,10 @@ export default function Builder() {
   };
 
   const copyEmbed = async () => {
-  if (!chatbotId) {
-    showToast("Save the chatbot before copying embed code.", "error");
-    return;
-  }
-
-  const code =
-`<script src="${API_URL}/api/embed/${chatbotId}.js"></script>`;
-
   try {
+    const activeChatbotId = await ensureChatbot();
+    const code =
+`<script src="${API_URL}/api/embed/${activeChatbotId}.js"></script>`;
     await navigator.clipboard.writeText(code);
     setCopied(true);
     showToast("Embed code copied.");
@@ -500,12 +497,17 @@ export default function Builder() {
     event.target.value = "";
 
     if (!files.length) return;
-    if (!chatbotId) {
-      showToast("Save the chatbot before uploading training files.", "error");
+    setUploading(true);
+    let activeChatbotId;
+    try {
+      activeChatbotId = await ensureChatbot();
+    } catch (err) {
+      console.error("TRAINING CHATBOT CREATION ERROR:", err);
+      setUploading(false);
+      showToast(err?.message || "Unable to prepare the chatbot.", "error");
       return;
     }
 
-    setUploading(true);
     const uploaded = [];
     const failed = [];
 
@@ -513,7 +515,7 @@ export default function Builder() {
       try {
         const formData = new FormData();
         formData.append("file", file);
-        formData.append("chatbot_id", chatbotId);
+        formData.append("chatbot_id", activeChatbotId);
         await uploadAPI.trainingFile(formData);
         uploaded.push(file.name);
       } catch (err) {
@@ -522,7 +524,7 @@ export default function Builder() {
       }
     }
 
-    await loadTrainingFiles(chatbotId);
+    await loadTrainingFiles(activeChatbotId);
     setUploading(false);
 
     if (failed.length) {
@@ -720,7 +722,7 @@ xl:grid-cols-[220px_minmax(420px,520px)_minmax(500px,620px)]
                 <code className="break-all whitespace-pre-wrap text-xs text-slate-700">{`<script src="${API_URL}/api/embed/${chatbotId}.js"></script>`}</code>
               </div>
 
-              <button onClick={copyEmbed} disabled={!chatbotId} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-violet-600 px-5 text-sm font-semibold text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60">
+              <button onClick={copyEmbed} disabled={saving} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-violet-600 px-5 text-sm font-semibold text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60">
                 {copied ? <><Check size={15} /> Copied</> : <><Copy size={15} /> Copy embed code</>}
               </button>
             </div>
