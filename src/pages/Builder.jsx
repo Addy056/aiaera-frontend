@@ -18,6 +18,7 @@ import {
   useState,
   useEffect,
   useRef,
+  useCallback,
 } from "react";
 
 import { supabase } from "../lib/supabase";
@@ -34,8 +35,26 @@ import {
   saveIntegrations,
 } from "../api/integrationsApi";
 
+import { uploadAPI } from "../lib/api";
+
 const API_URL =
-  import.meta.env.VITE_API_URL;
+  import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+const MAX_LOGO_SIZE = 5 * 1024 * 1024;
+const DEFAULT_THEME = {
+  botName: "AI Assistant",
+  chatBg: "#F8FAFC",
+  botBubble: "#FFFFFF",
+  userBubble: "#7C3AED",
+  textColor: "#0F172A",
+  logo: "",
+};
+
+const normalizeTheme = (chatbot) => ({
+  ...DEFAULT_THEME,
+  ...(chatbot?.theme && typeof chatbot.theme === "object" ? chatbot.theme : {}),
+  botName: chatbot?.bot_name || chatbot?.theme?.botName || DEFAULT_THEME.botName,
+});
 
 export default function Builder() {
 
@@ -55,8 +74,6 @@ export default function Builder() {
 
     saving,
 
-    setIntegrations,
-
     handleSaveChatbot,
 
   } = useBuilder(
@@ -75,8 +92,7 @@ export default function Builder() {
   const [activeTab, setActiveTab] =
     useState("basic");
 
-  const [previewMode, setPreviewMode] =
-    useState("desktop");
+  const previewMode = "desktop";
 
   const [businessInfo, setBusinessInfo] =
     useState("");
@@ -84,14 +100,10 @@ export default function Builder() {
   const [website, setWebsite] =
     useState("");
 
-const [theme, setTheme] = useState({
-  botName: "AI Assistant",
-  chatBg: "#F8FAFC",
-  botBubble: "#FFFFFF",
-  userBubble: "#7C3AED",
-  textColor: "#0F172A",
-  logo: "",
-});
+  const [theme, setTheme] = useState(DEFAULT_THEME);
+  const [toast, setToast] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [trainingFiles, setTrainingFiles] = useState([]);
 
   const [messages, setMessages] =
     useState([
@@ -107,8 +119,13 @@ const [theme, setTheme] = useState({
 
   useEffect(() => {
 
-    if (!selectedChatbot)
+    if (!selectedChatbot) {
+      setChatbotId(null);
+      setBusinessInfo("");
+      setWebsite("");
+      setTheme(DEFAULT_THEME);
       return;
+    }
    setChatbotId(selectedChatbot.id);
     setBusinessInfo(
       selectedChatbot.business_info ||
@@ -120,7 +137,38 @@ const [theme, setTheme] = useState({
         ""
     );
 
+    setTheme(normalizeTheme(selectedChatbot));
+
   }, [selectedChatbot]);
+
+  const showToast = useCallback((message, type = "success") => {
+    setToast({ message, type });
+  }, []);
+
+  const loadTrainingFiles = useCallback(async (id) => {
+    if (!id) {
+      setTrainingFiles([]);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("chatbot_files")
+      .select("id, file_name, created_at")
+      .eq("chatbot_id", id)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("TRAINING LIST ERROR:", error);
+      showToast("Unable to load training files.", "error");
+      return;
+    }
+
+    setTrainingFiles(Array.isArray(data) ? data : []);
+  }, [showToast]);
+
+  useEffect(() => {
+    loadTrainingFiles(chatbotId);
+  }, [chatbotId, loadTrainingFiles]);
 
   useEffect(() => {
 
@@ -133,60 +181,33 @@ const [theme, setTheme] = useState({
   
 
   const saveChanges = async () => {
+    if (saving) return;
+
+    if (!selectedChatbot || !chatbotId) {
+      showToast("Select or create a chatbot before saving.", "error");
+      return;
+    }
 
     try {
+      await handleSaveChatbot({
+        id: chatbotId,
+        business_info: businessInfo || "",
+        website_url: website || "",
+        bot_name: theme.botName || DEFAULT_THEME.botName,
+        theme: { ...DEFAULT_THEME, ...theme },
+      });
 
-      setSaving(true);
+      const { error: integrationsError } = await saveIntegrations({
+        ...(integrations || {}),
+        user_id: user.id,
+      });
 
-      await supabase
-        .from("chatbots")
-        .update({
-          business_info:
-            businessInfo,
-
-          website_url:
-            website,
-
-          bot_name:
-            theme.botName,
-
-          theme,
-        })
-        .eq("id", chatbotId);
-
-      
-
-      await fetch(
-        `${API_URL}/api/integrations`,
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-
-          body: JSON.stringify({
-            provider:
-              integrations.provider,
-
-            meeting_link:
-              integrations.meeting_link,
-
-            maps:
-              integrations.maps_link,
-          }),
-        }
-      );
+      if (integrationsError) throw integrationsError;
+      showToast("Changes saved successfully.");
 
     } catch (err) {
-
-      console.error(err);
-
-    } finally {
-
-      setSaving(false);
-
+      console.error("SAVE BUILDER ERROR:", err);
+      showToast(err?.message || "Unable to save changes.", "error");
     }
   };
 
@@ -197,20 +218,24 @@ const [theme, setTheme] = useState({
       const file =
         e.target.files?.[0];
 
-      if (!file) return;
+      if (!file || uploading) return;
 
-      if (
-        !file.type.startsWith(
-          "image/"
-        )
-      ) {
-
-        alert(
-          "Please upload an image file"
-        );
-
+      if (!chatbotId || !user?.id) {
+        showToast("Save the chatbot before uploading a logo.", "error");
         return;
       }
+
+      if (!file.type.startsWith("image/")) {
+        showToast("Please upload an image file.", "error");
+        return;
+      }
+
+      if (file.size > MAX_LOGO_SIZE) {
+        showToast("Logo must be smaller than 5 MB.", "error");
+        return;
+      }
+
+      setUploading(true);
 
       const fileExt =
         file.name
@@ -246,10 +271,7 @@ const [theme, setTheme] = useState({
           uploadError
         );
 
-        alert(
-          "Logo upload failed"
-        );
-
+        showToast("Logo upload failed.", "error");
         return;
       }
 
@@ -260,6 +282,10 @@ const [theme, setTheme] = useState({
         .getPublicUrl(
           filePath
         );
+
+      if (!publicData?.publicUrl) {
+        throw new Error("Logo URL was not generated");
+      }
 
       const logoUrl =
         `${publicData.publicUrl}?t=${Date.now()}`;
@@ -273,24 +299,25 @@ const [theme, setTheme] = useState({
         updatedTheme
       );
 
-      await supabase
+      const { error: themeError } = await supabase
         .from("chatbots")
         .update({
-          theme:
-            updatedTheme,
+          theme: updatedTheme,
+          bot_name: updatedTheme.botName,
         })
         .eq(
           "id",
           chatbotId
         );
 
+      if (themeError) throw themeError;
+      showToast("Logo uploaded successfully.");
+
     } catch (err) {
-
-      console.error(err);
-
-      alert(
-        "Something went wrong"
-      );
+      console.error("LOGO UPLOAD ERROR:", err);
+      showToast(err?.message || "Something went wrong while uploading the logo.", "error");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -300,6 +327,11 @@ const [theme, setTheme] = useState({
       !input.trim() ||
       sending
     ) return;
+
+    if (!chatbotId || !user?.id) {
+      showToast("Save the chatbot before using chat preview.", "error");
+      return;
+    }
 
     const userMessage =
       input;
@@ -376,8 +408,12 @@ const [theme, setTheme] = useState({
 
       setSending(true);
 
-      const response =
-        await fetch(
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) throw new Error("User is not authenticated");
+
+      const response = await fetch(
           `${API_URL}/api/chatbot/chat`,
           {
             method: "POST",
@@ -385,6 +421,7 @@ const [theme, setTheme] = useState({
             headers: {
               "Content-Type":
                 "application/json",
+              Authorization: `Bearer ${accessToken}`,
             },
 
             body: JSON.stringify({
@@ -400,8 +437,10 @@ const [theme, setTheme] = useState({
           }
         );
 
-      const data =
-        await response.json();
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || data?.message || "Chat request failed");
+      }
 
       setMessages((prev) => [
         ...prev,
@@ -417,6 +456,7 @@ const [theme, setTheme] = useState({
     } catch (err) {
 
       console.error(err);
+      showToast(err?.message || "Chat preview request failed.", "error");
 
       setMessages((prev) => [
         ...prev,
@@ -434,24 +474,63 @@ const [theme, setTheme] = useState({
     }
   };
 
- const copyEmbed = async () => {
+  const copyEmbed = async () => {
+  if (!chatbotId) {
+    showToast("Save the chatbot before copying embed code.", "error");
+    return;
+  }
 
   const code =
 `<script src="${API_URL}/api/embed/${chatbotId}.js"></script>`;
 
-  await navigator.clipboard.writeText(
-    code
-  );
-
-  setCopied(true);
-
-  setTimeout(() => {
-
-    setCopied(false);
-
-  }, 2000);
+  try {
+    await navigator.clipboard.writeText(code);
+    setCopied(true);
+    showToast("Embed code copied.");
+    setTimeout(() => setCopied(false), 2000);
+  } catch (err) {
+    console.error("COPY EMBED ERROR:", err);
+    showToast("Unable to copy embed code.", "error");
+  }
 
 };
+
+  const uploadTrainingFiles = async (event) => {
+    const files = Array.from(event.target.files || []);
+    event.target.value = "";
+
+    if (!files.length) return;
+    if (!chatbotId) {
+      showToast("Save the chatbot before uploading training files.", "error");
+      return;
+    }
+
+    setUploading(true);
+    const uploaded = [];
+    const failed = [];
+
+    for (const file of files) {
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("chatbot_id", chatbotId);
+        await uploadAPI.trainingFile(formData);
+        uploaded.push(file.name);
+      } catch (err) {
+        console.error(`TRAINING UPLOAD ERROR (${file.name}):`, err);
+        failed.push(file.name);
+      }
+    }
+
+    await loadTrainingFiles(chatbotId);
+    setUploading(false);
+
+    if (failed.length) {
+      showToast(`${uploaded.length} uploaded; failed: ${failed.join(", ")}`, "error");
+    } else {
+      showToast(`${uploaded.length} training file${uploaded.length === 1 ? "" : "s"} uploaded.`);
+    }
+  };
 
   const previewSurfaceBg =
     theme.chatBg &&
@@ -499,6 +578,11 @@ const [theme, setTheme] = useState({
 
   return (
     <div className="min-h-[calc(100vh-90px)] overflow-hidden text-slate-900">
+      {toast && (
+        <div className={`mb-4 rounded-xl border px-4 py-3 text-sm ${toast.type === "error" ? "border-red-200 bg-red-50 text-red-700" : "border-emerald-200 bg-emerald-50 text-emerald-700"}`} role="status">
+          {toast.message}
+        </div>
+      )}
       <div className="mb-4 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1">
@@ -508,7 +592,7 @@ const [theme, setTheme] = useState({
           <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Builder</h1>
         </div>
 
-        <button onClick={saveChanges} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-violet-600 px-5 text-sm font-semibold text-white transition hover:bg-violet-700">
+        <button onClick={saveChanges} disabled={saving} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-violet-600 px-5 text-sm font-semibold text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60">
           {saving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
           Save
         </button>
@@ -587,28 +671,18 @@ xl:grid-cols-[220px_minmax(420px,520px)_minmax(500px,620px)]
                 <Upload size={24} className="mb-3 text-violet-600" />
                 <p className="text-sm font-medium text-slate-900">Upload PDF or CSV</p>
                 <p className="mt-1 text-xs text-slate-600">Click here to upload training files</p>
-                <input type="file" hidden multiple accept=".pdf,.csv" onChange={async (e) => {
-                  try {
-                    const files = Array.from(e.target.files);
-                    if (!files.length) return;
-                    for (const file of files) {
-                      const formData = new FormData();
-                      formData.append("file", file);
-                      formData.append("chatbot_id", chatbotId);
-                      const response = await fetch(`${API_URL}/api/upload/training`, {
-                        method: "POST",
-                        headers: { Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}` },
-                        body: formData,
-                      });
-                      await response.json();
-                    }
-                    alert("Training files uploaded successfully 🚀");
-                  } catch (err) {
-                    console.error("UPLOAD ERROR:", err);
-                    alert("Failed to upload files");
-                  }
-                }} />
+                <input type="file" hidden multiple accept=".pdf,.csv" onChange={uploadTrainingFiles} />
               </label>
+
+              {uploading && <p className="text-xs text-violet-600">Uploading training files…</p>}
+              {trainingFiles.length > 0 && (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <h3 className="mb-2 text-sm font-semibold text-slate-900">Uploaded files</h3>
+                  <div className="space-y-1 text-xs text-slate-600">
+                    {trainingFiles.map((file) => <p key={file.id}>{file.file_name}</p>)}
+                  </div>
+                </div>
+              )}
 
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <h3 className="mb-2 text-sm font-semibold text-slate-900">Tips for better AI responses</h3>
@@ -646,7 +720,7 @@ xl:grid-cols-[220px_minmax(420px,520px)_minmax(500px,620px)]
                 <code className="break-all whitespace-pre-wrap text-xs text-slate-700">{`<script src="${API_URL}/api/embed/${chatbotId}.js"></script>`}</code>
               </div>
 
-              <button onClick={copyEmbed} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-violet-600 px-5 text-sm font-semibold text-white transition hover:bg-violet-700">
+              <button onClick={copyEmbed} disabled={!chatbotId} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-violet-600 px-5 text-sm font-semibold text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60">
                 {copied ? <><Check size={15} /> Copied</> : <><Copy size={15} /> Copy embed code</>}
               </button>
             </div>

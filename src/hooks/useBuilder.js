@@ -175,7 +175,7 @@ export const useBuilder =
                 "INTEGRATION ERROR:",
                 integrationError
               );
-
+              throw integrationError;
             } else {
 
               setIntegrations(
