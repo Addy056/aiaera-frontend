@@ -1,6 +1,5 @@
 import {
   Save,
-  Send,
   Copy,
   Check,
   Loader2,
@@ -9,7 +8,6 @@ import {
   FileText,
   Palette,
   Rocket,
-  BrainCircuit,
   Upload,
   Info,
 } from "lucide-react";
@@ -17,7 +15,6 @@ import {
 import {
   useState,
   useEffect,
-  useRef,
   useCallback,
 } from "react";
 
@@ -34,6 +31,9 @@ import {
 import {
   saveIntegrations,
 } from "../api/integrationsApi";
+
+import { ChatWidget } from "../components/chat";
+
 
 import { uploadAPI } from "../lib/api";
 
@@ -60,9 +60,6 @@ export default function Builder() {
 
   const { user } =
     useAuth();
-
-  const messagesEndRef =
-    useRef(null);
 
   const {
 
@@ -91,8 +88,6 @@ export default function Builder() {
 
   const [activeTab, setActiveTab] =
     useState("basic");
-
-  const previewMode = "desktop";
 
   const [businessInfo, setBusinessInfo] =
     useState("");
@@ -193,16 +188,6 @@ export default function Builder() {
     setChatbotId(chatbot.id);
     return chatbot.id;
   };
-
-  useEffect(() => {
-
-    messagesEndRef.current?.scrollIntoView({
-      behavior: "smooth",
-    });
-
-  }, [messages]);
-
-  
 
   const saveChanges = async () => {
     if (saving) return;
@@ -533,13 +518,14 @@ export default function Builder() {
       showToast(`${uploaded.length} training file${uploaded.length === 1 ? "" : "s"} uploaded.`);
     }
   };
-
-  const previewSurfaceBg =
-    theme.chatBg &&
-    theme.chatBg !== "#081120"
-      ? theme.chatBg
-      : "#f8fafc";
-
+const previewChatbot = {
+  bot_name: theme.botName,
+  theme: {
+    ...DEFAULT_THEME,
+    ...theme,
+    botName: theme.botName,
+  },
+};
   const previewSeedMessages = [
     {
       role: "bot",
@@ -563,6 +549,54 @@ export default function Builder() {
     messages.length <= 1
       ? [...previewSeedMessages, ...messages.slice(1)]
       : messages;
+
+  const handleBookAppointment = () => {
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "user",
+        text: "Book Appointment",
+      },
+      {
+        role: "bot",
+        text: integrations?.meeting_link
+          ? `📅 Book your appointment here:\n${integrations.meeting_link}`
+          : "Booking link not configured yet.",
+      },
+    ]);
+  };
+
+  const handleVisitOffice = () => {
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "user",
+        text: "Visit Office",
+      },
+      {
+        role: "bot",
+        text: integrations?.maps_link
+          ? `📍 Visit our office:\n${integrations.maps_link}`
+          : "Office location not configured yet.",
+      },
+    ]);
+  };
+
+  const handleAskServices = () => {
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "user",
+        text: "Tell me more",
+      },
+      {
+        role: "bot",
+        text: businessInfo
+          ? `I can help explain our services: ${businessInfo}`
+          : "I can help explain our services in more detail.",
+      },
+    ]);
+  };
 
   if (loading) {
 
@@ -730,89 +764,28 @@ xl:grid-cols-[220px_minmax(420px,520px)_minmax(500px,620px)]
         </div>
 
         <div className="flex h-full w-full items-center justify-center">
-          <div className={`flex h-full w-full flex-col overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-[0_24px_80px_-28px_rgba(15,23,42,0.28)] ${previewMode === "mobile" ? "max-w-[340px]" : "max-w-[560px]"}`}>
-            <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white p-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
-                  {theme.logo ? <img src={theme.logo} alt="logo" onError={(e) => { e.target.style.display = "none"; }} className="h-full w-full object-cover" /> : <span className="text-[11px] font-semibold text-slate-500">Logo</span>}
-                </div>
-                <div>
-                  <h2 className="text-base font-semibold text-slate-900">{theme.botName}</h2>
-                  <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
-                    <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                    Online now
-                  </div>
-                </div>
-              </div>
-             <div className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2">
-  <span className="text-sm font-medium text-slate-600">
-    Live Preview
-  </span>
-</div>
+          <div className="h-full w-full max-w-[560px]">
+          <ChatWidget
+            mode="preview"
+            chatbot={previewChatbot}
+            messages={displayMessages}
+            loading={sending}
+            input={input}
+            setInput={setInput}
+            onSend={sendMessage}
+            integrations={integrations}
+            placeholder="Type your message..."
+            onBookAppointment={handleBookAppointment}
+            onVisitOffice={handleVisitOffice}
+            onAskServices={handleAskServices}
+          />
             </div>
 
-            <div className="flex shrink-0 flex-wrap gap-2 border-b border-slate-200 bg-slate-50/70 p-3">
-              <button onClick={() => { setMessages((prev) => [...prev, { role: "user", text: "Book Appointment" }, { role: "bot", text: integrations?.meeting_link ? `📅 Book your appointment here:\n${integrations.meeting_link}` : "Booking link not configured yet." }]); }} className="rounded-full border border-violet-200 bg-white px-3 py-2 text-[11px] font-medium text-violet-700 shadow-sm transition hover:border-violet-300 hover:bg-violet-50">📅 Book appointment</button>
-              <button onClick={() => { setMessages((prev) => [...prev, { role: "user", text: "Visit Office" }, { role: "bot", text: integrations?.maps_link ? `📍 Visit our office:\n${integrations.maps_link}` : "Office location not configured yet." }]); }} className="rounded-full border border-violet-200 bg-white px-3 py-2 text-[11px] font-medium text-violet-700 shadow-sm transition hover:border-violet-300 hover:bg-violet-50">📍 Visit office</button>
-              <button onClick={() => { setMessages((prev) => [...prev, { role: "user", text: "Tell me more" }, { role: "bot", text: businessInfo ? `I can help explain our services: ${businessInfo}` : "I can help explain our services in more detail." }]); }} className="rounded-full border border-slate-200 bg-white px-3 py-2 text-[11px] font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-100">💬 Ask about services</button>
-            </div>
-
-            <div className="flex-1 min-h-0 overflow-y-auto p-4" style={{ background: previewSurfaceBg }}>
-              <div className="space-y-3">
-                {displayMessages.map((msg, index) => (
-                  <div key={index} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                    <div className={`max-w-[88%] whitespace-pre-wrap break-words rounded-[20px] px-4 py-3 text-sm leading-6 shadow-sm ${msg.role === "user" ? "border border-violet-100" : "border border-slate-200 bg-white"}`} style={{
-  background:
-    msg.role === "user"
-      ? theme.userBubble
-      : theme.botBubble,
-
-  color:
-    msg.role === "user"
-      ? (
-          theme.userBubble === "#ffffff" ||
-          theme.userBubble.toLowerCase() === "#fff"
-            ? "#0f172a"
-            : "#ffffff"
-        )
-      : theme.textColor,
-}}>
-                      {msg.text.split("\n").map((line, lineIndex) => {
-                        const urlMatch = line.match(/(https?:\/\/[^\s]+)/);
-                        if (urlMatch) {
-                          const url = urlMatch[0];
-                          const text = line.replace(url, "");
-                          return (
-                            <div key={lineIndex} className="space-y-2">
-                              {text && <div>{text}</div>}
-                              <a href={url} target="_blank" rel="noopener noreferrer" className="block break-all text-violet-600 underline transition hover:text-violet-700">{url}</a>
-                            </div>
-                          );
-                        }
-                        return <div key={lineIndex}>{line}</div>;
-                      })}
-                    </div>
-                  </div>
-                ))}
-                <div ref={messagesEndRef}></div>
-              </div>
-            </div>
-
-            <div className="shrink-0 border-t border-slate-200 bg-white p-3">
-              <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-2 py-2 shadow-sm">
-                <input type="text" placeholder="Type your message..." value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { sendMessage(); } }} className="h-11 flex-1 rounded-xl border-none bg-transparent px-3 text-sm text-slate-700 outline-none placeholder:text-slate-400" />
-                <button onClick={sendMessage} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-600 text-white shadow-sm transition hover:bg-violet-700" style={{ backgroundColor: theme.userBubble }}>
-                  {sending ? <Loader2 className="animate-spin" size={16} /> : <Send size={16} />}
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
   );
 }
-
 function MenuItem({ icon, title, desc, active, onClick }) {
   return (
     <button onClick={onClick} className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-left transition-all ${active ? "bg-violet-600 text-white shadow-sm" : "bg-slate-50 text-slate-700 hover:bg-slate-100"}`}>

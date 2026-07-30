@@ -1,94 +1,20 @@
+import { useState, useEffect, useCallback } from "react";
+import { useParams } from "react-router-dom";
+import { Loader2 } from "lucide-react";
+
+import { ChatWidget } from "../components/chat";
+import useVisitorId from "../hooks/useVisitorId";
+import { loadChat, saveChat } from "../utils/chatStorage";
 import {
-  useState,
-  useEffect,
-  useRef,
-} from "react";
+  DEFAULT_MESSAGE,
+  DEFAULT_INTEGRATIONS,
+  CHAT_PLACEHOLDERS,
+} from "../constants/chatConstants";
+import { fetchPublicChatbot, sendPublicMessage } from "../api/chatApi";
 
-import {
-  useParams,
-} from "react-router-dom";
-
-import {
-  Send,
-  Bot,
-  User,
-  Loader2,
-  Sparkles,
-} from "lucide-react";
-
-const API_URL =
-  import.meta.env.VITE_API_URL;
-
-/*
-========================================
-RTL LANGUAGE DETECTION
-========================================
-*/
-const isRTLText =
-  (text = "") => {
-
-    const rtlRegex =
-      /[\u0591-\u07FF\uFB1D-\uFDFD\uFE70-\uFEFC]/;
-
-    return rtlRegex.test(
-      text
-    );
-  };
-  /*
-========================================
-RENDER CLICKABLE LINKS
-========================================
-*/
-const renderMessage = (text = "") => {
-  const urlRegex = /(https?:\/\/[^\s]+)/g;
-
-  return text.split(urlRegex).map((part, index) => {
-    if (part.match(urlRegex)) {
-      return (
-        <a
-          key={index}
-          href={part}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-400 underline break-all hover:text-blue-300 transition"
-        >
-          {part}
-        </a>
-      );
-    }
-
-    return <span key={index}>{part}</span>;
-  });
-};
-/*
-========================================
-VISITOR ID
-========================================
-*/
-const getVisitorId = () => {
-
-  let visitorId =
-    localStorage.getItem(
-      "aiaera_visitor_id"
-    );
-
-  if (!visitorId) {
-
-    visitorId =
-      crypto.randomUUID();
-
-    localStorage.setItem(
-      "aiaera_visitor_id",
-      visitorId
-    );
-  }
-
-  return visitorId;
-};
 export default function PublicChatbot() {
-
-  const { id } =
-    useParams();
+  const { id } = useParams();
+  const visitorId = useVisitorId();
 
   /*
   ========================================
@@ -96,340 +22,169 @@ export default function PublicChatbot() {
   ========================================
   */
   const isEmbed =
-    new URLSearchParams(
-      window.location.search
-    ).get("embed");
+  new URLSearchParams(window.location.search).get("embed") === "true";
 
   /*
   ========================================
   STATES
   ========================================
   */
- const [messages, setMessages] =
-  useState(() => {
-
-    const saved =
-      localStorage.getItem(
-        `chat_${id}`
-      );
-
-    if (saved) {
-
-      try {
-
-        return JSON.parse(
-          saved
-        );
-
-      } catch {
-
-        return [
-          {
-            role: "bot",
-            text:
-              "Hi 👋 I'm your AI assistant. How can I help you today?",
-          },
-        ];
-      }
+  const [messages, setMessages] = useState(() => {
+    const saved = loadChat(id);
+    if (saved && saved.length > 0) {
+      return saved;
     }
-
-    return [
-      {
-        role: "bot",
-        text:
-          "Hi 👋 I'm your AI assistant. How can I help you today?",
-      },
-    ];
+    return [DEFAULT_MESSAGE];
   });
 
-  const [input, setInput] =
-    useState("");
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [chatbot, setChatbot] = useState(null);
+  const [fetching, setFetching] = useState(true);
+  const [expired, setExpired] = useState(false);
 
-  const [loading, setLoading] =
-    useState(false);
-
-  const [chatbot, setChatbot] =
-    useState(null);
-
-  const [fetching, setFetching] =
-    useState(true);
-
-  const [expired, setExpired] =
-    useState(false);
-const [visitorId] =
-  useState(
-    getVisitorId()
-  );
-  const [integrations, setIntegrations] =
-  useState({
-    meeting_provider: "calendly",
-    meeting_link: "",
-    maps_link: "",
-  });
-    
-
-  const messagesEndRef =
-    useRef(null);
+  const [integrations, setIntegrations] = useState(DEFAULT_INTEGRATIONS);
 
   /*
   ========================================
-  AUTO SCROLL
+  RELOAD CHAT ON ID CHANGE
   ========================================
   */
   useEffect(() => {
+    const saved = loadChat(id);
+    if (saved && saved.length > 0) {
+      setMessages(saved);
+    } else {
+      setMessages([DEFAULT_MESSAGE]);
+    }
+  }, [id]);
 
-    messagesEndRef.current
-      ?.scrollIntoView({
-        behavior:
-          "smooth",
-      });
+  /*
+  ========================================
+  LOCALSTORAGE PERSISTENCE
+  ========================================
+  */
+  useEffect(() => {
+    saveChat(id, messages);
+  }, [messages, id]);
 
-  }, [messages]);
-useEffect(() => {
-
-  localStorage.setItem(
-
-    `chat_${id}`,
-
-    JSON.stringify(
-      messages
-    )
-  );
-
-}, [
-  messages,
-  id,
-]);
   /*
   ========================================
   FETCH CHATBOT
   ========================================
   */
-  useEffect(() => {
+const fetchChatbot = useCallback(async () => {
+  try {
+    setFetching(true);
 
-    fetchChatbot();
+    setExpired(false);
+    setChatbot(null);
 
+    const data = await fetchPublicChatbot(id);
+
+      if (data.subscription_expired) {
+        setExpired(true);
+        setMessages([
+          {
+            role: "bot",
+            text: "This chatbot is temporarily unavailable.",
+          },
+        ]);
+        return;
+      }
+
+      setChatbot(data.chatbot);
+
+      setIntegrations({
+        ...DEFAULT_INTEGRATIONS,
+        ...(data.integrations || {}),
+      });
+    } catch (error) {
+  console.error("FETCH CHATBOT ERROR:", error);
+
+  setMessages([
+    {
+      role: "bot",
+      text: "Unable to load chatbot. Please try again later.",
+    },
+  ]);
+} finally {
+  setFetching(false);
+}
   }, [id]);
 
-  const fetchChatbot =
-    async () => {
-
-      try {
-
-        setFetching(true);
-
-        const response =
-          await fetch(
-            `${API_URL}/api/chatbot/public/${id}`
-          );
-
-        const data =
-          await response.json();
-
-        if (
-          data.subscription_expired
-        ) {
-
-          setExpired(true);
-
-          setMessages([
-            {
-              role: "bot",
-              text:
-                "This chatbot is temporarily unavailable.",
-            },
-          ]);
-
-          return;
-        }
-
-        setChatbot(
-          data.chatbot
-        );
-
-       setIntegrations({
-  meeting_provider:
-    data.integrations?.meeting_provider ||
-    "calendly",
-
-  meeting_link:
-    data.integrations?.meeting_link ||
-    "",
-
-  maps_link:
-    data.integrations?.maps_link ||
-    "",
-});
-
-      } catch (error) {
-
-        console.error(
-          "FETCH CHATBOT ERROR:",
-          error
-        );
-
-      } finally {
-
-        setFetching(false);
-
-      }
-    };
+  useEffect(() => {
+    fetchChatbot();
+  }, [fetchChatbot]);
 
   /*
   ========================================
   SEND MESSAGE
   ========================================
   */
-  const sendMessage =
-    async () => {
+ const sendMessage = useCallback(
+  async (customText = null) => {
+    const textToSend = customText || input;
 
-      if (
-        !input.trim() ||
-        loading ||
-        expired
-      )
-        return;
+    if (!textToSend.trim() || loading || expired) return;
 
-      const userMessage = {
-        role: "user",
-        text: input,
-      };
+    const userMessage = {
+      role: "user",
+      text: textToSend,
+    };
 
-      const updatedMessages = [
-        ...messages,
-        userMessage,
-      ];
+    const updatedMessages = [...messages, userMessage];
 
-      setMessages(
-        updatedMessages
-      );
+    setMessages(updatedMessages);
 
-      const currentInput =
-        input;
-
+    if (!customText) {
       setInput("");
+    }
 
-      try {
+    try {
+      setLoading(true);
 
-        setLoading(true);
+      const data = await sendPublicMessage({
+        chatbotId: id,
+        visitorId,
+        message: textToSend,
+        messages: updatedMessages,
+      });
 
-        const response =
-          await fetch(
-            `${API_URL}/api/chatbot/chat`,
-            {
-              method:
-                "POST",
-
-              headers: {
-                "Content-Type":
-                  "application/json",
-              },
-
-              body:
-  JSON.stringify({
-
-    chatbotId:
-      id,
-
-    visitorId,
-
-    message:
-      currentInput,
-
-    messages:
-      updatedMessages,
-
-  }),
-            }
-          );
-
-        const data =
-          await response.json();
-
-        if (
-          data.error
-        ) {
-
-          setMessages(
-            (
-              prev
-            ) => [
-              ...prev,
-              {
-                role: "bot",
-                text:
-                  data.error,
-              },
-            ]
-          );
-
-          return;
-        }
-
-        setMessages(
-          (
-            prev
-          ) => [
-            ...prev,
-            {
-              role: "bot",
-              text:
-                data.reply ||
-                "No response generated.",
-            },
-          ]
-        );
-
-      } catch (error) {
-
-        console.error(
-          "CHAT ERROR:",
-          error
-        );
-
-        setMessages(
-          (
-            prev
-          ) => [
-            ...prev,
-            {
-              role: "bot",
-              text:
-                "Something went wrong. Please try again later.",
-            },
-          ]
-        );
-
-      } finally {
-
-        setLoading(false);
-
+      if (data.error) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "bot",
+            text: data.error,
+          },
+        ]);
+        return;
       }
-    };
 
-  /*
-  ========================================
-  ENTER KEY
-  ========================================
-  */
-  const handleKeyDown =
-    (e) => {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "bot",
+          text: data.reply || "No response generated.",
+        },
+      ]);
+    } catch (error) {
+      console.error("CHAT ERROR:", error);
 
-      if (
-        e.key ===
-        "Enter"
-      ) {
-
-        e.preventDefault();
-
-        sendMessage();
-      }
-    };
-
-  const inputIsRTL =
-    isRTLText(
-      input
-    );
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "bot",
+          text: "Something went wrong. Please try again later.",
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  },
+  [input, loading, expired, messages, id, visitorId]
+);
 
   /*
   ========================================
@@ -437,32 +192,22 @@ useEffect(() => {
   ========================================
   */
   if (fetching) {
-
     return (
-
       <div className="w-screen h-[100dvh] bg-[#050816] flex items-center justify-center">
-
         <div className="flex flex-col items-center">
-
           <Loader2
             size={36}
             className="animate-spin text-purple-400 mb-4"
           />
-
           <p className="text-sm text-gray-400">
-
             Loading {chatbot?.bot_name || "Assistant"}...
-
           </p>
-
         </div>
-
       </div>
     );
   }
 
   return (
-
     <div
       className={
         isEmbed
@@ -470,16 +215,15 @@ useEffect(() => {
           : "min-h-screen bg-[#050816] flex items-center justify-center p-4 overflow-hidden relative"
       }
     >
-
       {!isEmbed && (
         <>
           <div className="absolute top-[-120px] left-[-120px] w-[300px] h-[300px] bg-purple-600/20 blur-[120px] rounded-full"></div>
-
           <div className="absolute bottom-[-120px] right-[-120px] w-[300px] h-[300px] bg-blue-600/20 blur-[120px] rounded-full"></div>
         </>
       )}
 
-      <div className={`
+      <div
+        className={`
         relative
         w-full
         h-[100dvh]
@@ -495,347 +239,25 @@ useEffect(() => {
             ? "rounded-none"
             : "max-w-5xl rounded-[36px]"
         }
-      `}>
-
-        {/* HEADER */}
-        <div className="h-[92px] border-b border-white/10 px-6 flex items-center justify-between bg-white/[0.02] shrink-0">
-
-          <div className="flex items-center gap-4">
-
-            <div className="relative">
-
-              <div className="absolute inset-0 bg-purple-500/20 blur-[20px] rounded-2xl"></div>
-
-              <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-[#7f5af0] to-blue-500 flex items-center justify-center border border-white/10 overflow-hidden">
-
-                {chatbot?.theme?.logo ? (
-
-                  <img
-                    src={chatbot.theme.logo}
-                    alt="Business Logo"
-                    className="w-full h-full object-cover"
-                  />
-
-                ) : (
-
-                  <Bot
-                    size={24}
-                    className="text-white"
-                  />
-
-                )}
-
-              </div>
-
-            </div>
-
-            <div>
-
-              <div className="flex items-center gap-2 mb-1">
-
-                <h2 className="text-lg font-bold text-white">
-
-                  {chatbot?.bot_name ||
-                    "AI Assistant"}
-
-                </h2>
-
-                <div className="w-2 h-2 rounded-full bg-green-400"></div>
-
-              </div>
-
-              <p className="text-sm text-gray-400">
-
-                Multilingual AI assistant
-
-              </p>
-
-            </div>
-
-          </div>
-
-          <div className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/20">
-
-            <Sparkles
-              size={14}
-              className="text-purple-300"
-            />
-
-            <span className="text-xs text-purple-200">
-
-              Powered by AIAERA
-
-            </span>
-
-          </div>
-
-        </div>
-
-        {/* MESSAGES */}
-        <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5 min-h-0 pb-8">
-
-          {messages.map(
-            (
-              message,
-              index
-            ) => {
-
-              const rtl =
-                isRTLText(
-                  message.text
-                );
-
-              return (
-
-                <div
-                  key={index}
-                  className={`flex ${
-                    message.role ===
-                    "user"
-                      ? "justify-end"
-                      : "justify-start"
-                  }`}
-                >
-
-                  <div
-                    className={`
-                      max-w-[88%]
-                      overflow-hidden
-                      rounded-[28px]
-                      px-5
-                      py-4
-                      border
-                      backdrop-blur-xl
-                      ${
-                        message.role ===
-                        "user"
-                          ? `
-                            bg-gradient-to-br
-                            from-[#7f5af0]
-                            to-blue-500
-                            border-purple-400/30
-                            text-white
-                          `
-                          : `
-                            bg-white/[0.04]
-                            border-white/10
-                            text-gray-200
-                          `
-                      }
-                    `}
-                  >
-
-                    <div className={`
-                      flex
-                      items-start
-                      gap-3
-                      ${
-                        rtl
-                          ? "flex-row-reverse"
-                          : ""
-                      }
-                    `}>
-
-                      {/* ICON */}
-                      <div className={`
-                        min-w-[36px]
-                        h-[36px]
-                        rounded-xl
-                        flex
-                        items-center
-                        justify-center
-                        overflow-hidden
-                        shrink-0
-                        ${
-                          message.role ===
-                          "user"
-                            ? "bg-white/20"
-                            : "bg-purple-500/10"
-                        }
-                      `}>
-
-                        {message.role ===
-                        "user" ? (
-
-                          <User
-                            size={16}
-                          />
-
-                        ) : chatbot?.theme?.logo ? (
-
-                          <img
-                            src={
-                              chatbot.theme.logo
-                            }
-                            alt="Bot Logo"
-                            className="w-full h-full object-cover"
-                          />
-
-                        ) : (
-
-                          <Bot
-                            size={16}
-                            className="text-purple-300"
-                          />
-
-                        )}
-
-                      </div>
-
-                      {/* TEXT */}
-                     <div
-  dir={rtl ? "rtl" : "ltr"}
-  className={`
-    flex-1
-    leading-relaxed
-    text-sm
-    whitespace-pre-wrap
-    break-words
-    overflow-hidden
-    ${rtl ? "text-right" : "text-left"}
-  `}
->
-  {renderMessage(message.text)}
-</div>
-
-                    </div>
-
-                  </div>
-
-                </div>
-
-              );
-            }
-          )}
-
-          {/* LOADING */}
-          {loading && (
-
-            <div className="flex justify-start">
-
-              <div className="rounded-[28px] px-5 py-4 border border-white/10 bg-white/[0.04] max-w-[85%]">
-
-                <div className="flex items-center gap-3">
-
-                  <Loader2
-                    size={16}
-                    className="animate-spin text-purple-300"
-                  />
-
-                  <span className="text-sm text-gray-300">
-
-                    {chatbot?.bot_name || "Assistant"} is typing...
-
-                  </span>
-
-                </div>
-
-              </div>
-
-            </div>
-
-          )}
-
-          <div ref={messagesEndRef} />
-
-        </div>
-
-        {/* FOOTER */}
-        <div className="border-t border-white/10 p-4 bg-[#0B1120] shrink-0">
-
-          
-
-          
-
-          {/* INPUT */}
-          <div className="flex items-center gap-3">
-
-            <input
-              type="text"
-              dir={
-                inputIsRTL
-                  ? "rtl"
-                  : "ltr"
-              }
-              value={input}
-              onChange={(e) =>
-                setInput(
-                  e.target.value
-                )
-              }
-              onKeyDown={
-                handleKeyDown
-              }
-              disabled={
-                loading ||
-                expired
-              }
-              placeholder={
-                expired
-                  ? "Chatbot unavailable"
-                  : "Type your message..."
-              }
-              className={`
-                flex-1
-                h-[58px]
-                rounded-2xl
-                bg-[#111827]
-                border
-                border-white/10
-                px-5
-                text-white
-                placeholder:text-gray-500
-                outline-none
-                focus:border-purple-500
-                transition-all
-                ${
-                  inputIsRTL
-                    ? "text-right"
-                    : "text-left"
-                }
-              `}
-            />
-
-            <button
-              onClick={
-                sendMessage
-              }
-              disabled={
-                loading ||
-                expired ||
-                !input.trim()
-              }
-              className={`
-                min-w-[58px]
-                h-[58px]
-                rounded-2xl
-                flex
-                items-center
-                justify-center
-                transition-all
-                shrink-0
-                ${
-                  loading ||
-                  expired ||
-                  !input.trim()
-                    ? "bg-white/5 text-gray-500 cursor-not-allowed"
-                    : "bg-gradient-to-br from-[#7f5af0] to-blue-500 hover:scale-[1.03]"
-                }
-              `}
-            >
-
-              <Send
-                size={18}
-              />
-
-            </button>
-
-          </div>
-
-        </div>
-
+      `}
+      >
+        <ChatWidget
+          mode="public"
+          chatbot={chatbot}
+          messages={messages}
+          loading={loading}
+          input={input}
+          setInput={setInput}
+          onSend={sendMessage}
+          integrations={integrations}
+          placeholder={
+  expired
+    ? CHAT_PLACEHOLDERS.disabled
+    : CHAT_PLACEHOLDERS.default
+}
+          disabled={expired}
+        />
       </div>
-
     </div>
   );
 }
