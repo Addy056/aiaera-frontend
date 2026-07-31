@@ -49,6 +49,7 @@ export default function QuickActions({
       label: "Book Appointment",
       icon: Calendar,
       onClick: onBookAppointment,
+      enabled: typeof onBookAppointment === "function",
     });
   }
 
@@ -58,6 +59,7 @@ export default function QuickActions({
       label: "Visit Office",
       icon: MapPin,
       onClick: onVisitOffice,
+      enabled: typeof onVisitOffice === "function",
     });
   }
 
@@ -66,13 +68,14 @@ export default function QuickActions({
     label: "Our Services",
     icon: MessageCircle,
     onClick: onAskServices,
+    enabled: typeof onAskServices === "function",
   });
 
   if (!actions.length) return null;
 
   return (
-    <div className="border-b border-slate-200 bg-white px-6 py-4">
-      <div className="flex flex-wrap gap-3">
+    <div className="border-b border-slate-200 bg-white px-4 py-3 sm:px-6 sm:py-4">
+      <div className="flex flex-wrap gap-2 sm:gap-3">
         {actions.map((action) => {
           const Icon = action.icon;
 
@@ -80,20 +83,29 @@ export default function QuickActions({
             <button
               key={action.id}
               type="button"
-              onClick={action.onClick}
+              disabled={!action.enabled}
+              onClick={() => {
+                if (action.enabled) {
+                  action.onClick();
+                }
+              }}
               className="
                 inline-flex
                 items-center
                 gap-2
                 rounded-full
                 border
-                px-4
+                px-3
                 py-2
-                text-sm
+                sm:px-4
+                text-xs
+                sm:text-sm
                 font-medium
                 shadow-sm
                 transition-all
                 duration-200
+                disabled:cursor-not-allowed
+                disabled:opacity-50
               "
               style={{
                 background: "#FFFFFF",
@@ -101,6 +113,8 @@ export default function QuickActions({
                 color: "#475569",
               }}
               onMouseEnter={(e) => {
+                if (!action.enabled) return;
+
                 e.currentTarget.style.borderColor =
                   accentColor;
 
@@ -128,7 +142,6 @@ export default function QuickActions({
               }}
             >
               <Icon size={16} />
-
               <span>{action.label}</span>
             </button>
           );

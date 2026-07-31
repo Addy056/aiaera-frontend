@@ -117,6 +117,42 @@ const fetchChatbot = useCallback(async () => {
     fetchChatbot();
   }, [fetchChatbot]);
 
+  useEffect(() => {
+  if (!isEmbed) return;
+
+  const html = document.documentElement;
+  const body = document.body;
+
+  const previousHtmlOverflow = html.style.overflow;
+  const previousBodyOverflow = body.style.overflow;
+
+  html.style.overflow = "hidden";
+  body.style.overflow = "hidden";
+
+  return () => {
+    html.style.overflow = previousHtmlOverflow;
+    body.style.overflow = previousBodyOverflow;
+  };
+}, [isEmbed]);
+
+useEffect(() => {
+  const viewport = document.querySelector('meta[name="viewport"]');
+
+  if (!viewport) return;
+
+  const previous = viewport.getAttribute("content");
+
+  viewport.setAttribute(
+    "content",
+    "width=device-width, initial-scale=1, maximum-scale=1"
+  );
+
+  return () => {
+    if (previous) {
+      viewport.setAttribute("content", previous);
+    }
+  };
+}, []);
   /*
   ========================================
   SEND MESSAGE
@@ -206,13 +242,45 @@ const fetchChatbot = useCallback(async () => {
       </div>
     );
   }
+/*
+========================================
+QUICK ACTIONS
+========================================
+*/
 
+const handleBookAppointment = () => {
+  if (integrations?.meeting_link) {
+    window.open(
+      integrations.meeting_link,
+      "_blank",
+      "noopener,noreferrer"
+    );
+  } else {
+    sendMessage("I want to book an appointment.");
+  }
+};
+
+const handleVisitOffice = () => {
+  if (integrations?.maps_link) {
+    window.open(
+      integrations.maps_link,
+      "_blank",
+      "noopener,noreferrer"
+    );
+  } else {
+    sendMessage("Where is your office located?");
+  }
+};
+
+const handleAskServices = () => {
+  sendMessage("Tell me about your services.");
+};
 
   return (
   <div
     className={
       isEmbed
-        ? "relative h-[100dvh] w-screen overflow-hidden bg-[#050816]"
+         ? "relative h-full w-full overflow-hidden bg-[#050816]"
         : `
           relative
           flex
@@ -252,21 +320,21 @@ const fetchChatbot = useCallback(async () => {
 
         ${
           isEmbed
-            ? `
-                h-[100dvh]
-                w-screen
-                rounded-none
-              `
+  ? `
+      h-full
+      w-full
+      rounded-none
+    `
             : `
                 w-full
 
                 max-w-full
-                sm:max-w-[480px]
+                sm:max-w-[430px]
                 lg:max-w-[450px]
 
-                h-[calc(100dvh-24px)]
+               h-[calc(100dvh-24px)]
                 sm:h-[720px]
-                lg:h-[760px]
+                lg:h-[740px]
 
                 rounded-[24px]
                 sm:rounded-[32px]
@@ -274,22 +342,25 @@ const fetchChatbot = useCallback(async () => {
         }
       `}
     >
-      <ChatWidget
-        mode="public"
-        chatbot={chatbot}
-        messages={messages}
-        loading={loading}
-        input={input}
-        setInput={setInput}
-        onSend={sendMessage}
-        integrations={integrations}
-        placeholder={
-          expired
-            ? CHAT_PLACEHOLDERS.disabled
-            : CHAT_PLACEHOLDERS.default
-        }
-        disabled={expired}
-      />
+     <ChatWidget
+  mode="public"
+  chatbot={chatbot}
+  messages={messages}
+  loading={loading}
+  input={input}
+  setInput={setInput}
+  onSend={sendMessage}
+  integrations={integrations}
+  onBookAppointment={handleBookAppointment}
+  onVisitOffice={handleVisitOffice}
+  onAskServices={handleAskServices}
+  placeholder={
+    expired
+      ? CHAT_PLACEHOLDERS.disabled
+      : CHAT_PLACEHOLDERS.default
+  }
+  disabled={expired}
+/>
     </div>
   </div>
 );

@@ -24,8 +24,8 @@ export default function ChatHeader({
         border-slate-200
         bg-white
 
-        h-[72px]
-        sm:h-[84px]
+       h-[68px]
+sm:h-[84px]
 
         px-4
         sm:px-6
@@ -48,13 +48,13 @@ export default function ChatHeader({
           <div
             className="
               relative
-              w-11
-              h-11
-              sm:w-14
-              sm:h-14
+             w-10
+h-10
+sm:w-14
+sm:h-14
 
-              rounded-xl
-              sm:rounded-2xl
+            rounded-lg
+sm:rounded-2xl
 
               overflow-hidden
               border
@@ -79,7 +79,7 @@ export default function ChatHeader({
               />
             ) : (
               <Bot
-                size={20}
+                size={18}
                 className="text-white sm:w-6 sm:h-6"
               />
             )}
@@ -88,14 +88,14 @@ export default function ChatHeader({
 
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <h2 className="truncate text-base sm:text-lg font-semibold text-slate-900">
+            <h2 className="truncate text-[18px] sm:text-lg font-semibold text-slate-900">
               {botName}
             </h2>
 
             <span className="h-2 w-2 rounded-full bg-emerald-500" />
           </div>
 
-          <p className="mt-0.5 truncate text-xs sm:text-sm text-slate-500">
+          <p className="mt-0.5 truncate text-[13px] sm:text-sm text-slate-500">
             Online now
           </p>
         </div>

@@ -43,11 +43,11 @@ export default function ChatWidget({
         w-full
         flex-col
         overflow-hidden
-        rounded-[28px]
+        text-rounded-[28px][13px] sm:text-sm
         border
         border-slate-200
         bg-white
-        shadow-[0_24px_80px_-28px_rgba(15,23,42,0.28)]
+        shadow-[0_18px_60px_-24px_rgba(15,23,42,0.22)]
         ${className}
       `}
       style={{

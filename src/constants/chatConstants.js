@@ -45,10 +45,10 @@ export const QUICK_ACTIONS = [
     id: "office",
     label: "Visit Office",
   },
-  {
-    id: "services",
-    label: "Tell me more",
-  },
+ {
+  id: "services",
+  label: "Our Services",
+}
 ];
 
 export const MAX_MESSAGE_LENGTH = 2000;
