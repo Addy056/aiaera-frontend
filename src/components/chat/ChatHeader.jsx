@@ -2,7 +2,7 @@ import { Bot, Sparkles } from "lucide-react";
 
 export default function ChatHeader({
   chatbot,
-  mode = "live", // "live" | "preview"
+  mode = "live",
 }) {
   const theme = chatbot?.theme || {};
 
@@ -17,9 +17,26 @@ export default function ChatHeader({
     theme?.userBubble || "#7C3AED";
 
   return (
-    <div className="h-[88px] shrink-0 border-b border-slate-200 bg-white px-6 flex items-center justify-between">
+    <div
+      className="
+        shrink-0
+        border-b
+        border-slate-200
+        bg-white
+
+        h-[72px]
+        sm:h-[84px]
+
+        px-4
+        sm:px-6
+
+        flex
+        items-center
+        justify-between
+      "
+    >
       {/* LEFT */}
-      <div className="flex items-center gap-4 min-w-0">
+      <div className="flex items-center gap-3 sm:gap-4 min-w-0">
         <div className="relative shrink-0">
           <div
             className="absolute inset-0 rounded-2xl blur-xl opacity-25"
@@ -29,7 +46,25 @@ export default function ChatHeader({
           />
 
           <div
-            className="relative w-14 h-14 rounded-2xl overflow-hidden border border-slate-200 flex items-center justify-center shadow-sm bg-white"
+            className="
+              relative
+              w-11
+              h-11
+              sm:w-14
+              sm:h-14
+
+              rounded-xl
+              sm:rounded-2xl
+
+              overflow-hidden
+              border
+              border-slate-200
+              flex
+              items-center
+              justify-center
+              shadow-sm
+              bg-white
+            "
             style={{
               background: logo
                 ? "#FFFFFF"
@@ -44,8 +79,8 @@ export default function ChatHeader({
               />
             ) : (
               <Bot
-                size={24}
-                className="text-white"
+                size={20}
+                className="text-white sm:w-6 sm:h-6"
               />
             )}
           </div>
@@ -53,14 +88,14 @@ export default function ChatHeader({
 
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <h2 className="truncate text-lg font-semibold text-slate-900">
+            <h2 className="truncate text-base sm:text-lg font-semibold text-slate-900">
               {botName}
             </h2>
 
-            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+            <span className="h-2 w-2 rounded-full bg-emerald-500" />
           </div>
 
-          <p className="mt-1 truncate text-sm text-slate-500">
+          <p className="mt-0.5 truncate text-xs sm:text-sm text-slate-500">
             Online now
           </p>
         </div>

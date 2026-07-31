@@ -10,57 +10,63 @@ import {
 
 const pricingPlans = [
   {
-    title: "Free",
+    title: "Free Trial",
     price: "₹0",
-    period: "/month",
-    subtitle: "Perfect for getting started with AI automation.",
-    badge: "Get Started",
+    period: "/7 Days",
+    subtitle:
+      "Explore AIAERA free for 7 days. No payment required.",
+    badge: "7 DAY TRIAL",
     icon: Sparkles,
     popular: false,
-    button: "Start Free",
+    button: "Start Free Trial",
     features: [
-      "1 AI Chatbot",
-      "Website Integration",
+      "Website AI Chatbot",
       "Lead Collection",
-      "1,000 Monthly Messages",
-      "Basic AI Responses",
-      "Email Support",
+      "Appointment Booking",
+      "Multi-language AI",
+      "File Upload Training",
+      "200 AI Messages",
     ],
   },
   {
     title: "Basic",
     price: "₹999",
     period: "/month",
-    subtitle: "Built for growing businesses and startups.",
-    badge: "Best Value",
+    subtitle:
+      "Perfect for businesses automating customer conversations.",
+    badge: "BEST VALUE",
     icon: Zap,
     popular: false,
     button: "Choose Basic",
     features: [
-      "Unlimited Website Chats",
-      "Unlimited Documents",
-      "Lead Dashboard",
-      "Advanced Analytics",
-      "Custom Branding",
-      "Priority Email Support",
+      "Website AI Chatbot",
+      "Unlimited Leads",
+      "Appointment Booking",
+      "Multi-language AI",
+      "3 Chatbots",
+      "2,000 AI Messages",
+      "Remove AIAERA Branding",
     ],
   },
   {
     title: "Pro",
     price: "₹1999",
     period: "/month",
-    subtitle: "Complete AI automation across every channel.",
-    badge: "Most Popular",
+    subtitle:
+      "Complete AI automation across every customer channel.",
+    badge: "MOST POPULAR",
     icon: Crown,
     popular: true,
     button: "Start Pro",
     features: [
       "Everything in Basic",
       "WhatsApp Automation",
-      "Facebook & Instagram",
-      "Appointment Booking",
-      "Multi-language AI",
-      "Premium Support",
+      "Facebook Automation",
+      "Instagram Automation",
+      "Advanced AI Automation",
+      "Unlimited Chatbots",
+      "10,000+ AI Messages",
+      "Priority Support",
     ],
   },
 ];
@@ -71,267 +77,228 @@ const PricingSection = () => {
   return (
     <section
       id="pricing"
-      className="relative overflow-hidden bg-slate-50 py-28"
+      className="relative overflow-hidden bg-slate-50 py-20 lg:py-28"
     >
-      {/* Background */}
+      {/* Background Ambience */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(124,58,237,0.05),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(139,92,246,0.05),transparent_35%)]" />
 
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(124,58,237,0.08),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(139,92,246,0.08),transparent_35%)]" />
+      <div className="absolute -top-40 -left-40 h-80 w-80 rounded-full bg-violet-200/50 blur-[120px] pointer-events-none" />
 
-      <div className="absolute -top-40 -left-40 h-96 w-96 rounded-full bg-violet-200 blur-[120px]" />
+      <div className="absolute -bottom-40 -right-40 h-80 w-80 rounded-full bg-purple-100/50 blur-[120px] pointer-events-none" />
 
-      <div className="absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-purple-100 blur-[120px]" />
-
-      <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
+      <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
 
         {/* Header */}
+        <div className="mx-auto mb-14 max-w-2xl text-center md:mb-16">
 
-        <div className="mx-auto mb-20 max-w-4xl text-center">
-
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-5 py-2">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50/80 px-3.5 py-1 backdrop-blur-sm shadow-sm">
 
             <Sparkles
-              size={16}
+              size={14}
               className="text-violet-600"
             />
 
-            <span className="text-sm font-semibold text-violet-700">
-              Flexible Pricing
+            <span className="text-xs font-semibold text-violet-700">
+              AI Automation Pricing
             </span>
 
           </div>
 
-          <h2 className="text-4xl font-black leading-tight text-slate-900 md:text-6xl">
+          <h2 className="text-3xl font-black tracking-tight text-slate-900 md:text-4xl lg:text-5xl">
 
             Simple Pricing
 
             <br />
 
-            <span className="bg-gradient-to-r from-violet-600 to-purple-500 bg-clip-text text-transparent">
-
+            <span className="block bg-gradient-to-r from-violet-600 to-purple-500 bg-clip-text pb-1 text-transparent">
               Built For Every Business
-
             </span>
 
           </h2>
 
-          <p className="mx-auto mt-8 max-w-3xl text-lg leading-8 text-slate-600">
+          <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-slate-600 md:text-base">
 
-            Start free and upgrade whenever your business grows.
-            Every plan includes powerful AI tools to automate
-            conversations, capture leads and increase productivity.
+            Start your 7-day free trial and upgrade as your AI automation grows.
+            Every plan includes powerful AI tools to automate conversations,
+            capture leads, and grow your business.
 
           </p>
 
         </div>
 
         {/* Pricing Cards */}
-
-        <div className="grid gap-8 lg:grid-cols-3">
-
+        <div className="grid gap-5 lg:grid-cols-3 lg:items-stretch max-w-5xl mx-auto">
           {pricingPlans.map((plan) => {
-
             const Icon = plan.icon;
 
             return (
-
               <div
                 key={plan.title}
-                className={`relative rounded-3xl border bg-white p-10 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl ${
+                className={`relative flex flex-col justify-between rounded-2xl border bg-white p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${
                   plan.popular
-                    ? "border-violet-500 shadow-xl shadow-violet-100"
-                    : "border-slate-200 shadow-sm"
+                    ? "border-violet-500 shadow-lg shadow-violet-500/10 ring-2 ring-violet-500/20 lg:-translate-y-1.5"
+                    : "border-slate-200 shadow-sm hover:border-violet-300"
                 }`}
               >
-
                 {plan.popular && (
-
-                  <div className="absolute right-6 top-6 rounded-full bg-violet-600 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white">
-
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-violet-600 px-3.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-md shadow-violet-200">
                     Most Popular
-
                   </div>
-
                 )}
 
-                <div className="mb-8 flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-violet-600 to-purple-500 shadow-lg shadow-violet-200">
+                <div>
 
-                  <Icon
-                    size={34}
-                    className="text-white"
-                  />
+                  <div className="mb-5 flex items-center justify-between">
 
-                </div>
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-purple-500 shadow-md shadow-violet-200">
 
-                <div className="mb-5 inline-flex rounded-full bg-violet-50 px-4 py-2 text-xs font-bold uppercase tracking-wider text-violet-700">
-
-                  {plan.badge}
-
-                </div>
-
-                <h3 className="text-3xl font-black text-slate-900">
-
-                  {plan.title}
-
-                </h3>
-
-                <p className="mt-3 leading-7 text-slate-600">
-
-                  {plan.subtitle}
-
-                </p>
-
-                <div className="mt-10 flex items-end gap-2">
-
-                  <span className="text-5xl font-black text-slate-900">
-
-                    {plan.price}
-
-                  </span>
-
-                  <span className="pb-2 text-slate-500">
-
-                    {plan.period}
-
-                  </span>
-
-                </div>
-
-                <div className="mt-10 space-y-5">
-
-                  {plan.features.map((feature) => (
-
-                    <div
-                      key={feature}
-                      className="flex items-center gap-4"
-                    >
-
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-violet-100">
-
-                        <Check
-                          size={16}
-                          className="text-violet-600"
-                        />
-
-                      </div>
-
-                      <span className="text-slate-700">
-
-                        {feature}
-
-                      </span>
+                      <Icon
+                        size={20}
+                        className="text-white"
+                      />
 
                     </div>
 
-                  ))}
+                    <div className="inline-flex rounded-full bg-violet-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-violet-700 ring-1 ring-inset ring-violet-500/10">
+                      {plan.badge}
+                    </div>
+
+                  </div>
+
+                  <h3 className="text-xl font-black text-slate-900">
+                    {plan.title}
+                  </h3>
+
+                  <p className="mt-1.5 min-h-[36px] text-xs leading-relaxed text-slate-600">
+                    {plan.subtitle}
+                  </p>
+
+                  <div className="mt-5 flex items-baseline gap-1.5 border-t border-slate-100 pt-5">
+
+                    <span className="text-3xl font-black tracking-tight text-slate-900">
+                      {plan.price}
+                    </span>
+
+                    <span className="text-xs font-medium text-slate-500">
+                      {plan.period}
+                    </span>
+
+                  </div>
+
+                  <div className="mt-5 space-y-2.5 border-t border-slate-100 pt-5">
+
+                    {plan.features.map((feature) => (
+                      <div
+                        key={feature}
+                        className="flex items-center gap-2.5"
+                      >
+                        <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-violet-100">
+
+                          <Check
+                            size={12}
+                            className="text-violet-600"
+                          />
+
+                        </div>
+
+                        <span className="text-xs text-slate-700">
+                          {feature}
+                        </span>
+
+                      </div>
+                    ))}
+
+                  </div>
 
                 </div>
 
                 <button
                   onClick={() => navigate("/signup")}
-                  className={`group mt-10 flex w-full items-center justify-center gap-2 rounded-xl py-4 font-semibold transition-all duration-300 ${
+                  className={`group mt-6 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-xs font-semibold transition-all duration-300 ${
                     plan.popular
-                      ? "bg-violet-600 text-white shadow-lg shadow-violet-200 hover:bg-violet-700"
-                      : "border border-slate-200 bg-white text-slate-800 hover:border-violet-300 hover:text-violet-600"
+                      ? "bg-violet-600 text-white shadow-lg shadow-violet-600/20 hover:bg-violet-700"
+                      : "border border-slate-300 bg-white text-slate-700 shadow-sm hover:border-violet-300 hover:bg-violet-50/50 hover:text-violet-700"
                   }`}
                 >
-
                   {plan.button}
 
                   <ArrowRight
-                    size={18}
+                    size={14}
                     className="transition-transform duration-300 group-hover:translate-x-1"
                   />
 
                 </button>
 
               </div>
-
             );
-
           })}
-
         </div>
-                {/* Trust Cards */}
 
-        <div className="mt-24 grid gap-8 md:grid-cols-3">
+        {/* Trust Cards */}
+        <div className="mt-12 grid gap-4 md:grid-cols-3 max-w-5xl mx-auto">
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-xl">
+          <div className="flex flex-col items-center rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm transition-all duration-300 hover:shadow-md">
 
-            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-3xl bg-gradient-to-br from-emerald-500 to-cyan-500 shadow-lg shadow-emerald-200">
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-cyan-500 shadow-md shadow-emerald-200">
 
               <ShieldCheck
-                size={28}
+                size={18}
                 className="text-white"
               />
 
             </div>
 
-            <h3 className="text-xl font-bold text-slate-900">
-
+            <h3 className="text-sm font-bold text-slate-900">
               Secure Payments
-
             </h3>
 
-            <p className="mt-4 leading-7 text-slate-600">
-
+            <p className="mt-1 text-[11px] leading-relaxed text-slate-600">
               All subscriptions are securely processed with
-              enterprise-grade encryption and trusted payment
-              infrastructure.
-
+              enterprise-grade encryption.
             </p>
 
           </div>
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-xl">
+          <div className="flex flex-col items-center rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm transition-all duration-300 hover:shadow-md">
 
-            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-3xl bg-gradient-to-br from-violet-600 to-purple-500 shadow-lg shadow-violet-200">
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-purple-500 shadow-md shadow-violet-200">
 
               <Sparkles
-                size={28}
+                size={18}
                 className="text-white"
               />
 
             </div>
 
-            <h3 className="text-xl font-bold text-slate-900">
-
+            <h3 className="text-sm font-bold text-slate-900">
               Upgrade Anytime
-
             </h3>
 
-            <p className="mt-4 leading-7 text-slate-600">
-
-              Begin with the free plan and upgrade whenever
-              your business needs more AI conversations,
-              automations and integrations.
-
+            <p className="mt-1 text-[11px] leading-relaxed text-slate-600">
+              Start with a free trial and upgrade whenever your
+              business grows.
             </p>
 
           </div>
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-xl">
+          <div className="flex flex-col items-center rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm transition-all duration-300 hover:shadow-md">
 
-            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-3xl bg-gradient-to-br from-orange-500 to-pink-500 shadow-lg shadow-orange-200">
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-pink-500 shadow-md shadow-orange-200">
 
               <Zap
-                size={28}
+                size={18}
                 className="text-white"
               />
 
             </div>
 
-            <h3 className="text-xl font-bold text-slate-900">
-
+            <h3 className="text-sm font-bold text-slate-900">
               Instant Activation
-
             </h3>
 
-            <p className="mt-4 leading-7 text-slate-600">
-
+            <p className="mt-1 text-[11px] leading-relaxed text-slate-600">
               Your AI assistant is ready within minutes after
-              creating your account and uploading your
-              business knowledge.
-
+              creating your account.
             </p>
 
           </div>
@@ -339,24 +306,24 @@ const PricingSection = () => {
         </div>
 
         {/* CTA Banner */}
+        <div className="mt-12 overflow-hidden rounded-3xl border border-violet-200 bg-gradient-to-r from-violet-600 to-purple-600 p-7 shadow-xl shadow-violet-500/10 sm:p-10 max-w-5xl mx-auto">
 
-        <div className="mt-24 overflow-hidden rounded-[36px] border border-violet-200 bg-gradient-to-r from-violet-600 to-purple-600 p-12 shadow-2xl shadow-violet-200">
-
-          <div className="flex flex-col items-center justify-between gap-8 lg:flex-row">
+          <div className="flex flex-col items-center justify-between gap-6 text-center lg:flex-row lg:text-left">
 
             <div>
 
-              <h3 className="text-4xl font-black text-white">
+              <h3 className="text-2xl font-black text-white sm:text-3xl">
 
-                Ready To Build Your AI Employee?
+                Ready to Automate Your Business with AI?
 
               </h3>
 
-              <p className="mt-5 max-w-2xl text-lg leading-8 text-violet-100">
+              <p className="mt-2 max-w-xl text-xs sm:text-sm text-violet-100 leading-relaxed">
 
-                Start free today, train your AI with your
-                business knowledge and automate customer
-                conversations 24/7.
+                Launch your AI chatbot in minutes, train it with your
+                business knowledge, capture more leads, and automate
+                customer conversations 24/7 across your website and
+                social channels.
 
               </p>
 
@@ -364,13 +331,13 @@ const PricingSection = () => {
 
             <button
               onClick={() => navigate("/signup")}
-              className="group flex items-center gap-3 rounded-2xl bg-white px-8 py-4 font-semibold text-violet-700 shadow-xl transition-all duration-300 hover:-translate-y-1"
+              className="group inline-flex shrink-0 items-center gap-2.5 rounded-xl bg-white px-7 py-3.5 text-xs font-semibold text-violet-700 shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:bg-violet-50"
             >
 
               Start Free Trial
 
               <ArrowRight
-                size={18}
+                size={14}
                 className="transition-transform duration-300 group-hover:translate-x-1"
               />
 
@@ -380,15 +347,14 @@ const PricingSection = () => {
 
         </div>
 
-        {/* Footer Note */}
+        {/* Footer */}
+        <div className="mt-8 text-center">
 
-        <div className="mt-12 text-center">
+          <p className="text-[11px] font-medium tracking-wide text-slate-500">
 
-          <p className="text-sm font-medium text-slate-500">
-
-            ✓ No Hidden Charges &nbsp; • &nbsp;
-            ✓ Cancel Anytime &nbsp; • &nbsp;
+            ✓ 7-Day Free Trial &nbsp; • &nbsp;
             ✓ Secure Payments &nbsp; • &nbsp;
+            ✓ Cancel Anytime &nbsp; • &nbsp;
             ✓ Instant Setup
 
           </p>
@@ -398,7 +364,9 @@ const PricingSection = () => {
       </div>
 
     </section>
+
   );
+
 };
 
 export default PricingSection;

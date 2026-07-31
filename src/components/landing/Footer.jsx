@@ -3,17 +3,9 @@ import {
   Mail,
   Phone,
   Globe,
-  ChevronRight,
   Sparkles,
-  ArrowRight,
 } from "lucide-react";
-
-const productLinks = [
-  { label: "Features", id: "features" },
-  { label: "Pricing", id: "pricing" },
-  { label: "Login", route: "/login" },
-  { label: "Get Started", route: "/signup" },
-];
+import { FaLinkedinIn, FaInstagram, FaXTwitter, FaFacebookF } from "react-icons/fa6";
 
 const contactItems = [
   {
@@ -33,214 +25,109 @@ const contactItems = [
   },
 ];
 
+const socialLinks = [
+  { name: "LinkedIn", icon: FaLinkedinIn, href: "#" },
+  { name: "Instagram", icon: FaInstagram, href: "#" },
+  { name: "X", icon: FaXTwitter, href: "#" },
+  { name: "Facebook", icon: FaFacebookF, href: "#" },
+];
+
 const Footer = () => {
   const navigate = useNavigate();
-
-  const go = (item) => {
-    if (item.id) {
-      document
-        .getElementById(item.id)
-        ?.scrollIntoView({
-          behavior: "smooth",
-        });
-
-      return;
-    }
-
-    navigate(item.route);
-  };
 
   return (
     <footer
       id="footer"
-      className="relative overflow-hidden border-t border-slate-200 bg-white"
+      className="relative overflow-hidden border-t border-slate-200/80 bg-white"
     >
-      {/* Background */}
+      {/* Subtle Background Ambiance */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(124,58,237,0.05),transparent_40%),radial-gradient(circle_at_bottom_right,rgba(139,92,246,0.05),transparent_40%)] pointer-events-none" />
+      <div className="absolute -top-32 -left-32 h-80 w-80 rounded-full bg-violet-200/40 blur-[100px] pointer-events-none" />
+      <div className="absolute -bottom-32 -right-32 h-80 w-80 rounded-full bg-purple-100/40 blur-[100px] pointer-events-none" />
 
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(124,58,237,0.08),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(139,92,246,0.08),transparent_35%)]" />
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 py-16 lg:py-20 lg:px-8">
 
-      <div className="absolute -top-40 -left-40 h-96 w-96 rounded-full bg-violet-200 blur-[120px]" />
+        {/* Top Brand Bar matching Zomato multi-column style */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 pb-12 border-b border-slate-200/80">
+          <div className="flex items-center gap-3.5">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600 to-purple-500 shadow-md shadow-violet-500/20">
+              <img
+                src="/favicon.png"
+                alt="AIAERA"
+                className="h-8 w-8 object-contain"
+              />
+            </div>
 
-      <div className="absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-purple-100 blur-[120px]" />
-
-      <div className="relative mx-auto max-w-7xl px-6 py-24 lg:px-8">
-
-        <div className="grid gap-16 lg:grid-cols-4">
-
-          {/* Left */}
-
-          <div className="lg:col-span-2">
-
-            <div className="flex items-center gap-4">
-
-              <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-gradient-to-br from-violet-600 to-purple-500 shadow-lg shadow-violet-200">
-
-                <img
-                  src="/favicon.png"
-                  alt="AIAERA"
-                  className="h-9 w-9"
-                />
-
+            <div>
+              <h2 className="text-3xl font-black tracking-tight text-slate-900">
+                AIAERA
+              </h2>
+              <div className="mt-1 flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-violet-600">
+                <Sparkles size={14} className="shrink-0" />
+                <span>AI Business Automation Platform</span>
               </div>
-
-              <div>
-
-                <h2 className="text-4xl font-black text-slate-900">
-                  AIAERA
-                </h2>
-
-                <div className="mt-2 flex items-center gap-2 text-sm font-semibold text-violet-600">
-                  <Sparkles size={15} />
-                  AI Business Automation Platform
-                </div>
-
-              </div>
-
             </div>
-
-            <p className="mt-8 max-w-xl text-lg leading-8 text-slate-600">
-              Build AI assistants trained on your business knowledge,
-              automate customer support, capture leads and schedule
-              appointments from one modern platform.
-            </p>
-
-            {/* Contact */}
-
-            <div className="mt-10 space-y-4">
-
-              {contactItems.map(({ icon: Icon, title, value }) => (
-
-                <div
-                  key={title}
-                  className="flex items-center gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
-                >
-
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-50">
-
-                    <Icon
-                      size={20}
-                      className="text-violet-600"
-                    />
-
-                  </div>
-
-                  <div>
-
-                    <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
-                      {title}
-                    </p>
-
-                    <p className="mt-1 font-medium text-slate-800">
-                      {value}
-                    </p>
-
-                  </div>
-
-                </div>
-
-              ))}
-
-            </div>
-
           </div>
 
-          {/* Product */}
-
-          <div>
-
-            <h3 className="mb-8 text-xl font-bold text-slate-900">
-              Product
-            </h3>
-
-            <div className="space-y-4">
-
-              {productLinks.map((item) => (
-
-                <button
-                  key={item.label}
-                  onClick={() => go(item)}
-                  className="group flex items-center gap-3 font-medium text-slate-600 transition-all duration-300 hover:text-violet-600"
-                >
-
-                  <ChevronRight
-                    size={18}
-                    className="transition-transform duration-300 group-hover:translate-x-1"
-                  />
-
-                  {item.label}
-
-                </button>
-
-              ))}
-
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 rounded-xl border border-slate-200/80 bg-white px-4 py-2.5 text-xs font-semibold text-slate-600 shadow-2xs">
+              <Globe size={16} className="text-violet-600" />
+              <span>India</span>
             </div>
-
+            <div className="flex items-center gap-2 rounded-xl border border-slate-200/80 bg-white px-4 py-2.5 text-xs font-semibold text-slate-600 shadow-2xs">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>English</span>
+            </div>
           </div>
-                    {/* Follow Us */}
-
-          <div>
-
-            <h3 className="mb-8 text-xl font-bold text-slate-900">
-              Follow Us
-            </h3>
-
-            <div className="flex flex-wrap gap-3">
-
-              {[
-                "Instagram",
-                "Facebook",
-                "LinkedIn",
-                "X",
-              ].map((social) => (
-
-                <button
-                  key={social}
-                  className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-slate-600 transition-all duration-300 hover:border-violet-300 hover:bg-violet-50 hover:text-violet-600"
-                >
-                  {social}
-                </button>
-
-              ))}
-
-            </div>
-
-            {/* CTA Card */}
-
-            <div className="mt-10 rounded-3xl bg-gradient-to-br from-violet-600 to-purple-600 p-8 shadow-xl shadow-violet-200">
-
-              <h4 className="text-2xl font-bold text-white">
-                Ready to Build?
-              </h4>
-
-              <p className="mt-4 leading-7 text-violet-100">
-                Create your AI assistant today and automate customer
-                conversations 24/7 while capturing more qualified
-                leads for your business.
-              </p>
-
-              <button
-                onClick={() => navigate("/signup")}
-                className="group mt-7 inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-3 font-semibold text-violet-700 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
-              >
-                Start Free
-
-                <ArrowRight
-                  size={18}
-                  className="transition-transform duration-300 group-hover:translate-x-1"
-                />
-
-              </button>
-
-            </div>
-
-          </div>
-
         </div>
 
-        {/* Bottom Cards */}
+        {/* Centered Social Links Section */}
+        <div className="py-12 border-b border-slate-200/80 text-center">
+          <div>
+            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 mb-4">
+              Social Links
+            </h3>
+            
+            {/* Centered social icons row */}
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              {socialLinks.map(({ name, icon: Icon, href }) => (
+                <a
+                  key={name}
+                  href={href}
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200/80 bg-slate-900 text-white transition-all duration-300 hover:bg-violet-600 shadow-2xs"
+                  title={name}
+                >
+                  <Icon size={16} />
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
 
-        <div className="mt-20 grid gap-6 md:grid-cols-3">
+        {/* Contact Info Row */}
+        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+          {contactItems.map(({ icon: Icon, title, value }) => (
+            <div
+              key={title}
+              className="flex items-center gap-3.5 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs transition-all duration-300 hover:border-violet-200 hover:shadow-md"
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+                <Icon size={18} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  {title}
+                </p>
+                <p className="mt-0.5 text-sm font-semibold text-slate-800 truncate">
+                  {value}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
 
+        {/* Bottom Feature Cards */}
+        <div className="mt-16 grid gap-4 sm:gap-6 md:grid-cols-3">
           {[
             {
               title: "Enterprise Security",
@@ -258,54 +145,28 @@ const Footer = () => {
                 "Generate more leads, automate conversations and scale your business effortlessly.",
             },
           ].map((item) => (
-
             <div
               key={item.title}
-              className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-xl"
+              className="rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-2xs transition-all duration-300 hover:-translate-y-1 hover:border-violet-200 hover:shadow-lg"
             >
-
-              <h4 className="text-xl font-bold text-slate-900">
+              <h4 className="text-base font-bold text-slate-900 tracking-tight">
                 {item.title}
               </h4>
-
-              <p className="mt-4 leading-7 text-slate-600">
+              <p className="mt-2 text-xs sm:text-sm leading-relaxed text-slate-600">
                 {item.description}
               </p>
-
             </div>
-
           ))}
-
         </div>
 
-        {/* Footer Bottom */}
-
-        <div className="mt-20 flex flex-col items-center justify-between gap-6 border-t border-slate-200 pt-8 lg:flex-row">
-
-          <p className="text-center text-sm text-slate-500">
-            © {new Date().getFullYear()} AIAERA. All rights reserved.
+        {/* Footer Bottom Bar with Copyright Disclaimer matching layout */}
+        <div className="mt-12 border-t border-slate-200/80 pt-6">
+          <p className="text-[11px] leading-relaxed text-slate-500 font-medium text-center md:text-left">
+            By continuing past this page, you agree to our Terms of Service, Cookie Policy, Privacy Policy and Content Policies. All trademarks are properties of their respective owners. © {new Date().getFullYear()} AIAERA Ltd. All rights reserved.
           </p>
-
-          <div className="flex flex-wrap items-center justify-center gap-6">
-
-            <button className="text-sm text-slate-500 transition hover:text-violet-600">
-              Privacy Policy
-            </button>
-
-            <button className="text-sm text-slate-500 transition hover:text-violet-600">
-              Terms of Service
-            </button>
-
-            <button className="text-sm text-slate-500 transition hover:text-violet-600">
-              Contact
-            </button>
-
-          </div>
-
         </div>
 
       </div>
-
     </footer>
   );
 };

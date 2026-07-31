@@ -80,124 +80,93 @@ export default function ChatInput({
     !value.trim();
 
   return (
-    <div className="shrink-0 border-t border-slate-200 bg-white p-5">
-      <div className="flex items-end gap-3">
-        <textarea
-          rows={1}
-          value={value}
-          dir={
-            inputIsRTL
-              ? "rtl"
-              : "ltr"
-          }
-          placeholder={placeholder}
-          disabled={
-            loading || disabled
-          }
-          onChange={(e) =>
-            onChange?.(
-              e.target.value
-            )
-          }
-          onKeyDown={
-            handleKeyDown
-          }
-          className={`
-            flex-1
-            resize-none
-            rounded-2xl
-            border
-            border-slate-200
-            bg-slate-50
-            px-5
-            py-4
-            text-sm
-            text-slate-900
-            placeholder:text-slate-400
-            outline-none
-            transition-all
-            duration-200
-            focus:bg-white
-            ${
-              inputIsRTL
-                ? "text-right"
-                : "text-left"
-            }
-          `}
-          style={{
-            minHeight: "56px",
-            maxHeight: "140px",
-            borderColor: "#E2E8F0",
-            boxShadow: "none",
-          }}
-          onFocus={(e) => {
-            e.target.style.borderColor =
-              accentColor;
-            e.target.style.boxShadow =
-              `0 0 0 4px ${accentColor}20`;
-          }}
-          onBlur={(e) => {
-            e.target.style.borderColor =
-              "#E2E8F0";
-            e.target.style.boxShadow =
-              "none";
-          }}
-        />
+  <div className="shrink-0 border-t border-slate-200 bg-white p-3 sm:p-5">
+    <div className="flex items-end gap-2 sm:gap-3">
+      <textarea
+        rows={1}
+        value={value}
+        dir={inputIsRTL ? "rtl" : "ltr"}
+        placeholder={placeholder}
+        disabled={loading || disabled}
+        onChange={(e) => onChange?.(e.target.value)}
+        onKeyDown={handleKeyDown}
+        className={`
+          flex-1
+          resize-none
+          rounded-xl
+          sm:rounded-2xl
+          border
+          border-slate-200
+          bg-slate-50
+          px-4
+          sm:px-5
+          py-3
+          sm:py-4
+          text-sm
+          text-slate-900
+          placeholder:text-slate-400
+          outline-none
+          transition-all
+          duration-200
+          focus:bg-white
+          ${inputIsRTL ? "text-right" : "text-left"}
+        `}
+        style={{
+          minHeight: "48px",
+          maxHeight: "140px",
+          borderColor: "#E2E8F0",
+          boxShadow: "none",
+        }}
+        onFocus={(e) => {
+          e.target.style.borderColor = accentColor;
+          e.target.style.boxShadow = `0 0 0 4px ${accentColor}20`;
+        }}
+        onBlur={(e) => {
+          e.target.style.borderColor = "#E2E8F0";
+          e.target.style.boxShadow = "none";
+        }}
+      />
 
-        <button
-          type="button"
-          onClick={onSend}
-          disabled={isDisabled}
-          className={`
-            flex
-            h-14
-            w-14
-            shrink-0
-            items-center
-            justify-center
-            rounded-2xl
-            transition-all
-            duration-200
-          `}
-          style={{
-            background: isDisabled
-              ? "#F1F5F9"
-              : accentColor,
-            color: isDisabled
-              ? "#94A3B8"
-              : buttonText,
-            cursor: isDisabled
-              ? "not-allowed"
-              : "pointer",
-            transform:
-              "translateZ(0)",
-          }}
-          onMouseEnter={(e) => {
-            if (!isDisabled) {
-              e.currentTarget.style.transform =
-                "scale(1.05)";
-            }
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform =
-              "scale(1)";
-          }}
-          onMouseDown={(e) => {
-            if (!isDisabled) {
-              e.currentTarget.style.transform =
-                "scale(0.96)";
-            }
-          }}
-          onMouseUp={(e) => {
-            if (!isDisabled) {
-              e.currentTarget.style.transform =
-                "scale(1.05)";
-            }
-          }}
-        >
-          <Send size={18} />
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={onSend}
+        disabled={isDisabled}
+        className="
+          flex
+          h-12
+          w-12
+          sm:h-14
+          sm:w-14
+          shrink-0
+          items-center
+          justify-center
+          rounded-xl
+          sm:rounded-2xl
+          transition-all
+          duration-200
+        "
+        style={{
+          background: isDisabled ? "#F1F5F9" : accentColor,
+          color: isDisabled ? "#94A3B8" : buttonText,
+          cursor: isDisabled ? "not-allowed" : "pointer",
+          transform: "translateZ(0)",
+        }}
+        onMouseEnter={(e) => {
+          if (!isDisabled) e.currentTarget.style.transform = "scale(1.05)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = "scale(1)";
+        }}
+        onMouseDown={(e) => {
+          if (!isDisabled) e.currentTarget.style.transform = "scale(0.96)";
+        }}
+        onMouseUp={(e) => {
+          if (!isDisabled) e.currentTarget.style.transform = "scale(1.05)";
+        }}
+      >
+        <Send size={18} />
+      </button>
     </div>
-  );
+  </div>
+);
 }

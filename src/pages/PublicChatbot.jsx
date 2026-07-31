@@ -193,7 +193,7 @@ const fetchChatbot = useCallback(async () => {
   */
   if (fetching) {
     return (
-      <div className="w-screen h-[100dvh] bg-[#050816] flex items-center justify-center">
+      <div className="w-screen min-h-[100dvh] bg-[#050816] flex items-center justify-center">
         <div className="flex flex-col items-center">
           <Loader2
             size={36}
@@ -207,57 +207,90 @@ const fetchChatbot = useCallback(async () => {
     );
   }
 
-  return (
-    <div
-      className={
-        isEmbed
-          ? "w-screen h-[100dvh] bg-[#050816] overflow-hidden relative"
-          : "min-h-screen bg-[#050816] flex items-center justify-center p-4 overflow-hidden relative"
-      }
-    >
-      {!isEmbed && (
-        <>
-          <div className="absolute top-[-120px] left-[-120px] w-[300px] h-[300px] bg-purple-600/20 blur-[120px] rounded-full"></div>
-          <div className="absolute bottom-[-120px] right-[-120px] w-[300px] h-[300px] bg-blue-600/20 blur-[120px] rounded-full"></div>
-        </>
-      )}
 
-      <div
-        className={`
+  return (
+  <div
+    className={
+      isEmbed
+        ? "relative h-[100dvh] w-screen overflow-hidden bg-[#050816]"
+        : `
+          relative
+          flex
+          min-h-[100dvh]
+          items-center
+          justify-center
+          overflow-hidden
+          bg-[#050816]
+          p-3
+          sm:p-4
+          lg:p-6
+        `
+    }
+  >
+    {!isEmbed && (
+      <>
+        <div className="pointer-events-none absolute -left-32 -top-32 h-[300px] w-[300px] rounded-full bg-purple-600/20 blur-[120px]" />
+
+        <div className="pointer-events-none absolute -bottom-32 -right-32 h-[300px] w-[300px] rounded-full bg-blue-600/20 blur-[120px]" />
+      </>
+    )}
+
+    <div
+      className={`
         relative
-        w-full
-        h-[100dvh]
         flex
+        w-full
         flex-col
         overflow-hidden
-        bg-[#0B1120]/95
+
         border
         border-white/10
+
+        bg-[#0B1120]/95
+
         shadow-[0_20px_120px_rgba(0,0,0,0.55)]
+
         ${
           isEmbed
-            ? "rounded-none"
-            : "max-w-5xl rounded-[36px]"
+            ? `
+                h-[100dvh]
+                w-screen
+                rounded-none
+              `
+            : `
+                w-full
+
+                max-w-full
+                sm:max-w-[480px]
+                lg:max-w-[450px]
+
+                h-[calc(100dvh-24px)]
+                sm:h-[720px]
+                lg:h-[760px]
+
+                rounded-[24px]
+                sm:rounded-[32px]
+              `
         }
       `}
-      >
-        <ChatWidget
-          mode="public"
-          chatbot={chatbot}
-          messages={messages}
-          loading={loading}
-          input={input}
-          setInput={setInput}
-          onSend={sendMessage}
-          integrations={integrations}
-          placeholder={
-  expired
-    ? CHAT_PLACEHOLDERS.disabled
-    : CHAT_PLACEHOLDERS.default
-}
-          disabled={expired}
-        />
-      </div>
+    >
+      <ChatWidget
+        mode="public"
+        chatbot={chatbot}
+        messages={messages}
+        loading={loading}
+        input={input}
+        setInput={setInput}
+        onSend={sendMessage}
+        integrations={integrations}
+        placeholder={
+          expired
+            ? CHAT_PLACEHOLDERS.disabled
+            : CHAT_PLACEHOLDERS.default
+        }
+        disabled={expired}
+      />
     </div>
-  );
+  </div>
+);
 }
