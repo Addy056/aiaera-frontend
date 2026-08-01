@@ -9,7 +9,6 @@ export default function ChatMessages({
   loading = false,
   className = "",
 }) {
-  const messagesRef = useRef(null);
   const messagesEndRef = useRef(null);
 
   const theme = chatbot?.theme || {};
@@ -29,68 +28,17 @@ export default function ChatMessages({
     });
   }, [messages, loading]);
 
-  /*
-  ========================================
-  PREVENT PAGE SCROLL WHILE
-  SCROLLING INSIDE CHAT
-  ========================================
-  */
-  useEffect(() => {
-    const container = messagesRef.current;
-
-    if (!container) return;
-
-    const handleWheel = (e) => {
-      const { scrollTop, scrollHeight, clientHeight } = container;
-
-      const scrollingDown = e.deltaY > 0;
-      const scrollingUp = e.deltaY < 0;
-
-      const atTop = scrollTop <= 0;
-      const atBottom =
-        scrollTop + clientHeight >= scrollHeight - 1;
-
-      if (
-        (scrollingUp && !atTop) ||
-        (scrollingDown && !atBottom)
-      ) {
-        e.stopPropagation();
-      }
-
-      if (
-        (scrollingUp && atTop) ||
-        (scrollingDown && atBottom)
-      ) {
-        e.preventDefault();
-      }
-    };
-
-    container.addEventListener("wheel", handleWheel, {
-      passive: false,
-    });
-
-    return () => {
-      container.removeEventListener(
-        "wheel",
-        handleWheel
-      );
-    };
-  }, []);
-
   return (
     <div
-      ref={messagesRef}
       className={`
         flex-1
         min-h-0
         overflow-y-auto
         overflow-x-hidden
         overscroll-contain
-        touch-pan-y
         px-6
         py-6
         space-y-5
-        scroll-smooth
         ${className}
       `}
       style={{
