@@ -249,50 +249,42 @@ QUICK ACTIONS
 */
 
 const handleBookAppointment = () => {
-  if (integrations?.meeting_link) {
-    window.open(
-      integrations.meeting_link,
-      "_blank",
-      "noopener,noreferrer"
-    );
-  } else {
-    sendMessage("I want to book an appointment.");
-  }
+  sendMessage("I want to book an appointment.");
 };
 
 const handleVisitOffice = () => {
-  if (integrations?.maps_link) {
-    window.open(
-      integrations.maps_link,
-      "_blank",
-      "noopener,noreferrer"
-    );
-  } else {
-    sendMessage("Where is your office located?");
-  }
+  sendMessage("Where is your office located?");
 };
 
 const handleAskServices = () => {
   sendMessage("Tell me about your services.");
 };
 
-  return (
+return (
   <div
     className={
       isEmbed
-         ? "relative h-full w-full overflow-hidden bg-[#050816]"
+        ? `
+            relative
+            h-full
+            w-full
+            overflow-x-hidden
+            overflow-y-hidden
+            bg-[#050816]
+          `
         : `
-          relative
-          flex
-          min-h-[100dvh]
-          items-center
-          justify-center
-          overflow-hidden
-          bg-[#050816]
-          p-3
-          sm:p-4
-          lg:p-6
-        `
+            relative
+            flex
+            min-h-[100dvh]
+            items-center
+            justify-center
+            overflow-x-hidden
+            overflow-y-hidden
+            bg-[#050816]
+            p-3
+            sm:p-4
+            lg:p-6
+          `
     }
   >
     {!isEmbed && (
@@ -320,19 +312,17 @@ const handleAskServices = () => {
 
         ${
           isEmbed
-  ? `
-      h-full
-      w-full
-      rounded-none
-    `
-            : `
+            ? `
+                h-full
                 w-full
-
+                rounded-none
+              `
+            : `
                 max-w-full
                 sm:max-w-[430px]
                 lg:max-w-[450px]
 
-               h-[calc(100dvh-24px)]
+                h-[calc(100dvh-24px)]
                 sm:h-[720px]
                 lg:h-[740px]
 
@@ -342,25 +332,25 @@ const handleAskServices = () => {
         }
       `}
     >
-     <ChatWidget
-  mode="public"
-  chatbot={chatbot}
-  messages={messages}
-  loading={loading}
-  input={input}
-  setInput={setInput}
-  onSend={sendMessage}
-  integrations={integrations}
-  onBookAppointment={handleBookAppointment}
-  onVisitOffice={handleVisitOffice}
-  onAskServices={handleAskServices}
-  placeholder={
-    expired
-      ? CHAT_PLACEHOLDERS.disabled
-      : CHAT_PLACEHOLDERS.default
-  }
-  disabled={expired}
-/>
+      <ChatWidget
+        mode="public"
+        chatbot={chatbot}
+        messages={messages}
+        loading={loading}
+        input={input}
+        setInput={setInput}
+        onSend={sendMessage}
+        integrations={integrations}
+        onBookAppointment={handleBookAppointment}
+        onVisitOffice={handleVisitOffice}
+        onAskServices={handleAskServices}
+        placeholder={
+          expired
+            ? CHAT_PLACEHOLDERS.disabled
+            : CHAT_PLACEHOLDERS.default
+        }
+        disabled={expired}
+      />
     </div>
   </div>
 );

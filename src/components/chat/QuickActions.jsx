@@ -84,10 +84,13 @@ export default function QuickActions({
               key={action.id}
               type="button"
               disabled={!action.enabled}
-              onClick={() => {
-                if (action.enabled) {
-                  action.onClick();
-                }
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                if (!action.enabled) return;
+
+                action.onClick(action.id);
               }}
               className="
                 inline-flex

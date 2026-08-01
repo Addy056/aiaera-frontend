@@ -5,45 +5,33 @@ import ChatInput from "./ChatInput";
 
 export default function ChatWidget({
   mode = "live",
-
   chatbot = null,
-
   messages = [],
-
   loading = false,
-
   input = "",
-
   setInput,
-
   onSend,
-
   integrations = {},
-
   placeholder = "Type your message...",
-
   disabled = false,
-
   className = "",
-
   onBookAppointment,
-
   onVisitOffice,
-
   onAskServices,
 }) {
-  const theme =
-    chatbot?.theme || {};
+  const theme = chatbot?.theme || {};
 
   return (
     <div
       className={`
         flex
+        flex-col
         h-full
         w-full
-        flex-col
         overflow-hidden
-        text-rounded-[28px][13px] sm:text-sm
+        rounded-[28px]
+        text-[13px]
+        sm:text-sm
         border
         border-slate-200
         bg-white
@@ -51,22 +39,13 @@ export default function ChatWidget({
         ${className}
       `}
       style={{
-        background:
-          theme.chatBg || "#FFFFFF",
+        background: theme.chatBg || "#FFFFFF",
       }}
     >
-      {/* ===========================
-          HEADER
-      =========================== */}
-
       <ChatHeader
         chatbot={chatbot}
         mode={mode}
       />
-
-      {/* ===========================
-          QUICK ACTIONS
-      =========================== */}
 
       <QuickActions
         chatbot={chatbot}
@@ -76,19 +55,11 @@ export default function ChatWidget({
         onAskServices={onAskServices}
       />
 
-      {/* ===========================
-          CHAT MESSAGES
-      =========================== */}
-
       <ChatMessages
         chatbot={chatbot}
         messages={messages}
         loading={loading}
       />
-
-      {/* ===========================
-          INPUT
-      =========================== */}
 
       <ChatInput
         chatbot={chatbot}
