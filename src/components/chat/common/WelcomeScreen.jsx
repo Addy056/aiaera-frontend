@@ -85,17 +85,20 @@ export default function WelcomeScreen({
 }) {
   const theme = useTheme();
 
-  const companyName =
-    chatbot?.theme?.companyName ||
-    chatbot?.name ||
-    "Your Company";
+ const companyName =
+  theme.companyName ||
+  chatbot?.name ||
+  "Your Company";
 
-  const introduction =
-    chatbot?.theme?.introduction ||
-    "I'm here to answer your questions, help you book appointments and connect you with our team.";
+const introduction =
+  theme.introduction ||
+  chatbot?.theme?.introduction ||
+  "I'm here to answer your questions, help you book appointments and connect you with our team.";
 
-  const logo =
-    chatbot?.theme?.logo || "";
+const logo =
+  theme.logo ||
+  chatbot?.theme?.logo ||
+  "";
 
   return (
     <div
@@ -165,18 +168,17 @@ export default function WelcomeScreen({
       {/* TITLE */}
 
       <div className="mt-6 text-center">
-
-        <h2
-          className="
-            text-2xl
-            font-bold
-          "
-          style={{
-            color: theme.text,
-          }}
-        >
-          Welcome to {companyName}
-        </h2>
+<h2
+  className="
+    text-2xl
+    font-bold
+  "
+  style={{
+    color: theme.text,
+  }}
+>
+  {theme.welcomeTitle || `Welcome to ${companyName}`}
+</h2>
 
         <p
           className="

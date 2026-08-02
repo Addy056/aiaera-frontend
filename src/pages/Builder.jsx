@@ -283,7 +283,10 @@ setSuggestedQuestions(
       ...(existingId ? { id: existingId } : {}),
       business_info: businessInfo || "",
       website_url: website || "",
-      bot_name:
+      name:
+  companyName,
+
+bot_name:
   assistantName ||
   DEFAULT_THEME.assistantName,
       theme: {
@@ -296,6 +299,7 @@ setSuggestedQuestions(
   introduction: assistantIntro,
   suggestedActions,
   suggestedQuestions,
+  logo: theme.logo,
 },
       status: "active",
     };
@@ -403,8 +407,15 @@ setSuggestedQuestions(
 
       const logoUrl =
         `${publicData.publicUrl}?t=${Date.now()}`;
-        const updatedTheme = {
+      const updatedTheme = {
   ...theme,
+  companyName,
+  assistantName,
+  businessCategory,
+  welcomeTitle,
+  introduction: assistantIntro,
+  suggestedActions,
+  suggestedQuestions,
   logo: logoUrl,
 };
 
@@ -816,6 +827,41 @@ xl:grid-cols-[220px_minmax(420px,520px)_minmax(500px,620px)]
               </div>
 
               <div className="space-y-2">
+                <div className="space-y-2">
+  <label className="text-sm font-medium text-slate-700">
+    Company name
+  </label>
+
+  <input
+    type="text"
+    placeholder="AIAERA"
+    value={companyName}
+    onChange={(e) => {
+      const value = e.target.value;
+
+      setCompanyName(value);
+
+      setTheme((prev) => ({
+        ...prev,
+        companyName: value,
+      }));
+    }}
+    className="
+      h-11
+      w-full
+      rounded-2xl
+      border
+      border-slate-200
+      bg-slate-50
+      px-4
+      text-sm
+      text-slate-700
+      outline-none
+      transition
+      focus:border-violet-400
+    "
+  />
+</div>
   <label className="text-sm font-medium text-slate-700">
     Chatbot name
   </label>
@@ -904,7 +950,16 @@ xl:grid-cols-[220px_minmax(420px,520px)_minmax(500px,620px)]
                 <h2 className="text-2xl font-semibold text-slate-900">Appearance</h2>
                 <p className="mt-1 text-sm text-slate-600">Customize the chatbot look and feel.</p>
               </div>
-
+<ColorField
+  label="Brand color"
+  value={theme.brandColor}
+  onChange={(value) =>
+    setTheme({
+      ...theme,
+      brandColor: value,
+    })
+  }
+/>
               <ColorField label="Chat background" value={theme.chatBg} onChange={(value) => setTheme({ ...theme, chatBg: value })} />
               <ColorField label="Bot message bubble" value={theme.botBubble} onChange={(value) => setTheme({ ...theme, botBubble: value })} />
               <ColorField label="User message bubble" value={theme.userBubble} onChange={(value) => setTheme({ ...theme, userBubble: value })} />
