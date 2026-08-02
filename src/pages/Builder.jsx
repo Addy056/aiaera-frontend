@@ -763,8 +763,8 @@ xl:grid-cols-[220px_minmax(420px,520px)_minmax(500px,620px)]
           )}
         </div>
 
-        <div className="flex h-full w-full items-center justify-center">
-          <div className="h-full w-full max-w-[560px]">
+        <div className="flex h-[calc(100vh-220px)] w-full items-center justify-center">
+  <div className="h-full w-full max-w-[560px]">
           <ChatWidget
             mode="preview"
             chatbot={previewChatbot}

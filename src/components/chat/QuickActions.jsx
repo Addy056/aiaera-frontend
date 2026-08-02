@@ -74,7 +74,7 @@ export default function QuickActions({
   if (!actions.length) return null;
 
   return (
-    <div className="border-b border-slate-200 bg-white px-4 py-3 sm:px-6 sm:py-4">
+    <div className="shrink-0 border-b border-slate-200 bg-white px-4 py-3 sm:px-6 sm:py-4">
       <div className="flex flex-wrap gap-2 sm:gap-3">
         {actions.map((action) => {
           const Icon = action.icon;
