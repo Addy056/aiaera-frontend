@@ -405,7 +405,7 @@ setSuggestedQuestions(
         .from("chatbots")
         .update({
           theme: updatedTheme,
-          bot_name: updatedassistantName,
+          bot_name: updatedAssistantName,
         })
         .eq("id", activeChatbotId);
 
