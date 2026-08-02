@@ -42,19 +42,78 @@ const API_URL =
 
 const MAX_LOGO_SIZE = 5 * 1024 * 1024;
 const DEFAULT_THEME = {
-  botName: "AI Assistant",
-  chatBg: "#F8FAFC",
-  botBubble: "#FFFFFF",
-  userBubble: "#7C3AED",
-  textColor: "#0F172A",
+  companyName: "",
+
+  assistantName: "Customer Assistant",
+
+  businessCategory: "General",
+
   logo: "",
+
+  brandColor: "#7C3AED",
+
+  chatBg: "#F8FAFC",
+
+  botBubble: "#FFFFFF",
+
+  userBubble: "#7C3AED",
+
+  textColor: "#0F172A",
+
+  welcomeTitle: "",
+
+  introduction:
+    "I'm here to answer your questions and help you connect with our team.",
+
+  suggestedActions: [
+    "Book Appointment",
+    "Our Services",
+    "Visit Office",
+    "Contact Us",
+  ],
+
+  suggestedQuestions: [
+    "Tell me about your services.",
+    "How can I book an appointment?",
+    "Where are you located?",
+  ],
 };
 
 const normalizeTheme = (chatbot) => ({
   ...DEFAULT_THEME,
   ...(chatbot?.theme && typeof chatbot.theme === "object" ? chatbot.theme : {}),
-  botName: chatbot?.bot_name || chatbot?.theme?.botName || DEFAULT_THEME.botName,
-});
+assistantName:
+  chatbot?.theme?.assistantName ||
+  chatbot?.bot_name ||
+  DEFAULT_THEME.assistantName,
+
+companyName:
+  chatbot?.theme?.companyName ||
+  "",
+
+businessCategory:
+  chatbot?.theme?.businessCategory ||
+  "General",
+
+brandColor:
+  chatbot?.theme?.brandColor ||
+  DEFAULT_THEME.brandColor,
+
+welcomeTitle:
+  chatbot?.theme?.welcomeTitle ||
+  "",
+
+introduction:
+  chatbot?.theme?.introduction ||
+  DEFAULT_THEME.introduction,
+
+suggestedActions:
+  chatbot?.theme?.suggestedActions ||
+  DEFAULT_THEME.suggestedActions,
+
+suggestedQuestions:
+  chatbot?.theme?.suggestedQuestions ||
+  DEFAULT_THEME.suggestedQuestions,});
 
 export default function Builder() {
 
@@ -99,7 +158,26 @@ export default function Builder() {
   const [toast, setToast] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [trainingFiles, setTrainingFiles] = useState([]);
+const [companyName, setCompanyName] =
+  useState("");
 
+const [assistantName, setAssistantName] =
+  useState(DEFAULT_THEME.assistantName);
+
+const [businessCategory, setBusinessCategory] =
+  useState("General");
+
+const [welcomeTitle, setWelcomeTitle] =
+  useState("");
+
+const [assistantIntro, setAssistantIntro] =
+  useState(DEFAULT_THEME.introduction);
+
+const [suggestedActions, setSuggestedActions] =
+  useState(DEFAULT_THEME.suggestedActions);
+
+const [suggestedQuestions, setSuggestedQuestions] =
+  useState(DEFAULT_THEME.suggestedQuestions);
   const [messages, setMessages] =
     useState([
       {
@@ -133,6 +211,36 @@ export default function Builder() {
     );
 
     setTheme(normalizeTheme(selectedChatbot));
+    const normalized =
+  normalizeTheme(selectedChatbot);
+
+setCompanyName(
+  normalized.companyName
+);
+
+setAssistantName(
+  normalized.assistantName
+);
+
+setBusinessCategory(
+  normalized.businessCategory
+);
+
+setWelcomeTitle(
+  normalized.welcomeTitle
+);
+
+setAssistantIntro(
+  normalized.introduction
+);
+
+setSuggestedActions(
+  normalized.suggestedActions
+);
+
+setSuggestedQuestions(
+  normalized.suggestedQuestions
+);
 
   }, [selectedChatbot]);
 
@@ -175,7 +283,7 @@ export default function Builder() {
       ...(existingId ? { id: existingId } : {}),
       business_info: businessInfo || "",
       website_url: website || "",
-      bot_name: theme.botName || DEFAULT_THEME.botName,
+      bot_name: assistantName || DEFAULT_assistantName,
       theme: { ...DEFAULT_THEME, ...theme },
       status: "active",
     };
@@ -297,7 +405,7 @@ export default function Builder() {
         .from("chatbots")
         .update({
           theme: updatedTheme,
-          bot_name: updatedTheme.botName,
+          bot_name: updatedassistantName,
         })
         .eq("id", activeChatbotId);
 
@@ -519,17 +627,36 @@ export default function Builder() {
     }
   };
 const previewChatbot = {
-  bot_name: theme.botName,
-  theme: {
-    ...DEFAULT_THEME,
-    ...theme,
-    botName: theme.botName,
-  },
+bot_name:
+assistantName,
+ theme: {
+  ...DEFAULT_THEME,
+
+  ...theme,
+
+  companyName,
+
+  assistantName,
+
+  businessCategory,
+
+  brandColor:
+    theme.brandColor,
+
+  welcomeTitle,
+
+  introduction:
+    assistantIntro,
+
+  suggestedActions,
+
+  suggestedQuestions,
+},
 };
   const previewSeedMessages = [
     {
       role: "bot",
-      text: `Hi, I’m ${theme.botName}. ${businessInfo ? `I help with ${businessInfo}` : "I can help with questions, bookings, and support."}`,
+      text: `Hi, I’m ${assistantName}. ${businessInfo ? `I help with ${businessInfo}` : "I can help with questions, bookings, and support."}`,
     },
     {
       role: "bot",
@@ -681,7 +808,7 @@ xl:grid-cols-[220px_minmax(420px,520px)_minmax(500px,620px)]
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">Chatbot name</label>
-                <input type="text" placeholder="AI Assistant" value={theme.botName} onChange={(e) => setTheme({ ...theme, botName: e.target.value })} className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 outline-none transition focus:border-violet-400" />
+                <input type="text" placeholder="AI Assistant" value={assistantName} onChange={(e) => setTheme({ ...theme, botName: e.target.value })} className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 outline-none transition focus:border-violet-400" />
               </div>
 
               <div className="space-y-2">

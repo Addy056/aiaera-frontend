@@ -29,13 +29,14 @@ export default function PublicChatbot() {
   STATES
   ========================================
   */
-  const [messages, setMessages] = useState(() => {
-    const saved = loadChat(id);
-    if (saved && saved.length > 0) {
-      return saved;
-    }
-    return [DEFAULT_MESSAGE];
-  });
+  useEffect(() => {
+  const saved = loadChat(id);
+  if (saved && saved.length > 0) {
+    setMessages(saved);
+  } else {
+    setMessages([DEFAULT_MESSAGE]);
+  }
+}, [id]);
 
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -94,7 +95,7 @@ const fetchChatbot = useCallback(async () => {
       }
 
       setChatbot(data.chatbot);
-
+console.log("PUBLIC CHATBOT:", data.chatbot);
       setIntegrations({
         ...DEFAULT_INTEGRATIONS,
         ...(data.integrations || {}),
@@ -236,7 +237,7 @@ useEffect(() => {
             className="animate-spin text-purple-400 mb-4"
           />
           <p className="text-sm text-gray-400">
-            Loading {chatbot?.bot_name || "Assistant"}...
+           Loading {chatbot?.name || chatbot?.bot_name || "Assistant"}...
           </p>
         </div>
       </div>

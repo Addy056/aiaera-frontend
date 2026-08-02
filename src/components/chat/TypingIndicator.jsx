@@ -1,91 +1,78 @@
-import { Bot, Loader2 } from "lucide-react";
+import AssistantAvatar from "./common/AssistantAvatar";
+import { useTheme } from "./common/ThemeProvider";
+
+/*
+========================================
+TYPING INDICATOR
+========================================
+*/
 
 export default function TypingIndicator({
   chatbot,
 }) {
-  const theme =
-    chatbot?.theme || {};
-
-  const botName =
-    chatbot?.bot_name ||
-    theme?.botName ||
-    "AI Assistant";
-
-  const logo =
-    theme?.logo;
-
-  const accentColor =
-    theme?.userBubble || "#7C3AED";
+  const theme = useTheme();
 
   return (
     <div className="flex justify-start">
-      <div
-        className="
-          max-w-[88%]
-          rounded-3xl
-          border
-          border-slate-200
-          bg-white
-          px-5
-          py-4
-          shadow-sm
-        "
-      >
-        <div className="flex items-center gap-3">
-          {/* BOT ICON */}
-          <div
-            className="
-              flex
-              h-9
-              w-9
-              shrink-0
-              items-center
-              justify-center
-              overflow-hidden
-              rounded-xl
-            "
-            style={{
-              background: logo
-                ? "#F8FAFC"
-                : accentColor,
-            }}
-          >
-            {logo ? (
-              <img
-                src={logo}
-                alt={botName}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <Bot
-                size={16}
-                className="text-white"
-              />
-            )}
-          </div>
 
-          {/* TEXT */}
-          <div>
-            <p className="text-sm font-medium text-slate-900">
-              {botName}
-            </p>
+      <div className="flex items-end gap-3">
 
-            <div className="mt-1 flex items-center gap-2">
-              <Loader2
-                size={14}
-                className="animate-spin"
+        {/* AVATAR */}
+
+        <AssistantAvatar
+          chatbot={chatbot}
+          size={40}
+        />
+
+        {/* BUBBLE */}
+
+        <div
+          className="
+            rounded-3xl
+
+            border
+
+            px-5
+            py-4
+
+            shadow-sm
+          "
+          style={{
+            background: theme.botBubble,
+            borderColor: theme.border,
+          }}
+        >
+          <div className="flex items-center gap-2">
+
+            {[0, 1, 2].map((dot) => (
+
+              <span
+                key={dot}
+                className="
+                  h-2.5
+                  w-2.5
+
+                  rounded-full
+
+                  animate-bounce
+                "
                 style={{
-                  color: accentColor,
+                  background:
+                    theme.primary,
+
+                  animationDelay:
+                    `${dot * 0.15}s`,
                 }}
               />
 
-              <span className="text-xs text-slate-500">
-                is typing...
-              </span>
-            </div>
+            ))}
+
           </div>
+
         </div>
+
       </div>
+
     </div>
   );
 }

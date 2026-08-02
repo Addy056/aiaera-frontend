@@ -1,137 +1,138 @@
-import { Bot, Sparkles } from "lucide-react";
+import {
+  ShieldCheck,
+  X,
+} from "lucide-react";
+
+import AssistantAvatar from "./common/AssistantAvatar";
+import OnlineIndicator from "./common/OnlineIndicator";
+import { useTheme } from "./common/ThemeProvider";
 
 export default function ChatHeader({
   chatbot,
   mode = "live",
+  onClose,
 }) {
-  const theme = chatbot?.theme || {};
+  const theme = useTheme();
 
-  const botName =
-    chatbot?.bot_name ||
-    theme?.botName ||
-    "AI Assistant";
+  /*
+  ========================================
+  BRANDING
+  ========================================
+  */
 
-  const logo = theme?.logo;
+  const companyName =
+    theme.companyName ||
+    "Business";
 
-  const userBubble =
-    theme?.userBubble || "#7C3AED";
+  const assistantName =
+    theme.assistantName ||
+    `${companyName} Assistant`;
+
+  const subtitle =
+    chatbot?.theme?.subtitle ||
+    "Typically replies instantly";
 
   return (
-    <div
+    <header
       className="
         shrink-0
         border-b
-        border-slate-200
         bg-white
-
-       h-[68px]
-sm:h-[84px]
-
         px-4
-        sm:px-6
-
-        flex
-        items-center
-        justify-between
+        py-4
+        sm:px-5
       "
+      style={{
+        borderColor: theme.border,
+      }}
     >
-      {/* LEFT */}
-      <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-        <div className="relative shrink-0">
-          <div
-            className="absolute inset-0 rounded-2xl blur-xl opacity-25"
-            style={{
-              background: userBubble,
-            }}
+      <div className="flex items-center justify-between">
+
+        {/* LEFT */}
+
+        <div className="flex min-w-0 items-center gap-3">
+
+          <AssistantAvatar
+            chatbot={chatbot}
+            size={48}
           />
 
-          <div
+          <div className="min-w-0">
+
+            {/* COMPANY */}
+
+            <div className="flex items-center gap-2">
+
+              <h2
+                className="
+                  truncate
+                  text-sm
+                  font-semibold
+                  sm:text-base
+                "
+                style={{
+                  color: theme.text,
+                }}
+              >
+                {companyName}
+              </h2>
+
+              <ShieldCheck
+                size={14}
+                color={theme.primary}
+              />
+
+            </div>
+
+            {/* STATUS */}
+
+            <div className="mt-1 flex items-center gap-2">
+
+              <OnlineIndicator
+                status="online"
+              />
+
+              <span
+                className="
+                  truncate
+                  text-xs
+                "
+                style={{
+                  color: theme.muted,
+                }}
+              >
+                {subtitle}
+              </span>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* RIGHT */}
+
+        {mode === "embed" && (
+
+          <button
+            type="button"
+            onClick={onClose}
             className="
-              relative
-             w-10
-h-10
-sm:w-14
-sm:h-14
-
-            rounded-lg
-sm:rounded-2xl
-
-              overflow-hidden
-              border
-              border-slate-200
-              flex
-              items-center
-              justify-center
-              shadow-sm
-              bg-white
+              rounded-xl
+              p-2
+              transition
+              hover:bg-slate-100
             "
-            style={{
-              background: logo
-                ? "#FFFFFF"
-                : userBubble,
-            }}
           >
-            {logo ? (
-              <img
-                src={logo}
-                alt={botName}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <Bot
-                size={18}
-                className="text-white sm:w-6 sm:h-6"
-              />
-            )}
-          </div>
-        </div>
+            <X
+              size={18}
+              color={theme.muted}
+            />
+          </button>
 
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <h2 className="truncate text-[18px] sm:text-lg font-semibold text-slate-900">
-              {botName}
-            </h2>
+        )}
 
-            <span className="h-2 w-2 rounded-full bg-emerald-500" />
-          </div>
-
-          <p className="mt-0.5 truncate text-[13px] sm:text-sm text-slate-500">
-            Online now
-          </p>
-        </div>
       </div>
-
-      {/* RIGHT */}
-      <div className="hidden md:flex shrink-0">
-        <div
-          className="flex items-center gap-2 rounded-full border px-4 py-2"
-          style={{
-            borderColor: "#E2E8F0",
-            background:
-              mode === "preview"
-                ? "#F8FAFC"
-                : "#FFFFFF",
-          }}
-        >
-          <Sparkles
-            size={14}
-            style={{
-              color: userBubble,
-            }}
-          />
-
-          <span
-            className="text-xs font-medium"
-            style={{
-              color: "#475569",
-            }}
-          >
-            {mode === "preview"
-              ? "Live Preview"
-              : "Powered by AIAERA"}
-          </span>
-        </div>
-      </div>
-    </div>
+    </header>
   );
 }
