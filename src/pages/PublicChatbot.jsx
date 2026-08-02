@@ -29,14 +29,15 @@ export default function PublicChatbot() {
   STATES
   ========================================
   */
-  useEffect(() => {
+  const [messages, setMessages] = useState(() => {
   const saved = loadChat(id);
+
   if (saved && saved.length > 0) {
-    setMessages(saved);
-  } else {
-    setMessages([DEFAULT_MESSAGE]);
+    return saved;
   }
-}, [id]);
+
+  return [DEFAULT_MESSAGE];
+});
 
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -257,8 +258,10 @@ const handleVisitOffice = () => {
   sendMessage("Where is your office located?");
 };
 
-const handleAskServices = () => {
-  sendMessage("Tell me about your services.");
+const handleAskServices = (
+  question = "Tell me about your services."
+) => {
+  sendMessage(question);
 };
 
 return (
