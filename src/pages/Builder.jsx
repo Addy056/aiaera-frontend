@@ -283,8 +283,20 @@ setSuggestedQuestions(
       ...(existingId ? { id: existingId } : {}),
       business_info: businessInfo || "",
       website_url: website || "",
-      bot_name: assistantName || DEFAULT_assistantName,
-      theme: { ...DEFAULT_THEME, ...theme },
+      bot_name:
+  assistantName ||
+  DEFAULT_THEME.assistantName,
+      theme: {
+  ...DEFAULT_THEME,
+  ...theme,
+  companyName,
+  assistantName,
+  businessCategory,
+  welcomeTitle,
+  introduction: assistantIntro,
+  suggestedActions,
+  suggestedQuestions,
+},
       status: "active",
     };
 
@@ -391,22 +403,19 @@ setSuggestedQuestions(
 
       const logoUrl =
         `${publicData.publicUrl}?t=${Date.now()}`;
+        const updatedTheme = {
+  ...theme,
+  logo: logoUrl,
+};
 
-      const updatedTheme = {
-        ...theme,
-        logo: logoUrl,
-      };
-
-      setTheme(
-        updatedTheme
-      );
+setTheme(updatedTheme);
 
       const { error: themeError } = await supabase
-        .from("chatbots")
-        .update({
-          theme: updatedTheme,
-          bot_name: updatedAssistantName,
-        })
+  .from("chatbots")
+  .update({
+    theme: updatedTheme,
+    bot_name: assistantName || DEFAULT_THEME.assistantName,
+  })
         .eq("id", activeChatbotId);
 
       if (themeError) throw themeError;
@@ -807,9 +816,40 @@ xl:grid-cols-[220px_minmax(420px,520px)_minmax(500px,620px)]
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Chatbot name</label>
-                <input type="text" placeholder="AI Assistant" value={assistantName} onChange={(e) => setTheme({ ...theme, botName: e.target.value })} className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-700 outline-none transition focus:border-violet-400" />
-              </div>
+  <label className="text-sm font-medium text-slate-700">
+    Chatbot name
+  </label>
+
+  <input
+    type="text"
+    placeholder="AI Assistant"
+    value={assistantName}
+    onChange={(e) => {
+      const value = e.target.value;
+
+      setAssistantName(value);
+
+      setTheme((prev) => ({
+        ...prev,
+        assistantName: value,
+      }));
+    }}
+    className="
+      h-11
+      w-full
+      rounded-2xl
+      border
+      border-slate-200
+      bg-slate-50
+      px-4
+      text-sm
+      text-slate-700
+      outline-none
+      transition
+      focus:border-violet-400
+    "
+  />
+</div>
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">Business description</label>
