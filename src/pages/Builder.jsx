@@ -862,39 +862,7 @@ xl:grid-cols-[220px_minmax(420px,520px)_minmax(500px,620px)]
     "
   />
 </div>
-  <label className="text-sm font-medium text-slate-700">
-    Chatbot name
-  </label>
-
-  <input
-    type="text"
-    placeholder="AI Assistant"
-    value={assistantName}
-    onChange={(e) => {
-      const value = e.target.value;
-
-      setAssistantName(value);
-
-      setTheme((prev) => ({
-        ...prev,
-        assistantName: value,
-      }));
-    }}
-    className="
-      h-11
-      w-full
-      rounded-2xl
-      border
-      border-slate-200
-      bg-slate-50
-      px-4
-      text-sm
-      text-slate-700
-      outline-none
-      transition
-      focus:border-violet-400
-    "
-  />
+ 
 </div>
 
               <div className="space-y-2">
@@ -985,7 +953,7 @@ xl:grid-cols-[220px_minmax(420px,520px)_minmax(500px,620px)]
           )}
         </div>
 
-        <div className="flex h-[calc(100vh-220px)] w-full items-center justify-center">
+        <div className="flex h-[calc(100vh-140px)] w-full items-stretch justify-center">
   <div className="h-full w-full max-w-[560px]">
           <ChatWidget
             mode="preview"
