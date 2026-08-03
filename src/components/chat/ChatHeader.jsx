@@ -30,16 +30,20 @@ export default function ChatHeader({
 
   const subtitle =
     chatbot?.theme?.subtitle ||
-    "Typically replies instantly";
+    "🟢 Online • Typically replies instantly";
 
   return (
     <header
       className="
         shrink-0
-        border-b
-        bg-white
+        style={{
+  borderColor: theme.border,
+}}
+       bg-white/90
+backdrop-blur-xl
+supports-[backdrop-filter]:bg-white/80
         px-4
-        py-4
+        py-5
         sm:px-5
       "
       style={{
@@ -54,7 +58,7 @@ export default function ChatHeader({
 
           <AssistantAvatar
             chatbot={chatbot}
-            size={48}
+            size={52}
           />
 
           <div className="min-w-0">
@@ -67,7 +71,7 @@ export default function ChatHeader({
                 className="
                   truncate
                   text-sm
-                  font-semibold
+                  font-bold
                   sm:text-base
                 "
                 style={{

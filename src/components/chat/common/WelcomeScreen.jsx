@@ -32,8 +32,8 @@ function ActionButton({
 
         border
 
-        px-4
-        py-3
+       px-4
+py-2.5
 
         text-sm
         font-medium
@@ -52,8 +52,8 @@ function ActionButton({
       <div
         className="
           flex
-          h-9
-          w-9
+          h-8
+          w-8
           items-center
           justify-center
 
@@ -64,7 +64,7 @@ function ActionButton({
           color: theme.primary,
         }}
       >
-        <Icon size={18} />
+        <Icon size={16} />
       </div>
 
       <span>{label}</span>
@@ -93,7 +93,7 @@ export default function WelcomeScreen({
 const introduction =
   theme.introduction ||
   chatbot?.theme?.introduction ||
-  "I'm here to answer your questions, help you book appointments and connect you with our team.";
+  "Ask me anything or choose one of the options below.";
 
 const logo =
   theme.logo ||
@@ -109,8 +109,8 @@ const logo =
 
         overflow-y-auto
 
-        px-6
-        py-8
+        px-5
+        py-5
       "
       style={{
         background: theme.background,
@@ -126,10 +126,10 @@ const logo =
             src={logo}
             alt={companyName}
             className="
-              h-20
-              w-20
+              h-14
+              w-14
 
-              rounded-3xl
+              rounded-2xl
 
               object-cover
 
@@ -142,15 +142,16 @@ const logo =
           <div
             className="
               flex
-              h-20
-              w-20
+              h-14
+              w-14
+          
 
               items-center
               justify-center
 
-              rounded-3xl
+              rounded-2xl
 
-              text-3xl
+              text-xl
               font-bold
             "
             style={{
@@ -167,28 +168,28 @@ const logo =
 
       {/* TITLE */}
 
-      <div className="mt-6 text-center">
+      <div className="mt-2 text-center">
 <h2
   className="
-    text-2xl
+    text-xl
     font-bold
   "
   style={{
     color: theme.text,
   }}
 >
-  {theme.welcomeTitle || `Welcome to ${companyName}`}
+  {theme.welcomeTitle || `Hi, I'm ${companyName} Assistant 👋`}
 </h2>
 
         <p
           className="
             mx-auto
-            mt-4
+            mt-2
 
             max-w-md
 
             text-sm
-            leading-7
+            leading-6
           "
           style={{
             color: theme.muted,
@@ -201,11 +202,11 @@ const logo =
 
       {/* HOW CAN I HELP */}
 
-      <div className="mt-10">
+      <div className="mt-6">
 
         <h3
           className="
-            mb-4
+            mb-3
 
             text-sm
             font-semibold
@@ -217,7 +218,7 @@ const logo =
           How can I help?
         </h3>
 
-        <div className="grid gap-3">
+        <div className="grid gap-2">
 
           <ActionButton
             icon={Calendar}
@@ -249,11 +250,11 @@ const logo =
           POPULAR QUESTIONS
       ======================================== */}
 
-      <div className="mt-10">
+      <div className="mt-6">
 
         <h3
           className="
-            mb-4
+            mb-3
 
             text-sm
             font-semibold
@@ -265,7 +266,7 @@ const logo =
           Popular questions
         </h3>
 
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-2">
 
           {(chatbot?.theme?.suggestedQuestions || [
             "Tell me about your services.",
@@ -286,16 +287,17 @@ const logo =
 
                 border
 
-                px-4
-                py-2
-
+               px-3
+py-1.5
                 text-xs
-                sm:text-sm
+               
 
                 transition-all
                 duration-200
 
                 hover:-translate-y-0.5
+hover:shadow-md
+hover:border-slate-300
               "
               style={{
                 borderColor: theme.border,
@@ -312,44 +314,4 @@ const logo =
 
       </div>
 
-      {/* ========================================
-          SPACER
-      ======================================== */}
-
-      <div className="flex-1" />
-
-      {/* ========================================
-          FOOTER
-      ======================================== */}
-
-      <div className="mt-10 text-center">
-
-        <p
-          className="
-            text-xs
-          "
-          style={{
-            color: theme.muted,
-          }}
-        >
-          Powered by
-        </p>
-
-        <h4
-          className="
-            mt-1
-
-            text-sm
-            font-semibold
-          "
-          style={{
-            color: theme.primary,
-          }}
-        >
-          AIAERA
-        </h4>
-
-      </div>
-          </div>
-  );
-}
+      
