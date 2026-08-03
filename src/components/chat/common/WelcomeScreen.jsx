@@ -310,8 +310,10 @@ hover:border-slate-300
 
           ))}
 
-        </div>
+                </div>
 
       </div>
 
-      
+    </div>
+  );
+}
