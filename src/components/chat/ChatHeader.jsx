@@ -24,32 +24,28 @@ export default function ChatHeader({
     theme.companyName ||
     "Business";
 
-  const assistantName =
-    theme.assistantName ||
-    `${companyName} Assistant`;
 
-  const subtitle =
-    chatbot?.theme?.subtitle ||
-    "🟢 Online • Typically replies instantly";
+
+const subtitle =
+  chatbot?.theme?.subtitle ||
+  "Online • Typically replies instantly";
 
   return (
     <header
-      className="
-        shrink-0
-        style={{
-  borderColor: theme.border,
-}}
-       bg-white/90
-backdrop-blur-xl
-supports-[backdrop-filter]:bg-white/80
-        px-4
-        py-5
-        sm:px-5
-      "
-      style={{
-        borderColor: theme.border,
-      }}
-    >
+  className="
+    shrink-0
+    border-b
+    bg-white/90
+    backdrop-blur-xl
+    supports-[backdrop-filter]:bg-white/80
+    px-4
+    py-5
+    sm:px-5
+  "
+  style={{
+    borderColor: theme.border,
+  }}
+>
       <div className="flex items-center justify-between">
 
         {/* LEFT */}
@@ -91,10 +87,10 @@ supports-[backdrop-filter]:bg-white/80
             {/* STATUS */}
 
             <div className="mt-1 flex items-center gap-2">
-
-              <OnlineIndicator
-                status="online"
-              />
+<OnlineIndicator
+  status="online"
+  showText={false}
+/>
 
               <span
                 className="
