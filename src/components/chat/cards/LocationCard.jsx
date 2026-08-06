@@ -13,37 +13,21 @@ LOCATION CARD
 
 export default function LocationCard({
   title = "Visit Our Office",
-  address = "Our office location",
+  address = "",
   buttonText = "Open in Google Maps",
   mapsLink = "",
 }) {
   const theme = useTheme();
 
-  const handleOpen = () => {
-    if (!mapsLink) return;
-
-    window.open(
-      mapsLink,
-      "_blank",
-      "noopener,noreferrer"
-    );
-  };
-
   return (
     <div
       className="
         w-full
-
         rounded-3xl
-
         border
-
         bg-white
-
         p-5
-
         shadow-sm
-
         transition-all
         duration-200
       "
@@ -52,18 +36,14 @@ export default function LocationCard({
       }}
     >
       {/* ICON */}
-
       <div
         className="
           mb-4
-
           flex
           h-12
           w-12
-
           items-center
           justify-center
-
           rounded-2xl
         "
         style={{
@@ -77,12 +57,8 @@ export default function LocationCard({
       </div>
 
       {/* TITLE */}
-
       <h3
-        className="
-          text-base
-          font-semibold
-        "
+        className="text-base font-semibold"
         style={{
           color: theme.text,
         }}
@@ -90,60 +66,84 @@ export default function LocationCard({
         {title}
       </h3>
 
-      {/* ADDRESS */}
-
-      <p
-        className="
-          mt-2
-
-          text-sm
-          leading-6
-        "
-        style={{
-          color: theme.muted,
-        }}
-      >
-        {address}
-      </p>
+      {/* ADDRESS (only if available) */}
+      {address && (
+        <p
+          className="
+            mt-2
+            text-sm
+            leading-6
+          "
+          style={{
+            color: theme.muted,
+          }}
+        >
+          {address}
+        </p>
+      )}
 
       {/* BUTTON */}
-
-      <button
-        type="button"
-        onClick={handleOpen}
-        disabled={!mapsLink}
-        className="
-          mt-5
-
-          inline-flex
-          w-full
-
-          items-center
-          justify-center
-          gap-2
-
-          rounded-2xl
-
-          px-4
-          py-3
-
-          font-medium
-
-          transition-all
-          duration-200
-
-          disabled:cursor-not-allowed
-          disabled:opacity-50
-        "
-        style={{
-          background: theme.primary,
-          color: "#FFFFFF",
-        }}
-      >
-        <Navigation size={18} />
-
-        <span>{buttonText}</span>
-      </button>
+      {mapsLink ? (
+        <a
+          href={mapsLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Open office location in Google Maps"
+          title="Open Google Maps"
+          className="
+            mt-5
+            inline-flex
+            w-full
+            items-center
+            justify-center
+            gap-2
+            rounded-2xl
+            px-4
+            py-3
+            font-medium
+            transition-all
+            duration-200
+            hover:opacity-90
+            focus:outline-none
+            focus:ring-2
+            focus:ring-offset-2
+          "
+          style={{
+            background: theme.primary,
+            color: "#FFFFFF",
+          }}
+        >
+          <Navigation size={18} />
+          <span>{buttonText}</span>
+        </a>
+      ) : (
+        <button
+          type="button"
+          disabled
+          aria-disabled="true"
+          className="
+            mt-5
+            inline-flex
+            w-full
+            items-center
+            justify-center
+            gap-2
+            rounded-2xl
+            px-4
+            py-3
+            font-medium
+            cursor-not-allowed
+            opacity-50
+          "
+          style={{
+            background: theme.primary,
+            color: "#FFFFFF",
+          }}
+        >
+          <Navigation size={18} />
+          <span>{buttonText}</span>
+        </button>
+      )}
     </div>
   );
 }
