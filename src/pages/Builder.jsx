@@ -487,10 +487,18 @@ setTheme(updatedTheme);
       setMessages((prev) => [
         ...prev,
         {
-          role: "bot",
-          text:
-            `📅 Book your appointment using ${providerName}:\n${integrations.meeting_link}`,
-        },
+    role:"bot",
+
+    type:"appointment",
+
+    title:"Schedule Meeting",
+
+    description:`Book your appointment using ${providerName}.`,
+
+    buttonText:"Schedule Meeting",
+
+    meetingLink:integrations.meeting_link,
+}
       ]);
 
       return;
@@ -508,11 +516,17 @@ setTheme(updatedTheme);
 
       setMessages((prev) => [
         ...prev,
-        {
-          role: "bot",
-          text:
-            `📍 Visit our office:\n${integrations.maps_link}`,
-        },
+       {
+    role:"bot",
+
+    type:"location",
+
+    title:"Visit our Office",
+
+    buttonText:"Open Google Maps",
+
+    mapsLink:integrations.maps_link,
+}
       ]);
 
       return;
@@ -559,13 +573,20 @@ setTheme(updatedTheme);
 
       setMessages((prev) => [
         ...prev,
-        {
-          role: "bot",
-          text:
-            data.reply ||
-            data.message ||
-            "No response received",
-        },
+      {
+  role: "bot",
+  type: data.type || "text",
+  text: data.reply || data.message,
+  title: data.title,
+  description: data.description,
+  buttonText: data.buttonText,
+  meetingLink: data.meetingLink,
+  mapsLink: data.mapsLink,
+  phone: data.phone,
+  email: data.email,
+  website: data.website,
+  whatsapp: data.whatsapp,
+}
       ]);
 
     } catch (err) {
@@ -698,34 +719,33 @@ assistantName,
       : messages;
 
   const handleBookAppointment = () => {
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: "user",
-        text: "Book Appointment",
-      },
-      {
-        role: "bot",
-        text: integrations?.meeting_link
-          ? `📅 Book your appointment here:\n${integrations.meeting_link}`
-          : "Booking link not configured yet.",
-      },
-    ]);
-  };
+  setMessages((prev) => [
+    ...prev,
+    {
+      role: "user",
+      text: "Book Appointment",
+    },
+    {
+      role: "bot",
+      type: "appointment",
+      title: "Schedule Meeting",
+      description: "Choose a suitable time below.",
+      buttonText: "Schedule Meeting",
+      meetingLink: integrations.meeting_link,
+    },
+  ]);
+};
 
   const handleVisitOffice = () => {
     setMessages((prev) => [
       ...prev,
       {
-        role: "user",
-        text: "Visit Office",
-      },
-      {
-        role: "bot",
-        text: integrations?.maps_link
-          ? `📍 Visit our office:\n${integrations.maps_link}`
-          : "Office location not configured yet.",
-      },
+  role: "bot",
+  type: "location",
+  title: "Visit our Office",
+  buttonText: "Open Google Maps",
+  mapsLink: integrations.maps_link,
+}
     ]);
   };
 

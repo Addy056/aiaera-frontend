@@ -3,6 +3,12 @@ import ContactCard from "../cards/ContactCard";
 import FileCard from "../cards/FileCard";
 import ImageCard from "../cards/ImageCard";
 import LocationCard from "../cards/LocationCard";
+import ActionButton from "../cards/ActionButton";
+
+import {
+  detectAction,
+  extractFirstUrl,
+} from "../../../utils/messageActions";
 
 /*
 ========================================
@@ -23,7 +29,33 @@ export default function MessageRenderer({
   */
 
   if (!message.type || message.type === "text") {
-    return message.text || "";
+    const text = message.text || "";
+
+    const url = extractFirstUrl(text);
+
+    if (!url) {
+      return text;
+    }
+
+    const action =
+      detectAction(url);
+
+    const cleanText =
+      text.replace(url, "").trim();
+
+    return (
+      <div className="space-y-3">
+        {cleanText && (
+          <div>{cleanText}</div>
+        )}
+
+        <ActionButton
+          type={action.type}
+          text={action.text}
+          href={url}
+        />
+      </div>
+    );
   }
 
   /*
