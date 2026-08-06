@@ -20,6 +20,7 @@ export default function ChatWidget({
   onBookAppointment,
   onVisitOffice,
   onAskServices,
+  onContactUs,
 }) {
   /*
   ========================================
@@ -85,6 +86,7 @@ export default function ChatWidget({
               onBookAppointment={onBookAppointment}
               onVisitOffice={onVisitOffice}
               onAskServices={onAskServices}
+              onContactUs={onContactUs}
             />
           ) : (
             <ChatMessages
