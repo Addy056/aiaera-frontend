@@ -673,11 +673,13 @@ export default function Leads() {
                                 "No Email"}
 
                             </p>
-{lead.phone && (
-    <p className="text-sm text-slate-500">
-      {lead.phone}
-    </p>
-  )}
+<p className="text-sm text-slate-500">
+  {lead.platform === "instagram" && lead.external_id
+    ? `Instagram ID: ${lead.external_id}`
+    : lead.platform === "facebook" && lead.external_id
+    ? `Facebook ID: ${lead.external_id}`
+    : lead.phone || "No Phone"}
+</p>
 
                           </div>
 
@@ -852,16 +854,21 @@ className="w-11 h-11 rounded-2xl border border-slate-200 bg-slate-50 text-slate-
                 }
               />
               
-              <ModernDetailCard
-  title="Phone Number"
+             <ModernDetailCard
+  title={
+    selectedLead.platform === "instagram"
+      ? "Instagram User ID"
+      : selectedLead.platform === "facebook"
+      ? "Facebook User ID"
+      : "Phone Number"
+  }
   value={
-    selectedLead.phone
+    selectedLead.platform === "instagram" ||
+    selectedLead.platform === "facebook"
+      ? selectedLead.external_id
+      : selectedLead.phone
   }
-  icon={
-    <Phone
-      size={16}
-    />
-  }
+  icon={<Phone size={16} />}
 />
               <ModernDetailCard
                 title="Email Address"
@@ -874,6 +881,16 @@ className="w-11 h-11 rounded-2xl border border-slate-200 bg-slate-50 text-slate-
                   />
                 }
               />
+              <ModernDetailCard
+  title="Platform"
+  value={
+    selectedLead.platform
+      ?.charAt(0)
+      .toUpperCase() +
+    selectedLead.platform?.slice(1)
+  }
+  icon={<Sparkles size={16} />}
+/>
 
               <ModernDetailCard
                 title="Reason for Inquiry"
@@ -886,7 +903,17 @@ className="w-11 h-11 rounded-2xl border border-slate-200 bg-slate-50 text-slate-
                   />
                 }
               />
+<ModernDetailCard
+  title="Conversation Count"
+  value={selectedLead.conversation_count}
+  icon={<MessageSquare size={16} />}
+/>
 
+<ModernDetailCard
+  title="Last Message"
+  value={selectedLead.last_message}
+  icon={<MessageSquare size={16} />}
+/>
               <ModernDetailCard
                 title="Created At"
                 value={new Date(
