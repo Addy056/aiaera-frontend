@@ -786,23 +786,8 @@ assistantName,
     },
   ]);
 };
-const handleContactUs = () => {
-  setMessages((prev) => [
-    ...prev,
-    {
-      role: "user",
-      text: "Contact Us",
-    },
-    {
-      role: "bot",
-      type: "contact",
-      phone: integrations?.phone,
-      email: integrations?.email,
-      website: website,
-      whatsapp: integrations?.whatsapp,
-    },
-  ]);
-};
+
+
   if (loading) {
 
     return (
