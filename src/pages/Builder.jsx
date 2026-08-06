@@ -737,17 +737,21 @@ assistantName,
 };
 
   const handleVisitOffice = () => {
-    setMessages((prev) => [
-      ...prev,
-      {
-  role: "bot",
-  type: "location",
-  title: "Visit our Office",
-  buttonText: "Open Google Maps",
-  mapsLink: integrations.maps_link,
-}
-    ]);
-  };
+  setMessages((prev) => [
+    ...prev,
+    {
+      role: "user",
+      text: "Visit Office",
+    },
+    {
+      role: "bot",
+      type: "location",
+      title: "Visit our Office",
+      buttonText: "Open Google Maps",
+      mapsLink: integrations?.maps_link || "",
+    },
+  ]);
+};
 
   const handleAskServices = () => {
     setMessages((prev) => [
@@ -765,6 +769,23 @@ assistantName,
     ]);
   };
 
+  const handleContactUs = () => {
+  setMessages((prev) => [
+    ...prev,
+    {
+      role: "user",
+      text: "Contact Us",
+    },
+    {
+      role: "bot",
+      type: "contact",
+      phone: integrations?.phone,
+      email: integrations?.email,
+      website: website,
+      whatsapp: integrations?.whatsapp,
+    },
+  ]);
+};
   if (loading) {
 
     return (
@@ -976,19 +997,20 @@ xl:grid-cols-[220px_minmax(420px,520px)_minmax(500px,620px)]
         <div className="flex h-[calc(100vh-140px)] w-full items-stretch justify-center">
   <div className="h-full w-full max-w-[560px]">
           <ChatWidget
-            mode="preview"
-            chatbot={previewChatbot}
-            messages={displayMessages}
-            loading={sending}
-            input={input}
-            setInput={setInput}
-            onSend={sendMessage}
-            integrations={integrations}
-            placeholder="Type your message..."
-            onBookAppointment={handleBookAppointment}
-            onVisitOffice={handleVisitOffice}
-            onAskServices={handleAskServices}
-          />
+  mode="preview"
+  chatbot={previewChatbot}
+  messages={displayMessages}
+  loading={sending}
+  input={input}
+  setInput={setInput}
+  onSend={sendMessage}
+  integrations={integrations}
+  placeholder="Type your message..."
+  onBookAppointment={handleBookAppointment}
+  onVisitOffice={handleVisitOffice}
+  onAskServices={handleAskServices}
+  onContactUs={handleContactUs}
+/>
             </div>
 
         </div>
