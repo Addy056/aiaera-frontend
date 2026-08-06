@@ -82,6 +82,7 @@ export default function WelcomeScreen({
   onBookAppointment,
   onVisitOffice,
   onAskServices,
+  onContactUs,
 }) {
   const theme = useTheme();
 
@@ -239,10 +240,10 @@ const logo =
           />
 
           <ActionButton
-            icon={Phone}
-            label="Contact Us"
-            onClick={() => {}}
-          />
+  icon={Phone}
+  label="Contact Us"
+  onClick={onContactUs}
+/>
 
         </div>
       </div>

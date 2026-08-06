@@ -48,7 +48,9 @@ export default function ChatWidget({
           border
           border-white/70
 
-bg-white/95 backdrop-blur-xl
+          bg-white/95
+          backdrop-blur-xl
+
           shadow-[0_24px_70px_rgba(15,23,42,0.18)]
 
           ${className}
@@ -89,6 +91,7 @@ bg-white/95 backdrop-blur-xl
               chatbot={chatbot}
               messages={messages}
               loading={loading}
+              integrations={integrations}
             />
           )}
         </main>
