@@ -554,15 +554,18 @@ setTheme(updatedTheme);
             },
 
             body: JSON.stringify({
-              message:
-                userMessage,
+  message:
+    userMessage,
 
-              chatbot_id:
-                activeChatbotId,
+  chatbot_id:
+    activeChatbotId,
 
-              session_id:
-                user.id,
-            }),
+  visitorId:
+    user.id,
+
+  messages:
+    messages,
+}),
           }
         );
 
